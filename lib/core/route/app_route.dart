@@ -1,7 +1,10 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/view/login_screen.dart';
 import '../../features/auth/presentation/view/register_screen.dart';
+import '../../features/dashboard/presentation/view/dashboard_screen.dart';
 import '../../features/splash/presentation/view/splash_screen.dart';
 
 class AppRoute {
@@ -33,8 +36,113 @@ class AppRoute {
           return const RegisterScreen();
         },
       ),
+
+      // =========================
+      // DASHBOARD
+      // =========================
+
+      GoRoute(
+        path: '/dashboard',
+        name: 'dashboard',
+        builder: (context, state) {
+          return const DashboardScreen();
+        },
+      ),
+
+      // =========================
+      // OTHER PAGES
+      // =========================
+
+      GoRoute(
+        path: '/pos-billing',
+        builder: (context, state) {
+          return const PlaceholderPage(
+            title: 'POS Billing',
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/inventory',
+        builder: (context, state) {
+          return const PlaceholderPage(
+            title: 'Inventory',
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/customers',
+        builder: (context, state) {
+          return const PlaceholderPage(
+            title: 'Customers',
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/returns',
+        builder: (context, state) {
+          return const PlaceholderPage(
+            title: 'Returns',
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/reports',
+        builder: (context, state) {
+          return const PlaceholderPage(
+            title: 'Reports',
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/staff-managers',
+        builder: (context, state) {
+          return const PlaceholderPage(
+            title: 'Staff / Managers',
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) {
+          return const PlaceholderPage(
+            title: 'Settings',
+          );
+        },
+      ),
     ],
   );
 }
 
+
+class PlaceholderPage extends StatelessWidget {
+  final String title;
+
+  const PlaceholderPage({
+    super.key,
+    required this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+      ),
+      body: Center(
+        child: Text(
+          title,
+          style: Theme.of(context)
+              .textTheme
+              .headlineMedium,
+        ),
+      ),
+    );
+  }
+}
 

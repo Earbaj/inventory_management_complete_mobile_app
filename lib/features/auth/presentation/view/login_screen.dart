@@ -256,7 +256,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
-    if (email.isEmpty || password.isEmpty) {
+    /*if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -266,11 +266,11 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       return;
-    }
+    }*/
 
     // Firebase login এখানে হবে
 
-    // context.go('/dashboard');
+    context.go('/dashboard');
   }
 }
 
