@@ -7,6 +7,7 @@ import '../../features/customer/presentation/view/customers_screen.dart';
 import '../../features/dashboard/presentation/view/dashboard_screen.dart';
 import '../../features/inventory/presentation/view/inventory_screen.dart';
 import '../../features/posbilling/presentation/view/pos_billing_screen.dart';
+import '../../features/returnandrestoke/presentation/view/returns_screen.dart';
 import '../../features/splash/presentation/view/splash_screen.dart';
 import '../../features/dashboard/presentation/widgets/app_drawer.dart';
 
@@ -90,9 +91,7 @@ class AppRoute {
           GoRoute(
             path: '/returns',
             builder: (context, state) {
-              return const PlaceholderPage(
-                title: 'Returns',
-              );
+              return ReturnsScreen();
             },
           ),
 
