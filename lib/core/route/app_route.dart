@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -7,8 +6,11 @@ import '../../features/auth/presentation/view/register_screen.dart';
 import '../../features/dashboard/presentation/view/dashboard_screen.dart';
 import '../../features/posbilling/presentation/view/pos_billing_screen.dart';
 import '../../features/splash/presentation/view/splash_screen.dart';
+import '../../features/dashboard/presentation/widgets/app_drawer.dart';
 
 class AppRoute {
+  static final GlobalKey<ScaffoldState> shellScaffoldKey = GlobalKey<ScaffoldState>();
+
   // GoRouter configuration
   static final GoRouter router = GoRouter(
     initialLocation: '/splash',
@@ -38,81 +40,91 @@ class AppRoute {
         },
       ),
 
-      // =========================
-      // DASHBOARD
-      // =========================
-
-      GoRoute(
-        path: '/dashboard',
-        name: 'dashboard',
-        builder: (context, state) {
-          return const DashboardScreen();
-        },
-      ),
-
-      // =========================
-      // OTHER PAGES
-      // =========================
-
-      GoRoute(
-        path: '/pos-billing',
-        builder: (context, state) {
-          return PosBillingScreen();
-        },
-      ),
-
-      GoRoute(
-        path: '/inventory',
-        builder: (context, state) {
-          return const PlaceholderPage(
-            title: 'Inventory',
+      ShellRoute(
+        builder: (context, state, child) {
+          final currentRoute = state.uri.path;
+          return Scaffold(
+            key: shellScaffoldKey,
+            drawer: AppDrawer(currentRoute: currentRoute),
+            body: child,
           );
         },
-      ),
+        routes: [
+          // =========================
+          // DASHBOARD
+          // =========================
+          GoRoute(
+            path: '/dashboard',
+            name: 'dashboard',
+            builder: (context, state) {
+              return const DashboardScreen();
+            },
+          ),
 
-      GoRoute(
-        path: '/customers',
-        builder: (context, state) {
-          return const PlaceholderPage(
-            title: 'Customers',
-          );
-        },
-      ),
+          // =========================
+          // OTHER PAGES
+          // =========================
+          GoRoute(
+            path: '/pos-billing',
+            builder: (context, state) {
+              return const PosBillingScreen();
+            },
+          ),
 
-      GoRoute(
-        path: '/returns',
-        builder: (context, state) {
-          return const PlaceholderPage(
-            title: 'Returns',
-          );
-        },
-      ),
+          GoRoute(
+            path: '/inventory',
+            builder: (context, state) {
+              return const PlaceholderPage(
+                title: 'Inventory',
+              );
+            },
+          ),
 
-      GoRoute(
-        path: '/reports',
-        builder: (context, state) {
-          return const PlaceholderPage(
-            title: 'Reports',
-          );
-        },
-      ),
+          GoRoute(
+            path: '/customers',
+            builder: (context, state) {
+              return const PlaceholderPage(
+                title: 'Customers',
+              );
+            },
+          ),
 
-      GoRoute(
-        path: '/staff-managers',
-        builder: (context, state) {
-          return const PlaceholderPage(
-            title: 'Staff / Managers',
-          );
-        },
-      ),
+          GoRoute(
+            path: '/returns',
+            builder: (context, state) {
+              return const PlaceholderPage(
+                title: 'Returns',
+              );
+            },
+          ),
 
-      GoRoute(
-        path: '/settings',
-        builder: (context, state) {
-          return const PlaceholderPage(
-            title: 'Settings',
-          );
-        },
+          GoRoute(
+            path: '/reports',
+            builder: (context, state) {
+              return const PlaceholderPage(
+                title: 'Reports',
+              );
+            },
+          ),
+
+          GoRoute(
+            path: '/staff-managers',
+            builder: (context, state) {
+              return const PlaceholderPage(
+                title: 'Staff / Managers',
+              );
+            },
+          ),
+
+          GoRoute(
+            path: '/settings',
+            builder: (context, state) {
+              return const PlaceholderPage(
+                title: 'Settings',
+              );
+            },
+          ),
+        ],
       ),
     ],
   );
@@ -131,6 +143,14 @@ class PlaceholderPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          onPressed: () {
+            AppRoute.shellScaffoldKey.currentState?.openDrawer();
+          },
+          icon: const Icon(
+            Icons.menu_rounded,
+          ),
+        ),
         title: Text(title),
       ),
       body: Center(

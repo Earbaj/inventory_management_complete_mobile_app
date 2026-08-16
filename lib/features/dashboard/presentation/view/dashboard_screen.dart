@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../widgets/app_drawer.dart';
+import '../../../../core/route/app_route.dart';
 import '../widgets/profit_chart.dart';
 import '../widgets/recent_transactions.dart';
 import '../widgets/sales_chart.dart';
@@ -23,10 +23,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      drawer: const AppDrawer(
-        currentRoute: '/dashboard',
-      ),
-
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
@@ -44,21 +40,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 child: Row(
                   children: [
-                    Builder(
-                      builder: (context) {
-                        return IconButton(
-                          onPressed: () {
-                            Scaffold.of(context).openDrawer();
-                          },
-                          style: IconButton.styleFrom(
-                            backgroundColor:
-                            colorScheme.surface,
-                          ),
-                          icon: const Icon(
-                            Icons.menu_rounded,
-                          ),
-                        );
+                    IconButton(
+                      onPressed: () {
+                        AppRoute.shellScaffoldKey.currentState?.openDrawer();
                       },
+                      style: IconButton.styleFrom(
+                        backgroundColor:
+                        colorScheme.surface,
+                      ),
+                      icon: const Icon(
+                        Icons.menu_rounded,
+                      ),
                     ),
 
                     const SizedBox(width: 10),

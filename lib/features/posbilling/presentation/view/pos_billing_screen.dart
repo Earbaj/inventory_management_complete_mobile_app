@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../dashboard/presentation/widgets/app_drawer.dart';
+import '../../../../core/route/app_route.dart';
 import '../../pos_customer.dart';
 import '../../pos_product.dart';
 import '../widget/check_out_sheet.dart';
@@ -206,22 +206,14 @@ class _PosBillingScreenState
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      drawer: const AppDrawer(
-        currentRoute: '/pos-billing',
-      ),
-
       appBar: AppBar(
-        leading: Builder(
-          builder: (context) {
-            return IconButton(
-              onPressed: () {
-                Scaffold.of(context).openDrawer();
-              },
-              icon: const Icon(
-                Icons.menu_rounded,
-              ),
-            );
+        leading: IconButton(
+          onPressed: () {
+            AppRoute.shellScaffoldKey.currentState?.openDrawer();
           },
+          icon: const Icon(
+            Icons.menu_rounded,
+          ),
         ),
 
         title: const Text(
