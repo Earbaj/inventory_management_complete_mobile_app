@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/view/login_screen.dart';
 import '../../features/auth/presentation/view/register_screen.dart';
 import '../../features/dashboard/presentation/view/dashboard_screen.dart';
+import '../../features/posbilling/presentation/view/pos_billing_screen.dart';
 import '../../features/splash/presentation/view/splash_screen.dart';
 
 class AppRoute {
@@ -56,9 +57,7 @@ class AppRoute {
       GoRoute(
         path: '/pos-billing',
         builder: (context, state) {
-          return const PlaceholderPage(
-            title: 'POS Billing',
-          );
+          return PosBillingScreen();
         },
       ),
 
