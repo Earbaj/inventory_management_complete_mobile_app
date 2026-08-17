@@ -100,7 +100,7 @@ class InvoiceLogsTab extends StatelessWidget {
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () {
               Navigator.pop(context);
-              onDeleteInvoice(invoice);
+              onDeleteInvoice?.call(invoice);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('${invoice.invoiceNumber} deleted successfully.'),

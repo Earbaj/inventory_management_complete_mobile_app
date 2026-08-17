@@ -81,7 +81,7 @@ class ItemsSoldTab extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${itemsSold.length}',
+                      '${itemsSold?.length}',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
@@ -129,7 +129,7 @@ class ItemsSoldTab extends StatelessWidget {
           );
         }
 
-        final item = itemsSold[index - 1];
+        final item = itemsSold?[index - 1];
         return Card(
           margin: const EdgeInsets.only(bottom: 10),
           elevation: 0.5,
@@ -167,7 +167,7 @@ class ItemsSoldTab extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        item.name,
+                        item!.name,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
