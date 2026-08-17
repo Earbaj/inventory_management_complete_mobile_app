@@ -125,6 +125,60 @@ class ApiClient {
     }
   }
 
+  /// Performs an HTTP PUT request.
+  Future<dynamic> put(
+    String url, {
+    Map<String, dynamic>? body,
+    Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
+    bool isPublic = false,
+  }) async {
+    try {
+      final response = await _dio.put(
+        url,
+        data: body,
+        queryParameters: queryParameters,
+        options: Options(
+          headers: headers,
+          extra: {'isPublic': isPublic},
+        ),
+      );
+
+      return _handleResponse(response);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    } catch (e) {
+      if (e is Failure) rethrow;
+      throw NetworkFailure(e.toString());
+    }
+  }
+
+  /// Performs an HTTP DELETE request.
+  Future<dynamic> delete(
+    String url, {
+    Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
+    bool isPublic = false,
+  }) async {
+    try {
+      final response = await _dio.delete(
+        url,
+        queryParameters: queryParameters,
+        options: Options(
+          headers: headers,
+          extra: {'isPublic': isPublic},
+        ),
+      );
+
+      return _handleResponse(response);
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    } catch (e) {
+      if (e is Failure) rethrow;
+      throw NetworkFailure(e.toString());
+    }
+  }
+
   /// Decodes and validates HTTP response payload.
   dynamic _handleResponse(Response response) {
     final statusCode = response.statusCode ?? 200;
