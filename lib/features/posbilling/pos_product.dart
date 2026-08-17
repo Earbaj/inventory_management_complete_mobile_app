@@ -1,17 +1,9 @@
-class PosProduct {
-  final String id;
-  final String name;
-  final String sku;
-  final double price;
-  final int stock;
-  final String category;
+import '../inventory/domain/entities/inventory_item_entity.dart';
 
-  const PosProduct({
-    required this.id,
-    required this.name,
-    required this.sku,
-    required this.price,
-    required this.stock,
-    required this.category,
-  });
+/// Legacy alias connecting to Clean Architecture [InventoryItemEntity]
+typedef PosProduct = InventoryItemEntity;
+
+extension PosProductExt on InventoryItemEntity {
+  double get price => retailSellPrice;
+  int get stock => stockQuantity;
 }

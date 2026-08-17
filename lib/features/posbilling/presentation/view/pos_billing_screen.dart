@@ -1,127 +1,42 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
-import '../../pos_customer.dart';
-import '../../pos_product.dart';
+import '../../../customers/domain/entities/customer_entity.dart';
+import '../../../customers/presentation/bloc/customer_event.dart';
+import '../../../customers/presentation/bloc/customer_state.dart';
+import '../../../inventory/domain/entities/inventory_item_entity.dart';
+import '../../../inventory/presentation/bloc/inventory_event.dart';
+import '../../../inventory/presentation/bloc/inventory_state.dart';
+import '../bloc/pos_event.dart';
+import '../bloc/pos_state.dart';
 import '../widget/check_out_sheet.dart';
 import '../widget/product_card.dart';
 import '../widget/sale_success_dialog.dart';
-
 
 class PosBillingScreen extends StatefulWidget {
   const PosBillingScreen({super.key});
 
   @override
-  State<PosBillingScreen> createState() =>
-      _PosBillingScreenState();
+  State<PosBillingScreen> createState() => _PosBillingScreenState();
 }
 
-class _PosBillingScreenState
-    extends State<PosBillingScreen> {
-  final TextEditingController searchController =
-  TextEditingController();
-
-  final TextEditingController discountController =
-  TextEditingController();
-
-  final List<PosProduct> products = const [
-    PosProduct(
-      id: '1',
-      name: 'Wireless Mouse',
-      sku: 'WM-001',
-      price: 850,
-      stock: 42,
-      category: 'Accessories',
-    ),
-    PosProduct(
-      id: '2',
-      name: 'USB Keyboard',
-      sku: 'KB-002',
-      price: 1250,
-      stock: 28,
-      category: 'Accessories',
-    ),
-    PosProduct(
-      id: '3',
-      name: 'HD Monitor 24"',
-      sku: 'MN-003',
-      price: 14500,
-      stock: 12,
-      category: 'Monitor',
-    ),
-    PosProduct(
-      id: '4',
-      name: 'Office Chair',
-      sku: 'CH-004',
-      price: 7800,
-      stock: 8,
-      category: 'Furniture',
-    ),
-    PosProduct(
-      id: '5',
-      name: 'External HDD 1TB',
-      sku: 'HD-005',
-      price: 6200,
-      stock: 15,
-      category: 'Storage',
-    ),
-    PosProduct(
-      id: '6',
-      name: 'USB-C Cable',
-      sku: 'CB-006',
-      price: 450,
-      stock: 75,
-      category: 'Accessories',
-    ),
-  ];
-
-  final List<PosCustomer> customers = const [
-    PosCustomer(
-      id: 'walk-in',
-      name: 'Walk-in Customer',
-      phone: '',
-      due: 0,
-    ),
-    PosCustomer(
-      id: 'rahim',
-      name: 'Rahim',
-      phone: '01712345678',
-      due: 2500,
-    ),
-    PosCustomer(
-      id: 'jahid',
-      name: 'Jahid',
-      phone: '01812345678',
-      due: 1200,
-    ),
-  ];
-
-  final Map<String, int> cart = {};
-
-  PosCustomer? selectedCustomer;
-
-  String selectedPayment = 'Cash';
+class _PosBillingScreenState extends State<PosBillingScreen> {
+  final TextEditingController searchController = TextEditingController();
+  final TextEditingController discountController = TextEditingController();
 
   String selectedCategory = 'All';
-
-  double discount = 0;
 
   @override
   void initState() {
     super.initState();
-
-    selectedCustomer = customers.first;
+    // Dispatch initial fetch events
+    InjectionContainer.inventoryBloc.add(const FetchInventoryItemsEvent());
+    InjectionContainer.customerBloc.add(const FetchCustomersEvent());
 
     discountController.addListener(() {
-      final value =
-          double.tryParse(
-            discountController.text,
-          ) ??
-              0;
-
-      setState(() {
-        discount = value;
-      });
+      final value = double.tryParse(discountController.text) ?? 0.0;
+      InjectionContainer.posBloc.add(ApplyDiscountEvent(value));
     });
   }
 
@@ -129,75 +44,7 @@ class _PosBillingScreenState
   void dispose() {
     searchController.dispose();
     discountController.dispose();
-
     super.dispose();
-  }
-
-  List<PosProduct> get filteredProducts {
-    final query =
-    searchController.text.trim().toLowerCase();
-
-    return products.where((product) {
-      final matchesSearch =
-          product.name.toLowerCase().contains(query) ||
-              product.sku.toLowerCase().contains(query);
-
-      final matchesCategory =
-          selectedCategory == 'All' ||
-              product.category == selectedCategory;
-
-      return matchesSearch && matchesCategory;
-    }).toList();
-  }
-
-  List<String> get categories {
-    return [
-      'All',
-      ...products
-          .map((product) => product.category)
-          .toSet(),
-    ];
-  }
-
-  List<PosProduct> get cartProducts {
-    return products.where(
-          (product) => cart.containsKey(product.id),
-    ).toList();
-  }
-
-  double get subtotal {
-    double total = 0;
-
-    for (final product in cartProducts) {
-      total +=
-          product.price *
-              (cart[product.id] ?? 0);
-    }
-
-    return total;
-  }
-
-  double get finalDiscount {
-    if (discount < 0) {
-      return 0;
-    }
-
-    if (discount > subtotal) {
-      return subtotal;
-    }
-
-    return discount;
-  }
-
-  double get total {
-    return subtotal - finalDiscount;
-  }
-
-  int get totalItems {
-    return cart.values.fold(
-      0,
-          (sum, quantity) => sum + quantity,
-    );
   }
 
   @override
@@ -211,357 +58,303 @@ class _PosBillingScreenState
           onPressed: () {
             AppRoute.shellScaffoldKey.currentState?.openDrawer();
           },
-          icon: const Icon(
-            Icons.menu_rounded,
-          ),
+          icon: const Icon(Icons.menu_rounded),
         ),
-
-        title: const Text(
-          'POS Billing',
-        ),
-
+        title: const Text('POS Billing'),
         actions: [
           IconButton(
             onPressed: () {
-              setState(() {
-                cart.clear();
-                discountController.clear();
-              });
+              InjectionContainer.posBloc.add(const ClearCartEvent());
+              discountController.clear();
             },
             tooltip: 'Clear Cart',
-            icon: const Icon(
-              Icons.delete_sweep_outlined,
-            ),
+            icon: const Icon(Icons.delete_sweep_outlined),
           ),
         ],
       ),
-
       body: Column(
         children: [
-          // =========================
           // SEARCH
-          // =========================
-
           Padding(
-            padding: const EdgeInsets.fromLTRB(
-              16,
-              8,
-              16,
-              10,
-            ),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
             child: TextField(
               controller: searchController,
               onChanged: (_) {
                 setState(() {});
               },
               decoration: InputDecoration(
-                hintText: 'Search product or SKU...',
-                prefixIcon: const Icon(
-                  Icons.search_rounded,
-                ),
-                suffixIcon:
-                searchController.text.isNotEmpty
+                hintText: 'Search product name or SKU',
+                prefixIcon: const Icon(Icons.search_rounded),
+                suffixIcon: searchController.text.isNotEmpty
                     ? IconButton(
-                  onPressed: () {
-                    searchController.clear();
-
-                    setState(() {});
-                  },
-                  icon: const Icon(
-                    Icons.close_rounded,
-                  ),
-                )
+                        onPressed: () {
+                          searchController.clear();
+                          setState(() {});
+                        },
+                        icon: const Icon(Icons.close_rounded),
+                      )
                     : null,
                 filled: true,
-                fillColor:
-                colorScheme.surfaceContainerHighest,
+                fillColor: colorScheme.surfaceContainerHighest,
                 border: OutlineInputBorder(
-                  borderRadius:
-                  BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide.none,
                 ),
               ),
             ),
           ),
 
-          // =========================
-          // CATEGORY
-          // =========================
+          // CATEGORIES & PRODUCT LIST (Streamed from InventoryBloc)
+          Expanded(
+            child: StreamBuilder<InventoryState>(
+              stream: InjectionContainer.inventoryBloc.stream,
+              initialData: InjectionContainer.inventoryBloc.state,
+              builder: (context, snapshot) {
+                final state = snapshot.data;
 
-          SizedBox(
-            height: 42,
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-              ),
-              scrollDirection: Axis.horizontal,
-              itemCount: categories.length,
-              separatorBuilder: (_, __) =>
-              const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final category =
-                categories[index];
+                if (state is InventoryLoadingState && state is! InventoryLoadedState) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-                final selected =
-                    selectedCategory == category;
+                final loadedState = state is InventoryLoadedState ? state : null;
+                final allProducts = loadedState?.items ?? [];
+                final categories = ['All', ...allProducts.map((e) => e.category).toSet()];
 
-                return ChoiceChip(
-                  label: Text(category),
-                  selected: selected,
-                  onSelected: (_) {
-                    setState(() {
-                      selectedCategory = category;
-                    });
-                  },
+                final query = searchController.text.trim().toLowerCase();
+                final filteredProducts = allProducts.where((p) {
+                  final matchesSearch = query.isEmpty || p.name.toLowerCase().contains(query) || p.sku.toLowerCase().contains(query);
+                  final matchesCategory = selectedCategory == 'All' || p.category == selectedCategory;
+                  return matchesSearch && matchesCategory;
+                }).toList();
+
+                return Column(
+                  children: [
+                    // CATEGORY CHIPS
+                    SizedBox(
+                      height: 40,
+                      child: ListView.separated(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        scrollDirection: Axis.horizontal,
+                        itemCount: categories.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        itemBuilder: (context, index) {
+                          final category = categories[index];
+                          final selected = selectedCategory == category;
+
+                          return ChoiceChip(
+                            label: Text(category),
+                            selected: selected,
+                            onSelected: (_) {
+                              setState(() {
+                                selectedCategory = category;
+                              });
+                            },
+                          );
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    // PRODUCT LIST
+                    Expanded(
+                      child: filteredProducts.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'No products available',
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            )
+                          : StreamBuilder<PosState>(
+                              stream: InjectionContainer.posBloc.stream,
+                              initialData: InjectionContainer.posBloc.state,
+                              builder: (context, posSnapshot) {
+                                final posState = posSnapshot.data is PosCartState ? posSnapshot.data as PosCartState : const PosCartState(cartItems: []);
+
+                                return ListView.builder(
+                                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                                  itemCount: filteredProducts.length,
+                                  itemBuilder: (context, index) {
+                                    final product = filteredProducts[index];
+                                    final cartIndex = posState.cartItems.indexWhere((element) => element.item.id == product.id);
+                                    final quantity = cartIndex != -1 ? posState.cartItems[cartIndex].quantity : 0;
+
+                                    return ProductCard(
+                                      product: product,
+                                      quantity: quantity,
+                                      onAdd: () {
+                                        InjectionContainer.posBloc.add(AddToCartEvent(product));
+                                      },
+                                      onIncrease: () {
+                                        InjectionContainer.posBloc.add(AddToCartEvent(product));
+                                      },
+                                      onDecrease: () {
+                                        InjectionContainer.posBloc.add(UpdateCartQuantityEvent(
+                                          itemId: product.id,
+                                          quantity: quantity - 1,
+                                        ));
+                                      },
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                    ),
+                  ],
                 );
               },
             ),
           ),
 
-          const SizedBox(height: 10),
+          // CART & CHECKOUT BOTTOM PANEL
+          StreamBuilder<PosState>(
+            stream: InjectionContainer.posBloc.stream,
+            initialData: InjectionContainer.posBloc.state,
+            builder: (context, snapshot) {
+              final posState = snapshot.data is PosCartState ? snapshot.data as PosCartState : const PosCartState(cartItems: []);
 
-          // =========================
-          // PRODUCT LIST
-          // =========================
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 16,
+                      offset: const Offset(0, -4),
+                    ),
+                  ],
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: Column(
+                    children: [
+                      // CUSTOMER SELECTION STREAM
+                      StreamBuilder<CustomerState>(
+                        stream: InjectionContainer.customerBloc.stream,
+                        initialData: InjectionContainer.customerBloc.state,
+                        builder: (context, custSnapshot) {
+                          final custState = custSnapshot.data is CustomerLoadedState ? custSnapshot.data as CustomerLoadedState : null;
+                          final customerList = custState?.customers ?? [];
 
-          Expanded(
-            child: filteredProducts.isEmpty
-                ? const Center(
-              child: Text(
-                'No products found',
-              ),
-            )
-                : ListView.builder(
-              padding:
-              const EdgeInsets.fromLTRB(
-                16,
-                4,
-                16,
-                110,
-              ),
-              itemCount:
-              filteredProducts.length,
-              itemBuilder: (
-                  context,
-                  index,
-                  ) {
-                final product =
-                filteredProducts[index];
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<CustomerEntity?>(
+                                isExpanded: true,
+                                value: posState.selectedCustomer,
+                                hint: const Text('Select Customer (Optional)'),
+                                items: [
+                                  const DropdownMenuItem<CustomerEntity?>(
+                                    value: null,
+                                    child: Text('Walk-in Customer (Guest)'),
+                                  ),
+                                  ...customerList.map((cust) {
+                                    return DropdownMenuItem<CustomerEntity?>(
+                                      value: cust,
+                                      child: Text('${cust.name} (${cust.phone})'),
+                                    );
+                                  }),
+                                ],
+                                onChanged: (cust) {
+                                  InjectionContainer.posBloc.add(SelectPosCustomerEvent(cust));
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                      ),
 
-                final quantity =
-                    cart[product.id] ?? 0;
+                      const SizedBox(height: 12),
 
-                return ProductCard(
-                  product: product,
-                  quantity: quantity,
-                  onAdd: () {
-                    _addProduct(product);
-                  },
-                  onRemove: () {
-                    _removeProduct(product);
-                  },
-                );
-              },
-            ),
+                      // TOTALS DISPLAY & CHECKOUT BUTTON
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${posState.totalItemCount} Items',
+                                  style: TextStyle(
+                                    color: colorScheme.onSurfaceVariant,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '৳${posState.netTotal.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: posState.cartItems.isEmpty
+                                ? null
+                                : () {
+                                    _openCheckoutSheet(context, posState);
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: colorScheme.primary,
+                              foregroundColor: colorScheme.onPrimary,
+                              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            child: const Text(
+                              'Checkout',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         ],
-      ),
-
-      // =========================
-      // CART BUTTON
-      // =========================
-
-      bottomNavigationBar: cart.isEmpty
-          ? null
-          : SafeArea(
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(
-            16,
-            10,
-            16,
-            10,
-          ),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            boxShadow: [
-              BoxShadow(
-                blurRadius: 15,
-                color: Colors.black
-                    .withValues(alpha: 0.08),
-              ),
-            ],
-          ),
-          child: FilledButton(
-            onPressed: () {
-              _openCheckoutSheet();
-            },
-            style: FilledButton.styleFrom(
-              minimumSize:
-              const Size.fromHeight(54),
-              shape:
-              RoundedRectangleBorder(
-                borderRadius:
-                BorderRadius.circular(14),
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding:
-                  const EdgeInsets.symmetric(
-                    horizontal: 9,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius:
-                    BorderRadius.circular(
-                      7,
-                    ),
-                  ),
-                  child: Text(
-                    '$totalItems',
-                    style: const TextStyle(
-                      fontWeight:
-                      FontWeight.bold,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(width: 10),
-
-                const Expanded(
-                  child: Text(
-                    'Review & Checkout',
-                    style: TextStyle(
-                      fontWeight:
-                      FontWeight.w700,
-                    ),
-                  ),
-                ),
-
-                Text(
-                  '৳ ${total.toStringAsFixed(0)}',
-                  style: const TextStyle(
-                    fontWeight:
-                    FontWeight.w700,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }
 
-  void _addProduct(PosProduct product) {
-    final currentQuantity =
-        cart[product.id] ?? 0;
-
-    if (currentQuantity >= product.stock) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Not enough stock available',
-          ),
-        ),
-      );
-
-      return;
-    }
-
-    setState(() {
-      cart[product.id] =
-          currentQuantity + 1;
-    });
-  }
-
-  void _removeProduct(PosProduct product) {
-    final currentQuantity =
-        cart[product.id] ?? 0;
-
-    if (currentQuantity <= 1) {
-      setState(() {
-        cart.remove(product.id);
-      });
-    } else {
-      setState(() {
-        cart[product.id] =
-            currentQuantity - 1;
-      });
-    }
-  }
-
-  void _openCheckoutSheet() {
+  void _openCheckoutSheet(BuildContext context, PosCartState posState) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        return CheckoutSheet(
-          cartProducts: cartProducts,
-          cart: cart,
-          subtotal: subtotal,
-          discount: finalDiscount,
-          total: total,
-          selectedCustomer: selectedCustomer!,
-          customers: customers,
-          selectedPayment: selectedPayment,
+        return CheckOutSheet(
+          cartItems: posState.cartItems,
+          customer: posState.selectedCustomer,
+          subtotal: posState.subtotal,
           discountController: discountController,
-          onCustomerChanged: (customer) {
-            setState(() {
-              selectedCustomer = customer;
-            });
-          },
-          onPaymentChanged: (payment) {
-            setState(() {
-              selectedPayment = payment;
-            });
-          },
-          onQuantityChanged: (
-              product,
-              quantity,
-              ) {
-            setState(() {
-              if (quantity <= 0) {
-                cart.remove(product.id);
-              } else if (quantity <=
-                  product.stock) {
-                cart[product.id] = quantity;
-              }
-            });
-          },
-          onCheckout: () {
+          onComplete: (paymentMethod, paidAmount) {
+            InjectionContainer.posBloc.add(SubmitCheckoutEvent(
+              paymentMethod: paymentMethod,
+              paidAmount: paidAmount,
+            ));
+
             Navigator.pop(context);
-            _completeCheckout();
+
+            // Show Receipt Dialog
+            showDialog(
+              context: context,
+              builder: (_) => const SaleSuccessDialog(),
+            );
           },
         );
-      },
-    );
-  }
-
-  void _completeCheckout() {
-    if (cart.isEmpty) {
-      return;
-    }
-
-    // এখানে পরে Firebase/backend API call হবে।
-
-    setState(() {
-      cart.clear();
-      discountController.clear();
-      discount = 0;
-      selectedCustomer = customers.first;
-      selectedPayment = 'Cash';
-    });
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return const SaleSuccessDialog();
       },
     );
   }

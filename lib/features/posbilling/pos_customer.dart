@@ -1,13 +1,8 @@
-class PosCustomer {
-  final String id;
-  final String name;
-  final String phone;
-  final double due;
+import '../customers/domain/entities/customer_entity.dart';
 
-  const PosCustomer({
-    required this.id,
-    required this.name,
-    required this.phone,
-    required this.due,
-  });
+/// Legacy alias connecting to Clean Architecture [CustomerEntity]
+typedef PosCustomer = CustomerEntity;
+
+extension PosCustomerExt on CustomerEntity {
+  double get due => totalDue;
 }

@@ -27,7 +27,13 @@ import '../../features/customers/domain/usecases/get_customers_usecase.dart';
 import '../../features/customers/domain/usecases/update_customer_usecase.dart';
 import '../../features/customers/presentation/bloc/customer_bloc.dart';
 import '../../features/inventory/presentation/bloc/inventory_bloc.dart';
-import '../network/api_client.dart';
+import '../../features/posbilling/data/datasources/pos_local_data_source.dart';
+import '../../features/posbilling/data/datasources/pos_remote_data_source.dart';
+import '../../features/posbilling/data/repositories/pos_repository_impl.dart';
+import '../../features/posbilling/domain/repositories/pos_repository.dart';
+import '../../features/posbilling/domain/usecases/create_sale_usecase.dart';
+import '../../features/posbilling/domain/usecases/get_sales_logs_usecase.dart';
+import '../../features/posbilling/presentation/bloc/pos_bloc.dart';
 
 /// Service Locator / Dependency Injection Container
 ///
@@ -43,11 +49,14 @@ class InjectionContainer {
   static late final InventoryRemoteDataSource inventoryRemoteDataSource;
   static late final CustomerLocalDataSource customerLocalDataSource;
   static late final CustomerRemoteDataSource customerRemoteDataSource;
+  static late final PosLocalDataSource posLocalDataSource;
+  static late final PosRemoteDataSource posRemoteDataSource;
 
   // Repositories
   static late final AuthRepository authRepository;
   static late final InventoryRepository inventoryRepository;
   static late final CustomerRepository customerRepository;
+  static late final PosRepository posRepository;
 
   // UseCases - Auth
   static late final LoginUseCase loginUseCase;
@@ -69,10 +78,15 @@ class InjectionContainer {
   static late final UpdateCustomerUseCase updateCustomerUseCase;
   static late final DeleteCustomerUseCase deleteCustomerUseCase;
 
+  // UseCases - POS
+  static late final CreateSaleUseCase createSaleUseCase;
+  static late final GetSalesLogsUseCase getSalesLogsUseCase;
+
   // BLoC State Management
   static late final AuthBloc authBloc;
   static late final InventoryBloc inventoryBloc;
   static late final CustomerBloc customerBloc;
+  static late final PosBloc posBloc;
 
   /// Initializes all dependencies at app startup in [main].
   static void init() {
@@ -86,6 +100,9 @@ class InjectionContainer {
 
     customerLocalDataSource = CustomerLocalDataSourceImpl();
     customerRemoteDataSource = CustomerRemoteDataSourceImpl(apiClient);
+
+    posLocalDataSource = PosLocalDataSourceImpl();
+    posRemoteDataSource = PosRemoteDataSourceImpl(apiClient);
 
     // 2. Repository Contract Implementation
     authRepository = AuthRepositoryImpl(
@@ -102,6 +119,11 @@ class InjectionContainer {
     customerRepository = CustomerRepositoryImpl(
       remoteDataSource: customerRemoteDataSource,
       localDataSource: customerLocalDataSource,
+    );
+
+    posRepository = PosRepositoryImpl(
+      remoteDataSource: posRemoteDataSource,
+      localDataSource: posLocalDataSource,
     );
 
     // 3. Domain UseCases
@@ -121,6 +143,9 @@ class InjectionContainer {
     addCustomerUseCase = AddCustomerUseCase(customerRepository);
     updateCustomerUseCase = UpdateCustomerUseCase(customerRepository);
     deleteCustomerUseCase = DeleteCustomerUseCase(customerRepository);
+
+    createSaleUseCase = CreateSaleUseCase(posRepository);
+    getSalesLogsUseCase = GetSalesLogsUseCase(posRepository);
 
     // 4. BLoC State Management Instances
     authBloc = AuthBloc(
@@ -145,6 +170,11 @@ class InjectionContainer {
       addCustomerUseCase: addCustomerUseCase,
       updateCustomerUseCase: updateCustomerUseCase,
       deleteCustomerUseCase: deleteCustomerUseCase,
+    );
+
+    posBloc = PosBloc(
+      createSaleUseCase: createSaleUseCase,
+      getSalesLogsUseCase: getSalesLogsUseCase,
     );
   }
 }
