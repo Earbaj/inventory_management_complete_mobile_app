@@ -1,3 +1,4 @@
+import '../../../../core/error/failures.dart';
 import '../../domain/entities/inventory_item_entity.dart';
 import '../../domain/repositories/inventory_repository.dart';
 import '../datasources/inventory_local_data_source.dart';
@@ -26,8 +27,14 @@ class InventoryRepositoryImpl implements InventoryRepository {
       await localDataSource.cacheItems(remoteModels);
       return remoteModels.map(InventoryMapper.modelToEntity).toList();
     } catch (_) {
-      // Offline / Prototyping Fallback to Local Cache
+      // API hit failed -> Try fallback to local cache
       final cachedModels = await localDataSource.getCachedItems();
+
+      // If cache expired (> 5 mins) or empty -> Throw Failure to show UI Error Widget
+      if (cachedModels.isEmpty) {
+        throw const ServerFailure('Something went wrong. Could not load data.');
+      }
+
       var filtered = cachedModels;
 
       if (searchQuery != null && searchQuery.trim().isNotEmpty) {
@@ -66,6 +73,12 @@ class InventoryRepositoryImpl implements InventoryRepository {
     final modelToUpdate = InventoryMapper.entityToModel(item);
     try {
       final updatedModel = await remoteDataSource.updateItem(modelToUpdate);
+      final currentCache = await localDataSource.getCachedItems();
+      final index = currentCache.indexWhere((el) => el.id == item.id);
+      if (index != -1) {
+        currentCache[index] = updatedModel;
+        await localDataSource.cacheItems(currentCache);
+      }
       return InventoryMapper.modelToEntity(updatedModel);
     } catch (_) {
       final currentCache = await localDataSource.getCachedItems();

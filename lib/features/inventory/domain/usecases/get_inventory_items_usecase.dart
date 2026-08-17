@@ -11,7 +11,6 @@ class GetInventoryItemsParams {
   });
 }
 
-/// UseCase: Fetches inventory items list from repository.
 class GetInventoryItemsUseCase {
   final InventoryRepository repository;
 

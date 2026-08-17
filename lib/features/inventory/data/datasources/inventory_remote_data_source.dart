@@ -3,7 +3,10 @@ import '../../../../core/config/env_config.dart';
 import '../models/inventory_item_model.dart';
 
 abstract class InventoryRemoteDataSource {
-  Future<List<InventoryItemModel>> getItems({String? search, String? category});
+  Future<List<InventoryItemModel>> getItems({
+    String? search,
+    String? category,
+  });
   Future<InventoryItemModel> addItem(InventoryItemModel item);
   Future<InventoryItemModel> updateItem(InventoryItemModel item);
   Future<void> deleteItem(String itemId);
@@ -15,7 +18,10 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
   InventoryRemoteDataSourceImpl(this.apiClient);
 
   @override
-  Future<List<InventoryItemModel>> getItems({String? search, String? category}) async {
+  Future<List<InventoryItemModel>> getItems({
+    String? search,
+    String? category,
+  }) async {
     final response = await apiClient.get(
       '${EnvConfig.apiBaseUrl}/api/items',
       queryParameters: {
