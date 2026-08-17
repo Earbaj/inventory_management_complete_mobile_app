@@ -34,6 +34,7 @@ import '../../features/posbilling/domain/repositories/pos_repository.dart';
 import '../../features/posbilling/domain/usecases/create_sale_usecase.dart';
 import '../../features/posbilling/domain/usecases/get_sales_logs_usecase.dart';
 import '../../features/posbilling/presentation/bloc/pos_bloc.dart';
+import '../network/api_client.dart';
 
 /// Service Locator / Dependency Injection Container
 ///

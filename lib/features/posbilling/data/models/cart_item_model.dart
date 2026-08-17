@@ -1,4 +1,4 @@
-import '../../inventory/data/models/inventory_item_model.dart';
+import '../../../inventory/data/models/inventory_item_model.dart';
 
 /// Data Transfer Object (DTO) for Cart Items in JSON payloads.
 class CartItemModel {

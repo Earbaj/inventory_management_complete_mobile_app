@@ -1,4 +1,4 @@
-import '../../customers/domain/entities/customer_entity.dart';
+import '../../../customers/domain/entities/customer_entity.dart';
 import 'cart_item_entity.dart';
 
 /// Domain Entity representing a completed POS Sale Transaction.

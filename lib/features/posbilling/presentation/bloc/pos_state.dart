@@ -1,4 +1,4 @@
-import '../../customers/domain/entities/customer_entity.dart';
+import '../../../customers/domain/entities/customer_entity.dart';
 import '../../domain/entities/cart_item_entity.dart';
 import '../../domain/entities/sale_entity.dart';
 

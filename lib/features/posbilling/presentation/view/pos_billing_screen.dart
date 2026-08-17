@@ -5,12 +5,10 @@ import '../../../../core/route/app_route.dart';
 import '../../../customers/domain/entities/customer_entity.dart';
 import '../../../customers/presentation/bloc/customer_event.dart';
 import '../../../customers/presentation/bloc/customer_state.dart';
-import '../../../inventory/domain/entities/inventory_item_entity.dart';
 import '../../../inventory/presentation/bloc/inventory_event.dart';
 import '../../../inventory/presentation/bloc/inventory_state.dart';
 import '../bloc/pos_event.dart';
 import '../bloc/pos_state.dart';
-import '../widget/check_out_sheet.dart';
 import '../widget/product_card.dart';
 import '../widget/sale_success_dialog.dart';
 
@@ -193,7 +191,7 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
                                           itemId: product.id,
                                           quantity: quantity - 1,
                                         ));
-                                      },
+                                      }, onRemove: () {  },
                                     );
                                   },
                                 );

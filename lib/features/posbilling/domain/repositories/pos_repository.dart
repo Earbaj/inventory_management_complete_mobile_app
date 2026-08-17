@@ -1,4 +1,5 @@
-import 'entities/sale_entity.dart';
+
+import '../entities/sale_entity.dart';
 
 /// Abstract POS Repository Contract
 abstract class PosRepository {

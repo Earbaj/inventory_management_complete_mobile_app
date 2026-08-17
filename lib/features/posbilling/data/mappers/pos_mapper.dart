@@ -1,5 +1,6 @@
-import '../../customers/data/mappers/customer_mapper.dart';
-import '../../inventory/data/mappers/inventory_mapper.dart';
+import '../../../customers/data/mappers/customer_mapper.dart';
+import '../../../inventory/data/mappers/inventory_mapper.dart';
+
 import '../../domain/entities/cart_item_entity.dart';
 import '../../domain/entities/sale_entity.dart';
 import '../models/cart_item_model.dart';

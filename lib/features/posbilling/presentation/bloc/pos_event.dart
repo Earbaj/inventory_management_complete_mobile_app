@@ -1,5 +1,5 @@
-import '../../customers/domain/entities/customer_entity.dart';
-import '../../inventory/domain/entities/inventory_item_entity.dart';
+import '../../../customers/domain/entities/customer_entity.dart';
+import '../../../inventory/domain/entities/inventory_item_entity.dart';
 import '../../domain/entities/cart_item_entity.dart';
 
 abstract class PosEvent {

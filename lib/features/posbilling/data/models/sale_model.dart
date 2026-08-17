@@ -1,4 +1,4 @@
-import '../../customers/data/models/customer_model.dart';
+import '../../../customers/data/models/customer_model.dart';
 import 'cart_item_model.dart';
 
 /// Data Transfer Object (DTO) for Sale Transactions in JSON payloads.

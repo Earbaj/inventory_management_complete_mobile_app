@@ -1,4 +1,4 @@
-import '../../inventory/domain/entities/inventory_item_entity.dart';
+import '../../../inventory/domain/entities/inventory_item_entity.dart';
 
 /// Domain Entity representing an item in the POS Shopping Cart.
 class CartItemEntity {
