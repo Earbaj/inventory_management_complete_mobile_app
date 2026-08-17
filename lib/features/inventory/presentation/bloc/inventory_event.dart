@@ -1,0 +1,40 @@
+import '../../domain/entities/inventory_item_entity.dart';
+import '../view/inventory_screen.dart';
+
+abstract class InventoryEvent {
+  const InventoryEvent();
+}
+
+/// Event: Fetches inventory items with optional search and category filters.
+class FetchInventoryItemsEvent extends InventoryEvent {
+  final String? searchQuery;
+  final String? category;
+  final InventoryFilter filter;
+
+  const FetchInventoryItemsEvent({
+    this.searchQuery,
+    this.category,
+    this.filter = InventoryFilter.all,
+  });
+}
+
+/// Event: Adds a new inventory item.
+class AddInventoryItemEvent extends InventoryEvent {
+  final InventoryItemEntity item;
+
+  const AddInventoryItemEvent(this.item);
+}
+
+/// Event: Updates an existing inventory item.
+class UpdateInventoryItemEvent extends InventoryEvent {
+  final InventoryItemEntity item;
+
+  const UpdateInventoryItemEvent(this.item);
+}
+
+/// Event: Deletes an inventory item.
+class DeleteInventoryItemEvent extends InventoryEvent {
+  final String itemId;
+
+  const DeleteInventoryItemEvent(this.itemId);
+}

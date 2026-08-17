@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
-
+import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
+import '../../domain/entities/inventory_item_entity.dart';
 import '../../inventory_item.dart';
+import '../bloc/inventory_event.dart';
+import '../bloc/inventory_state.dart';
 import '../widget/inventory_add_item_bottom_sheet.dart';
 import '../widget/inventory_empty_state.dart';
 import '../widget/inventory_item_card.dart';
 import '../widget/inventory_summery.dart';
-
 
 enum InventoryFilter {
   all,
@@ -18,94 +20,26 @@ class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
 
   @override
-  State<InventoryScreen> createState() =>
-      _InventoryScreenState();
+  State<InventoryScreen> createState() => _InventoryScreenState();
 }
 
-class _InventoryScreenState
-    extends State<InventoryScreen> {
-
-  final TextEditingController searchController =
-  TextEditingController();
-
-  final List<InventoryItem> items = [
-    const InventoryItem(
-      id: '1',
-      name: 'Wireless Mouse',
-      sku: 'WM-001',
-      category: 'Accessories',
-      unit: 'Piece',
-      lowStockQuantity: 10,
-      stockQuantity: 42,
-      retailSellPrice: 850,
-      purchasePrice: 650,
-    ),
-
-    const InventoryItem(
-      id: '2',
-      name: 'USB Keyboard',
-      sku: 'KB-002',
-      category: 'Accessories',
-      unit: 'Piece',
-      lowStockQuantity: 10,
-      stockQuantity: 7,
-      retailSellPrice: 1250,
-      purchasePrice: 950,
-    ),
-
-    const InventoryItem(
-      id: '3',
-      name: 'HD Monitor 24"',
-      sku: 'MN-003',
-      category: 'Monitor',
-      unit: 'Piece',
-      lowStockQuantity: 5,
-      stockQuantity: 0,
-      retailSellPrice: 14500,
-      purchasePrice: 12000,
-    ),
-
-    const InventoryItem(
-      id: '4',
-      name: 'Office Chair',
-      sku: 'CH-004',
-      category: 'Furniture',
-      unit: 'Piece',
-      lowStockQuantity: 5,
-      stockQuantity: 8,
-      retailSellPrice: 7800,
-      purchasePrice: 6500,
-    ),
-
-    const InventoryItem(
-      id: '5',
-      name: 'External HDD 1TB',
-      sku: 'HD-005',
-      category: 'Storage',
-      unit: 'Piece',
-      lowStockQuantity: 5,
-      stockQuantity: 15,
-      retailSellPrice: 6200,
-      purchasePrice: 5200,
-    ),
-
-    const InventoryItem(
-      id: '6',
-      name: 'USB-C Cable',
-      sku: 'CB-006',
-      category: 'Accessories',
-      unit: 'Piece',
-      lowStockQuantity: 15,
-      stockQuantity: 9,
-      retailSellPrice: 450,
-      purchasePrice: 280,
-    ),
-  ];
-
-  InventoryFilter selectedFilter =
-      InventoryFilter.all;
-
+class _InventoryScreenState extends State<InventoryScreen> {
+  final TextEditingController searchController = TextEditingController();
+  InventoryFilter selectedFilter = InventoryFilter.all;
   String selectedCategory = 'All';
+
+  @override
+  void initState() {
+    super.initState();
+    // Dispatch initial fetch event to InventoryBloc
+    InjectionContainer.inventoryBloc.add(
+      FetchInventoryItemsEvent(
+        searchQuery: '',
+        category: selectedCategory,
+        filter: selectedFilter,
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -113,56 +47,40 @@ class _InventoryScreenState
     super.dispose();
   }
 
-  List<String> get categories {
-    return [
-      'All',
-      ...items
-          .map((item) => item.category)
-          .toSet(),
-    ];
+  void _onSearchChanged(String query) {
+    InjectionContainer.inventoryBloc.add(
+      FetchInventoryItemsEvent(
+        searchQuery: query,
+        category: selectedCategory,
+        filter: selectedFilter,
+      ),
+    );
   }
 
-  List<InventoryItem> get filteredItems {
-    final query =
-    searchController.text.trim().toLowerCase();
-
-    return items.where((item) {
-
-      final matchesSearch =
-          item.name.toLowerCase().contains(query) ||
-              item.sku.toLowerCase().contains(query);
-
-      final matchesCategory =
-          selectedCategory == 'All' ||
-              item.category == selectedCategory;
-
-      final matchesFilter =
-      switch (selectedFilter) {
-        InventoryFilter.all => true,
-
-        InventoryFilter.lowStock =>
-        item.isLowStock,
-
-        InventoryFilter.outOfStock =>
-        item.isOutOfStock,
-      };
-
-      return matchesSearch &&
-          matchesCategory &&
-          matchesFilter;
-    }).toList();
+  void _onCategorySelected(String category) {
+    setState(() {
+      selectedCategory = category;
+    });
+    InjectionContainer.inventoryBloc.add(
+      FetchInventoryItemsEvent(
+        searchQuery: searchController.text,
+        category: category,
+        filter: selectedFilter,
+      ),
+    );
   }
 
-  int get lowStockCount {
-    return items
-        .where((item) => item.isLowStock)
-        .length;
-  }
-
-  int get outOfStockCount {
-    return items
-        .where((item) => item.isOutOfStock)
-        .length;
+  void _onFilterChanged(InventoryFilter filter) {
+    setState(() {
+      selectedFilter = filter;
+    });
+    InjectionContainer.inventoryBloc.add(
+      FetchInventoryItemsEvent(
+        searchQuery: searchController.text,
+        category: selectedCategory,
+        filter: filter,
+      ),
+    );
   }
 
   @override
@@ -171,240 +89,186 @@ class _InventoryScreenState
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-
       appBar: AppBar(
         leading: IconButton(
           onPressed: () {
             AppRoute.shellScaffoldKey.currentState?.openDrawer();
           },
-          icon: const Icon(
-            Icons.menu_rounded,
-          ),
+          icon: const Icon(Icons.menu_rounded),
         ),
-
-        title: const Text(
-          'Inventory',
-        ),
-
+        title: const Text('Inventory'),
         actions: [
           IconButton(
-            tooltip: 'Search',
+            tooltip: 'Refresh',
             onPressed: () {
-              // Search field already visible.
+              InjectionContainer.inventoryBloc.add(
+                FetchInventoryItemsEvent(
+                  searchQuery: searchController.text,
+                  category: selectedCategory,
+                  filter: selectedFilter,
+                ),
+              );
             },
-            icon: const Icon(
-              Icons.search_rounded,
-            ),
+            icon: const Icon(Icons.refresh_rounded),
           ),
         ],
       ),
-
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           _openAddItemSheet();
         },
-        icon: const Icon(
-          Icons.add_rounded,
-        ),
-        label: const Text(
-          'Add Item',
-        ),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Add Item'),
       ),
+      body: StreamBuilder<InventoryState>(
+        stream: InjectionContainer.inventoryBloc.stream,
+        initialData: InjectionContainer.inventoryBloc.state,
+        builder: (context, snapshot) {
+          final state = snapshot.data;
 
-      body: Column(
-        children: [
+          if (state is InventoryLoadingState && state is! InventoryLoadedState) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-          // ============================
-          // SUMMARY
-          // ============================
-
-          InventorySummary(
-            totalItems: items.length,
-            lowStock: lowStockCount,
-            outOfStock: outOfStockCount,
-            selectedFilter: selectedFilter,
-            onFilterChanged: (filter) {
-              setState(() {
-                selectedFilter = filter;
-              });
-            },
-          ),
-
-          // ============================
-          // SEARCH
-          // ============================
-
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              16,
-              4,
-              16,
-              10,
-            ),
-            child: TextField(
-              controller: searchController,
-              onChanged: (_) {
-                setState(() {});
-              },
-              decoration: InputDecoration(
-                hintText:
-                'Search item name, SKU or barcode',
-
-                prefixIcon: const Icon(
-                  Icons.search_rounded,
-                ),
-
-                suffixIcon:
-                searchController.text.isNotEmpty
-                    ? IconButton(
-                  onPressed: () {
-                    searchController.clear();
-                    setState(() {});
-                  },
-                  icon: const Icon(
-                    Icons.close_rounded,
+          if (state is InventoryErrorState) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline_rounded, color: Colors.red, size: 48),
+                  const SizedBox(height: 12),
+                  Text(state.message, style: const TextStyle(color: Colors.red)),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      InjectionContainer.inventoryBloc.add(const FetchInventoryItemsEvent());
+                    },
+                    child: const Text('Retry'),
                   ),
-                )
-                    : null,
+                ],
+              ),
+            );
+          }
 
-                filled: true,
+          final loadedState = state is InventoryLoadedState ? state : null;
+          final totalItems = loadedState?.items.length ?? 0;
+          final lowStockCount = loadedState?.lowStockCount ?? 0;
+          final outOfStockCount = loadedState?.outOfStockCount ?? 0;
+          final categories = loadedState?.categories ?? ['All'];
+          final filteredItems = loadedState?.filteredItems ?? [];
 
-                fillColor: colorScheme
-                    .surfaceContainerHighest,
+          return Column(
+            children: [
+              // SUMMARY
+              InventorySummary(
+                totalItems: totalItems,
+                lowStock: lowStockCount,
+                outOfStock: outOfStockCount,
+                selectedFilter: selectedFilter,
+                onFilterChanged: _onFilterChanged,
+              ),
 
-                border: OutlineInputBorder(
-                  borderRadius:
-                  BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
+              // SEARCH
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
+                child: TextField(
+                  controller: searchController,
+                  onChanged: _onSearchChanged,
+                  decoration: InputDecoration(
+                    hintText: 'Search item name, SKU or barcode',
+                    prefixIcon: const Icon(Icons.search_rounded),
+                    suffixIcon: searchController.text.isNotEmpty
+                        ? IconButton(
+                            onPressed: () {
+                              searchController.clear();
+                              _onSearchChanged('');
+                            },
+                            icon: const Icon(Icons.close_rounded),
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: colorScheme.surfaceContainerHighest,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
 
-          // ============================
-          // CATEGORY
-          // ============================
+              // CATEGORY CHIPS
+              SizedBox(
+                height: 40,
+                child: ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: categories.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (context, index) {
+                    final category = categories[index];
+                    final selected = selectedCategory == category;
 
-          SizedBox(
-            height: 40,
-            child: ListView.separated(
-              padding:
-              const EdgeInsets.symmetric(
-                horizontal: 16,
-              ),
-              scrollDirection: Axis.horizontal,
-              itemCount: categories.length,
-              separatorBuilder: (_, __) =>
-              const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-
-                final category =
-                categories[index];
-
-                final selected =
-                    selectedCategory == category;
-
-                return ChoiceChip(
-                  label: Text(category),
-                  selected: selected,
-                  onSelected: (_) {
-                    setState(() {
-                      selectedCategory =
-                          category;
-                    });
-                  },
-                );
-              },
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          // ============================
-          // ITEM LIST
-          // ============================
-
-          Expanded(
-            child: filteredItems.isEmpty
-                ? const EmptyInventory()
-                : ListView.builder(
-              padding:
-              const EdgeInsets.fromLTRB(
-                16,
-                4,
-                16,
-                100,
-              ),
-              itemCount:
-              filteredItems.length,
-              itemBuilder:
-                  (context, index) {
-
-                final item =
-                filteredItems[index];
-
-                return InventoryItemCard(
-                  item: item,
-                  onEdit: () {
-                    _openAddItemSheet(
-                      existingItem: item,
+                    return ChoiceChip(
+                      label: Text(category),
+                      selected: selected,
+                      onSelected: (_) => _onCategorySelected(category),
                     );
                   },
-                );
-              },
-            ),
-          ),
-        ],
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              // ITEM LIST
+              Expanded(
+                child: filteredItems.isEmpty
+                    ? const EmptyInventory()
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
+                        itemCount: filteredItems.length,
+                        itemBuilder: (context, index) {
+                          final item = filteredItems[index];
+
+                          return InventoryItemCard(
+                            item: item,
+                            onEdit: () {
+                              _openAddItemSheet(existingItem: item);
+                            },
+                          );
+                        },
+                      ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
-  // ====================================
-  // ADD / EDIT ITEM
-  // ====================================
-
+  // ADD / EDIT ITEM BOTTOM SHEET
   void _openAddItemSheet({
-    InventoryItem? existingItem,
+    InventoryItemEntity? existingItem,
   }) {
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-
       builder: (context) {
-
         return AddItemSheet(
           existingItem: existingItem,
-
           onSave: (item) {
-
-            setState(() {
-
-              if (existingItem == null) {
-                items.add(item);
-              } else {
-
-                final index = items.indexWhere(
-                      (element) =>
-                  element.id == item.id,
-                );
-
-                if (index != -1) {
-                  items[index] = item;
-                }
-              }
-            });
+            if (existingItem == null) {
+              InjectionContainer.inventoryBloc.add(AddInventoryItemEvent(item));
+            } else {
+              InjectionContainer.inventoryBloc.add(UpdateInventoryItemEvent(item));
+            }
 
             Navigator.pop(context);
 
-            ScaffoldMessenger.of(context)
-                .showSnackBar(
+            ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
-                  existingItem == null
-                      ? 'Item added successfully'
-                      : 'Item updated successfully',
+                  existingItem == null ? 'Item added successfully' : 'Item updated successfully',
                 ),
               ),
             );
