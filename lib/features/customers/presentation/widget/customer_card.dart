@@ -177,7 +177,7 @@ class CustomerCard
 
                     if (customer
                         .address
-                        .isNotEmpty) ...[
+                        !.isNotEmpty) ...[
 
                       const SizedBox(
                         height: 3,
@@ -203,7 +203,7 @@ class CustomerCard
 
                           Expanded(
                             child: Text(
-                              customer.address,
+                              customer.address!,
 
                               maxLines: 1,
 

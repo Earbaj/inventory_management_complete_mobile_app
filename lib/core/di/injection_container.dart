@@ -8,6 +8,7 @@ import '../../features/auth/domain/usecases/login_usecase.dart';
 import '../../features/auth/domain/usecases/logout_usecase.dart';
 import '../../features/auth/domain/usecases/register_usecase.dart';
 import '../../features/auth/domain/usecases/reset_password_usecase.dart';
+import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/inventory/data/datasources/inventory_local_data_source.dart';
 import '../../features/inventory/data/datasources/inventory_remote_data_source.dart';
 import '../../features/inventory/data/repositories/inventory_repository_impl.dart';
@@ -16,7 +17,17 @@ import '../../features/inventory/domain/usecases/add_inventory_item_usecase.dart
 import '../../features/inventory/domain/usecases/delete_inventory_item_usecase.dart';
 import '../../features/inventory/domain/usecases/get_inventory_items_usecase.dart';
 import '../../features/inventory/domain/usecases/update_inventory_item_usecase.dart';
+import '../../features/customers/data/datasources/customer_local_data_source.dart';
+import '../../features/customers/data/datasources/customer_remote_data_source.dart';
+import '../../features/customers/data/repositories/customer_repository_impl.dart';
+import '../../features/customers/domain/repositories/customer_repository.dart';
+import '../../features/customers/domain/usecases/add_customer_usecase.dart';
+import '../../features/customers/domain/usecases/delete_customer_usecase.dart';
+import '../../features/customers/domain/usecases/get_customers_usecase.dart';
+import '../../features/customers/domain/usecases/update_customer_usecase.dart';
+import '../../features/customers/presentation/bloc/customer_bloc.dart';
 import '../../features/inventory/presentation/bloc/inventory_bloc.dart';
+import '../network/api_client.dart';
 
 /// Service Locator / Dependency Injection Container
 ///
@@ -30,10 +41,13 @@ class InjectionContainer {
   static late final AuthRemoteDataSource authRemoteDataSource;
   static late final InventoryLocalDataSource inventoryLocalDataSource;
   static late final InventoryRemoteDataSource inventoryRemoteDataSource;
+  static late final CustomerLocalDataSource customerLocalDataSource;
+  static late final CustomerRemoteDataSource customerRemoteDataSource;
 
   // Repositories
   static late final AuthRepository authRepository;
   static late final InventoryRepository inventoryRepository;
+  static late final CustomerRepository customerRepository;
 
   // UseCases - Auth
   static late final LoginUseCase loginUseCase;
@@ -49,9 +63,16 @@ class InjectionContainer {
   static late final UpdateInventoryItemUseCase updateInventoryItemUseCase;
   static late final DeleteInventoryItemUseCase deleteInventoryItemUseCase;
 
+  // UseCases - Customer
+  static late final GetCustomersUseCase getCustomersUseCase;
+  static late final AddCustomerUseCase addCustomerUseCase;
+  static late final UpdateCustomerUseCase updateCustomerUseCase;
+  static late final DeleteCustomerUseCase deleteCustomerUseCase;
+
   // BLoC State Management
   static late final AuthBloc authBloc;
   static late final InventoryBloc inventoryBloc;
+  static late final CustomerBloc customerBloc;
 
   /// Initializes all dependencies at app startup in [main].
   static void init() {
@@ -63,6 +84,9 @@ class InjectionContainer {
     inventoryLocalDataSource = InventoryLocalDataSourceImpl();
     inventoryRemoteDataSource = InventoryRemoteDataSourceImpl(apiClient);
 
+    customerLocalDataSource = CustomerLocalDataSourceImpl();
+    customerRemoteDataSource = CustomerRemoteDataSourceImpl(apiClient);
+
     // 2. Repository Contract Implementation
     authRepository = AuthRepositoryImpl(
       remoteDataSource: authRemoteDataSource,
@@ -73,6 +97,11 @@ class InjectionContainer {
     inventoryRepository = InventoryRepositoryImpl(
       remoteDataSource: inventoryRemoteDataSource,
       localDataSource: inventoryLocalDataSource,
+    );
+
+    customerRepository = CustomerRepositoryImpl(
+      remoteDataSource: customerRemoteDataSource,
+      localDataSource: customerLocalDataSource,
     );
 
     // 3. Domain UseCases
@@ -87,6 +116,11 @@ class InjectionContainer {
     addInventoryItemUseCase = AddInventoryItemUseCase(inventoryRepository);
     updateInventoryItemUseCase = UpdateInventoryItemUseCase(inventoryRepository);
     deleteInventoryItemUseCase = DeleteInventoryItemUseCase(inventoryRepository);
+
+    getCustomersUseCase = GetCustomersUseCase(customerRepository);
+    addCustomerUseCase = AddCustomerUseCase(customerRepository);
+    updateCustomerUseCase = UpdateCustomerUseCase(customerRepository);
+    deleteCustomerUseCase = DeleteCustomerUseCase(customerRepository);
 
     // 4. BLoC State Management Instances
     authBloc = AuthBloc(
@@ -104,6 +138,13 @@ class InjectionContainer {
       addItemUseCase: addInventoryItemUseCase,
       updateItemUseCase: updateInventoryItemUseCase,
       deleteItemUseCase: deleteInventoryItemUseCase,
+    );
+
+    customerBloc = CustomerBloc(
+      getCustomersUseCase: getCustomersUseCase,
+      addCustomerUseCase: addCustomerUseCase,
+      updateCustomerUseCase: updateCustomerUseCase,
+      deleteCustomerUseCase: deleteCustomerUseCase,
     );
   }
 }

@@ -117,7 +117,7 @@ class CustomerHeader
                 ),
 
                 if (customer
-                    .address
+                    .address!
                     .isNotEmpty) ...[
 
                   const SizedBox(
@@ -125,7 +125,7 @@ class CustomerHeader
                   ),
 
                   Text(
-                    customer.address,
+                    customer.address!,
 
                     maxLines: 1,
 

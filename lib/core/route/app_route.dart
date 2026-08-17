@@ -5,7 +5,7 @@ import '../../features/auth/presentation/view/login_screen.dart';
 import '../../features/auth/presentation/view/register_screen.dart';
 import '../../features/auth/presentation/view/forgot_password_screen.dart';
 import '../../features/auth/presentation/view/reset_password_screen.dart';
-import '../../features/customer/presentation/view/customers_screen.dart';
+import '../../features/customers/presentation/view/customers_screen.dart';
 import '../../features/dashboard/presentation/view/dashboard_screen.dart';
 import '../../features/inventory/presentation/view/inventory_screen.dart';
 import '../../features/posbilling/presentation/view/pos_billing_screen.dart';
