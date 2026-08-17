@@ -57,6 +57,7 @@ import '../../features/settings/domain/repositories/settings_repository.dart';
 import '../../features/settings/domain/usecases/get_shop_profile_usecase.dart';
 import '../../features/settings/domain/usecases/update_shop_profile_usecase.dart';
 import '../../features/settings/domain/usecases/upgrade_subscription_usecase.dart';
+import '../../features/settings/presentation/bloc/settings_bloc.dart';
 import '../../features/staff_managers/data/datasources/staff_local_data_source.dart';
 import '../../features/staff_managers/data/datasources/staff_remote_data_source.dart';
 import '../../features/staff_managers/data/repositories/staff_repository_impl.dart';
@@ -66,6 +67,7 @@ import '../../features/staff_managers/domain/usecases/delete_staff_member_usecas
 import '../../features/staff_managers/domain/usecases/get_staff_members_usecase.dart';
 import '../../features/staff_managers/domain/usecases/update_staff_member_usecase.dart';
 import '../../features/staff_managers/presentation/bloc/staff_bloc.dart';
+import '../network/api_client.dart';
 
 /// Service Locator / Dependency Injection Container
 ///
