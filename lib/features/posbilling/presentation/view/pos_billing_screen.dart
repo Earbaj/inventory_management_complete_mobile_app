@@ -9,6 +9,7 @@ import '../../../inventory/presentation/bloc/inventory_event.dart';
 import '../../../inventory/presentation/bloc/inventory_state.dart';
 import '../bloc/pos_event.dart';
 import '../bloc/pos_state.dart';
+import '../widget/check_out_sheet.dart';
 import '../widget/product_card.dart';
 import '../widget/sale_success_dialog.dart';
 

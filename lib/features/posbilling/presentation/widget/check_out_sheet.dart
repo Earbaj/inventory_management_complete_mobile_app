@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../customers/domain/entities/customer_entity.dart';
 import '../../domain/entities/cart_item_entity.dart';
-import '../../customers/domain/entities/customer_entity.dart';
 import '../../pos_customer.dart';
 import '../../pos_product.dart';
 import 'payment_options.dart';
@@ -70,9 +70,9 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
     final colorScheme = theme.colorScheme;
 
     final cartItemsList = widget.cartItems ?? [];
-    final calcSubtotal = widget.subtotal ?? cartItemsList.fold(0.0, (sum, i) => sum + i.totalPrice);
+    final calcSubtotal = widget.subtotal ?? cartItemsList.fold(0.0, (sum, i) => sum! + i.totalPrice);
     final disc = double.tryParse(_discountCtrl.text) ?? widget.discount ?? 0.0;
-    final calcTotal = (calcSubtotal - disc).clamp(0.0, double.infinity);
+    final calcTotal = (calcSubtotal! - disc).clamp(0.0, double.infinity);
     final itemCount = widget.cart?.values.fold<int>(0, (a, b) => a + b) ?? cartItemsList.fold<int>(0, (sum, i) => sum + i.quantity);
 
     return Container(
