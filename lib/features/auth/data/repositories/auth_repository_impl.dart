@@ -6,6 +6,10 @@ import '../datasources/auth_local_data_source.dart';
 import '../datasources/auth_remote_data_source.dart';
 import '../mappers/auth_mapper.dart';
 
+/// Concrete Implementation of Domain [AuthRepository] Interface Contract.
+///
+/// Orchestrates data flow between Remote DataSource (API), Local DataSource (Secure Persistence),
+/// and Data Mappers.
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remoteDataSource;
   final AuthLocalDataSource localDataSource;
@@ -27,6 +31,7 @@ class AuthRepositoryImpl implements AuthRepository {
       password: password,
     );
 
+    // Save token securely and inject into ApiClient
     await localDataSource.saveToken(responseModel.accessToken);
     apiClient.setAuthToken(responseModel.accessToken);
 
@@ -49,6 +54,7 @@ class AuthRepositoryImpl implements AuthRepository {
       phone: phone,
     );
 
+    // Save token securely and inject into ApiClient
     await localDataSource.saveToken(responseModel.accessToken);
     apiClient.setAuthToken(responseModel.accessToken);
 

@@ -3,22 +3,32 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 
+/// Abstract Local Data Source Contract
 abstract class AuthLocalDataSource {
+  /// Encrypts and persists Bearer JWT token.
   Future<void> saveToken(String token);
+
+  /// Retrieves persisted Bearer JWT token.
   Future<String?> getToken();
 
+  /// Persists UserModel profile JSON.
   Future<void> saveUser(UserModel user);
+
+  /// Retrieves cached UserModel profile.
   Future<UserModel?> getUser();
 
+  /// Clears stored token and user profile on logout or session expiration.
   Future<void> clearAll();
 }
 
+/// Local Data Source Implementation using [FlutterSecureStorage] & [SharedPreferences]
 class AuthLocalDataSourceImpl implements AuthLocalDataSource {
   static const String _keyToken = 'auth_jwt_bearer_token';
   static const String _keyUser = 'auth_user_profile';
 
   final FlutterSecureStorage _secureStorage;
 
+  // In-Memory Fast Cache for Zero-Latency Synchronous Reads
   static String? _inMemoryToken;
   static UserModel? _inMemoryUser;
 

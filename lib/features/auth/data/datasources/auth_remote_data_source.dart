@@ -3,12 +3,15 @@ import '../../../../core/network/api_endpoints.dart';
 import '../models/auth_response_model.dart';
 import '../models/user_model.dart';
 
+/// Abstract Remote Data Source Contract for Auth API Communications
 abstract class AuthRemoteDataSource {
+  /// Calls POST /api/auth/login
   Future<AuthResponseModel> login({
     required String email,
     required String password,
   });
 
+  /// Calls POST /api/auth/register
   Future<AuthResponseModel> register({
     required String name,
     required String email,
@@ -17,19 +20,23 @@ abstract class AuthRemoteDataSource {
     String? phone,
   });
 
+  /// Calls POST /api/auth/forgot-password
   Future<void> requestForgotPasswordOtp({
     required String email,
   });
 
+  /// Calls POST /api/auth/reset-password
   Future<void> resetPassword({
     required String email,
     required String otpCode,
     required String newPassword,
   });
 
+  /// Calls GET /api/auth/me
   Future<UserModel> getMe();
 }
 
+/// Remote Data Source Implementation using [ApiClient]
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   final ApiClient apiClient;
 

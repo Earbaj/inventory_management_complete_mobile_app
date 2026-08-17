@@ -9,6 +9,10 @@ import '../../domain/usecases/reset_password_usecase.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 
+/// Authentication Business Logic Component (BLoC)
+///
+/// Encapsulates all authentication UseCases, handles BLoC state transitions,
+/// and hooks into ApiClient for loop-safe 401 unauth session expiration.
 class AuthBloc {
   final LoginUseCase loginUseCase;
   final RegisterUseCase registerUseCase;
@@ -21,7 +25,10 @@ class AuthBloc {
   AuthState _state = const AuthInitialState();
   final _stateController = StreamController<AuthState>.broadcast();
 
+  /// Returns current active state.
   AuthState get state => _state;
+
+  /// Stream of state changes emitted by AuthBloc.
   Stream<AuthState> get stream => _stateController.stream;
 
   AuthBloc({
@@ -33,16 +40,19 @@ class AuthBloc {
     required this.logoutUseCase,
     required this.apiClient,
   }) {
-    // Setup Global 401 Unauthorized Interceptor Callback (Loop-safe)
+    // Setup Global 401 Unauthorized Interceptor Callback
+    // Automatically dispatches SessionExpiredEvent when an API call gets 401
     apiClient.onUnauthorized = () {
       add(const SessionExpiredEvent());
     };
   }
 
+  /// Dispatches an event to the BLoC processor.
   void add(AuthEvent event) {
     _handleEvent(event);
   }
 
+  /// Emits a new state to all listeners.
   void _emit(AuthState newState) {
     _state = newState;
     if (!_stateController.isClosed) {
@@ -50,6 +60,7 @@ class AuthBloc {
     }
   }
 
+  /// Routes incoming events to their respective handler methods.
   Future<void> _handleEvent(AuthEvent event) async {
     if (event is LoginRequestedEvent) {
       await _onLoginRequested(event);
@@ -68,6 +79,7 @@ class AuthBloc {
     }
   }
 
+  /// Handles Login process.
   Future<void> _onLoginRequested(LoginRequestedEvent event) async {
     _emit(const AuthLoadingState());
     try {
@@ -82,6 +94,7 @@ class AuthBloc {
     }
   }
 
+  /// Handles Shop Owner Registration process.
   Future<void> _onRegisterRequested(RegisterRequestedEvent event) async {
     _emit(const AuthLoadingState());
     try {
@@ -99,19 +112,21 @@ class AuthBloc {
     }
   }
 
+  /// Handles 6-digit OTP request for forgot password.
   Future<void> _onForgotPasswordRequested(ForgotPasswordRequestedEvent event) async {
     _emit(const AuthLoadingState());
     try {
       await forgotPasswordUseCase(event.email);
       _emit(OtpSentSuccessState(
         email: event.email,
-        message: '6-digit OTP sent to ${event.email}',
+        message: '6-digit OTP code sent to ${event.email}',
       ));
     } catch (e) {
       _emit(AuthFailureState(e.toString()));
     }
   }
 
+  /// Handles resetting password using OTP code.
   Future<void> _onResetPasswordRequested(ResetPasswordRequestedEvent event) async {
     _emit(const AuthLoadingState());
     try {
@@ -126,6 +141,7 @@ class AuthBloc {
     }
   }
 
+  /// Verifies active token and fetches user profile.
   Future<void> _onCheckAuthStatus() async {
     _emit(const AuthLoadingState());
     try {
@@ -136,17 +152,20 @@ class AuthBloc {
     }
   }
 
+  /// User initiated Sign Out.
   Future<void> _onLogoutRequested() async {
     _emit(const AuthLoadingState());
     await logoutUseCase();
     _emit(const UnauthenticatedState('Logged out successfully'));
   }
 
+  /// Triggered automatically by ApiClient 401 Interceptor.
   Future<void> _onSessionExpired() async {
     await logoutUseCase();
     _emit(const UnauthenticatedState('Session expired. Please log in again.'));
   }
 
+  /// Closes the state stream.
   void dispose() {
     _stateController.close();
   }
