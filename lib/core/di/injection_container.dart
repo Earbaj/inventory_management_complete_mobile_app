@@ -50,6 +50,15 @@ import '../../features/returnandrestoke/domain/usecases/get_return_logs_usecase.
 import '../../features/returnandrestoke/domain/usecases/process_return_usecase.dart';
 import '../../features/returnandrestoke/presentation/bloc/returns_bloc.dart';
 
+import '../../features/settings/data/datasources/settings_local_data_source.dart';
+import '../../features/settings/data/datasources/settings_remote_data_source.dart';
+import '../../features/settings/data/repositories/settings_repository_impl.dart';
+import '../../features/settings/domain/repositories/settings_repository.dart';
+import '../../features/settings/domain/usecases/get_shop_profile_usecase.dart';
+import '../../features/settings/domain/usecases/update_shop_profile_usecase.dart';
+import '../../features/settings/domain/usecases/upgrade_subscription_usecase.dart';
+import '../../features/settings/presentation/bloc/settings_bloc.dart';
+
 /// Service Locator / Dependency Injection Container
 ///
 /// Instantiates and wires together DataSources, Repositories, UseCases, Network Clients, and BLoC instances.
@@ -70,6 +79,8 @@ class InjectionContainer {
   static late final ReportsRemoteDataSource reportsRemoteDataSource;
   static late final ReturnsLocalDataSource returnsLocalDataSource;
   static late final ReturnsRemoteDataSource returnsRemoteDataSource;
+  static late final SettingsLocalDataSource settingsLocalDataSource;
+  static late final SettingsRemoteDataSource settingsRemoteDataSource;
 
   // Repositories
   static late final AuthRepository authRepository;
@@ -78,6 +89,7 @@ class InjectionContainer {
   static late final PosRepository posRepository;
   static late final ReportsRepository reportsRepository;
   static late final ReturnsRepository returnsRepository;
+  static late final SettingsRepository settingsRepository;
 
   // UseCases - Auth
   static late final LoginUseCase loginUseCase;
@@ -111,6 +123,11 @@ class InjectionContainer {
   static late final ProcessReturnUseCase processReturnUseCase;
   static late final GetReturnLogsUseCase getReturnLogsUseCase;
 
+  // UseCases - Settings
+  static late final GetShopProfileUseCase getShopProfileUseCase;
+  static late final UpdateShopProfileUseCase updateShopProfileUseCase;
+  static late final UpgradeSubscriptionUseCase upgradeSubscriptionUseCase;
+
   // BLoC State Management
   static late final AuthBloc authBloc;
   static late final InventoryBloc inventoryBloc;
@@ -118,6 +135,7 @@ class InjectionContainer {
   static late final PosBloc posBloc;
   static late final ReportsBloc reportsBloc;
   static late final ReturnsBloc returnsBloc;
+  static late final SettingsBloc settingsBloc;
 
   /// Initializes all dependencies at app startup in [main].
   static void init() {
@@ -140,6 +158,9 @@ class InjectionContainer {
 
     returnsLocalDataSource = ReturnsLocalDataSourceImpl();
     returnsRemoteDataSource = ReturnsRemoteDataSourceImpl(apiClient);
+
+    settingsLocalDataSource = SettingsLocalDataSourceImpl();
+    settingsRemoteDataSource = SettingsRemoteDataSourceImpl(apiClient);
 
     // 2. Repository Contract Implementation
     authRepository = AuthRepositoryImpl(
@@ -174,6 +195,11 @@ class InjectionContainer {
       localDataSource: returnsLocalDataSource,
     );
 
+    settingsRepository = SettingsRepositoryImpl(
+      remoteDataSource: settingsRemoteDataSource,
+      localDataSource: settingsLocalDataSource,
+    );
+
     // 3. Domain UseCases
     loginUseCase = LoginUseCase(authRepository);
     registerUseCase = RegisterUseCase(authRepository);
@@ -200,6 +226,10 @@ class InjectionContainer {
 
     processReturnUseCase = ProcessReturnUseCase(returnsRepository);
     getReturnLogsUseCase = GetReturnLogsUseCase(returnsRepository);
+
+    getShopProfileUseCase = GetShopProfileUseCase(settingsRepository);
+    updateShopProfileUseCase = UpdateShopProfileUseCase(settingsRepository);
+    upgradeSubscriptionUseCase = UpgradeSubscriptionUseCase(settingsRepository);
 
     // 4. BLoC State Management Instances
     authBloc = AuthBloc(
@@ -239,6 +269,12 @@ class InjectionContainer {
     returnsBloc = ReturnsBloc(
       processReturnUseCase: processReturnUseCase,
       getReturnLogsUseCase: getReturnLogsUseCase,
+    );
+
+    settingsBloc = SettingsBloc(
+      getShopProfileUseCase: getShopProfileUseCase,
+      updateShopProfileUseCase: updateShopProfileUseCase,
+      upgradeSubscriptionUseCase: upgradeSubscriptionUseCase,
     );
   }
 }
