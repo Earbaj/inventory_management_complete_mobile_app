@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import '../../staff_manager_model.dart';
 
 class AddStaffDialog extends StatefulWidget {
-  final Function(StaffMember) onAdd;
+  final Function(StaffMember)? onAdd;
 
   const AddStaffDialog({
     super.key,
-    required this.onAdd,
+    this.onAdd,
   });
 
   @override
@@ -47,8 +47,10 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
         salesServedCount: 0,
       );
 
-      widget.onAdd(newStaff);
-      Navigator.pop(context);
+      if (widget.onAdd != null) {
+        widget.onAdd!(newStaff);
+      }
+      Navigator.pop(context, newStaff);
     }
   }
 

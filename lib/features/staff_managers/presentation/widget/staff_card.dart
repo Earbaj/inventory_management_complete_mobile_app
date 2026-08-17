@@ -4,13 +4,15 @@ import '../../staff_manager_model.dart';
 class StaffCard extends StatelessWidget {
   final StaffMember staff;
   final VoidCallback onDelete;
-  final Function(StaffStatus) onToggleStatus;
+  final dynamic onToggleStatus;
+  final VoidCallback? onEdit;
 
   const StaffCard({
     super.key,
     required this.staff,
     required this.onDelete,
-    required this.onToggleStatus,
+    this.onToggleStatus,
+    this.onEdit,
   });
 
   String _formatDate(DateTime dt) {
@@ -92,7 +94,13 @@ class StaffCard extends StatelessWidget {
                               final newStatus = staff.status == StaffStatus.active
                                   ? StaffStatus.inactive
                                   : StaffStatus.active;
-                              onToggleStatus(newStatus);
+                              if (onToggleStatus != null) {
+                                if (onToggleStatus is Function(StaffStatus)) {
+                                  onToggleStatus(newStatus);
+                                } else if (onToggleStatus is VoidCallback) {
+                                  onToggleStatus();
+                                }
+                              }
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
