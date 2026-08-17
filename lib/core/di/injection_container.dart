@@ -42,6 +42,14 @@ import '../../features/reports/domain/usecases/get_invoice_logs_usecase.dart';
 import '../../features/reports/domain/usecases/get_reports_summary_usecase.dart';
 import '../../features/reports/presentation/bloc/reports_bloc.dart';
 
+import '../../features/returnandrestoke/data/datasources/returns_local_data_source.dart';
+import '../../features/returnandrestoke/data/datasources/returns_remote_data_source.dart';
+import '../../features/returnandrestoke/data/repositories/returns_repository_impl.dart';
+import '../../features/returnandrestoke/domain/repositories/returns_repository.dart';
+import '../../features/returnandrestoke/domain/usecases/get_return_logs_usecase.dart';
+import '../../features/returnandrestoke/domain/usecases/process_return_usecase.dart';
+import '../../features/returnandrestoke/presentation/bloc/returns_bloc.dart';
+
 /// Service Locator / Dependency Injection Container
 ///
 /// Instantiates and wires together DataSources, Repositories, UseCases, Network Clients, and BLoC instances.
@@ -60,6 +68,8 @@ class InjectionContainer {
   static late final PosRemoteDataSource posRemoteDataSource;
   static late final ReportsLocalDataSource reportsLocalDataSource;
   static late final ReportsRemoteDataSource reportsRemoteDataSource;
+  static late final ReturnsLocalDataSource returnsLocalDataSource;
+  static late final ReturnsRemoteDataSource returnsRemoteDataSource;
 
   // Repositories
   static late final AuthRepository authRepository;
@@ -67,6 +77,7 @@ class InjectionContainer {
   static late final CustomerRepository customerRepository;
   static late final PosRepository posRepository;
   static late final ReportsRepository reportsRepository;
+  static late final ReturnsRepository returnsRepository;
 
   // UseCases - Auth
   static late final LoginUseCase loginUseCase;
@@ -96,12 +107,17 @@ class InjectionContainer {
   static late final GetReportsSummaryUseCase getReportsSummaryUseCase;
   static late final GetInvoiceLogsUseCase getInvoiceLogsUseCase;
 
+  // UseCases - Returns
+  static late final ProcessReturnUseCase processReturnUseCase;
+  static late final GetReturnLogsUseCase getReturnLogsUseCase;
+
   // BLoC State Management
   static late final AuthBloc authBloc;
   static late final InventoryBloc inventoryBloc;
   static late final CustomerBloc customerBloc;
   static late final PosBloc posBloc;
   static late final ReportsBloc reportsBloc;
+  static late final ReturnsBloc returnsBloc;
 
   /// Initializes all dependencies at app startup in [main].
   static void init() {
@@ -121,6 +137,9 @@ class InjectionContainer {
 
     reportsLocalDataSource = ReportsLocalDataSourceImpl();
     reportsRemoteDataSource = ReportsRemoteDataSourceImpl(apiClient);
+
+    returnsLocalDataSource = ReturnsLocalDataSourceImpl();
+    returnsRemoteDataSource = ReturnsRemoteDataSourceImpl(apiClient);
 
     // 2. Repository Contract Implementation
     authRepository = AuthRepositoryImpl(
@@ -150,6 +169,11 @@ class InjectionContainer {
       posLocalDataSource: posLocalDataSource,
     );
 
+    returnsRepository = ReturnsRepositoryImpl(
+      remoteDataSource: returnsRemoteDataSource,
+      localDataSource: returnsLocalDataSource,
+    );
+
     // 3. Domain UseCases
     loginUseCase = LoginUseCase(authRepository);
     registerUseCase = RegisterUseCase(authRepository);
@@ -173,6 +197,9 @@ class InjectionContainer {
 
     getReportsSummaryUseCase = GetReportsSummaryUseCase(reportsRepository);
     getInvoiceLogsUseCase = GetInvoiceLogsUseCase(reportsRepository);
+
+    processReturnUseCase = ProcessReturnUseCase(returnsRepository);
+    getReturnLogsUseCase = GetReturnLogsUseCase(returnsRepository);
 
     // 4. BLoC State Management Instances
     authBloc = AuthBloc(
@@ -207,6 +234,11 @@ class InjectionContainer {
     reportsBloc = ReportsBloc(
       getReportsSummaryUseCase: getReportsSummaryUseCase,
       getInvoiceLogsUseCase: getInvoiceLogsUseCase,
+    );
+
+    returnsBloc = ReturnsBloc(
+      processReturnUseCase: processReturnUseCase,
+      getReturnLogsUseCase: getReturnLogsUseCase,
     );
   }
 }
