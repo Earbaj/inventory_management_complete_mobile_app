@@ -65,8 +65,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         initialData: InjectionContainer.authBloc.state,
                         builder: (context, snapshot) {
                           final authState = snapshot.data;
-                          final userName = authState is AuthAuthenticatedState ? authState.user.name : 'Owner';
-                          final shopName = authState is AuthAuthenticatedState ? authState.user.shopName : 'Smart Inventory Store';
+                          final userName = authState is AuthenticatedState ? (authState.user?.name ?? 'Owner') : 'Owner';
+                          final shopName = authState is AuthenticatedState ? (authState.user?.shopName ?? 'Smart Inventory Store') : 'Smart Inventory Store';
 
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -226,7 +226,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     builder: (context, snapshot) {
                       final state = snapshot.data;
                       final lowStockCount = state is InventoryLoadedState
-                          ? state.items.where((i) => i.stockQuantity <= i.minStockAlert).length
+                          ? state.items.where((i) => i.isLowStock || i.isOutOfStock).length
                           : 0;
 
                       return StatCard(
