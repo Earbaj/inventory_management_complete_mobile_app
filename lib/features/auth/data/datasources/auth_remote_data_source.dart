@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../models/auth_response_model.dart';
@@ -5,13 +6,11 @@ import '../models/user_model.dart';
 
 /// Abstract Remote Data Source Contract for Auth API Communications
 abstract class AuthRemoteDataSource {
-  /// Calls POST /api/auth/login
   Future<AuthResponseModel> login({
     required String email,
     required String password,
   });
 
-  /// Calls POST /api/auth/register
   Future<AuthResponseModel> register({
     required String name,
     required String email,
@@ -20,19 +19,16 @@ abstract class AuthRemoteDataSource {
     String? phone,
   });
 
-  /// Calls POST /api/auth/forgot-password
   Future<void> requestForgotPasswordOtp({
     required String email,
   });
 
-  /// Calls POST /api/auth/reset-password
   Future<void> resetPassword({
     required String email,
     required String otpCode,
     required String newPassword,
   });
 
-  /// Calls GET /api/auth/me
   Future<UserModel> getMe();
 }
 
@@ -47,16 +43,23 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String email,
     required String password,
   }) async {
-    final responseJson = await apiClient.post(
-      ApiEndpoints.login,
-      body: {
-        'email': email,
-        'password': password,
-      },
-      isPublic: true,
-    );
+    developer.log('🔐 [AuthRemoteDataSource] Calling login for email: $email', name: 'AuthRemoteDataSource');
+    try {
+      final responseJson = await apiClient.post(
+        ApiEndpoints.login,
+        body: {
+          'email': email,
+          'password': password,
+        },
+        isPublic: true,
+      );
 
-    return AuthResponseModel.fromJson(responseJson);
+      developer.log('✅ [AuthRemoteDataSource] Login successful. Parsing AuthResponseModel...', name: 'AuthRemoteDataSource');
+      return AuthResponseModel.fromJson(responseJson);
+    } catch (e, stackTrace) {
+      developer.log('❌ [AuthRemoteDataSource] Login API Error: $e', name: 'AuthRemoteDataSource', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
   @override
@@ -67,32 +70,46 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     String? shopName,
     String? phone,
   }) async {
-    final responseJson = await apiClient.post(
-      ApiEndpoints.register,
-      body: {
-        'name': name,
-        'email': email,
-        'password': password,
-        if (shopName != null) 'shopName': shopName,
-        if (phone != null) 'phone': phone,
-      },
-      isPublic: true,
-    );
+    developer.log('🔐 [AuthRemoteDataSource] Calling register for name: $name, email: $email', name: 'AuthRemoteDataSource');
+    try {
+      final responseJson = await apiClient.post(
+        ApiEndpoints.register,
+        body: {
+          'name': name,
+          'email': email,
+          'password': password,
+          if (shopName != null) 'shopName': shopName,
+          if (phone != null) 'phone': phone,
+        },
+        isPublic: true,
+      );
 
-    return AuthResponseModel.fromJson(responseJson);
+      developer.log('✅ [AuthRemoteDataSource] Register successful. Parsing AuthResponseModel...', name: 'AuthRemoteDataSource');
+      return AuthResponseModel.fromJson(responseJson);
+    } catch (e, stackTrace) {
+      developer.log('❌ [AuthRemoteDataSource] Register API Error: $e', name: 'AuthRemoteDataSource', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
   @override
   Future<void> requestForgotPasswordOtp({
     required String email,
   }) async {
-    await apiClient.post(
-      ApiEndpoints.forgotPassword,
-      body: {
-        'email': email,
-      },
-      isPublic: true,
-    );
+    developer.log('🔐 [AuthRemoteDataSource] Calling requestForgotPasswordOtp for email: $email', name: 'AuthRemoteDataSource');
+    try {
+      await apiClient.post(
+        ApiEndpoints.forgotPassword,
+        body: {
+          'email': email,
+        },
+        isPublic: true,
+      );
+      developer.log('✅ [AuthRemoteDataSource] Forgot password OTP request successful.', name: 'AuthRemoteDataSource');
+    } catch (e, stackTrace) {
+      developer.log('❌ [AuthRemoteDataSource] Forgot Password OTP Error: $e', name: 'AuthRemoteDataSource', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
   @override
@@ -101,28 +118,42 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String otpCode,
     required String newPassword,
   }) async {
-    await apiClient.post(
-      ApiEndpoints.resetPassword,
-      body: {
-        'email': email,
-        'otpCode': otpCode,
-        'newPassword': newPassword,
-      },
-      isPublic: true,
-    );
+    developer.log('🔐 [AuthRemoteDataSource] Calling resetPassword for email: $email', name: 'AuthRemoteDataSource');
+    try {
+      await apiClient.post(
+        ApiEndpoints.resetPassword,
+        body: {
+          'email': email,
+          'otpCode': otpCode,
+          'newPassword': newPassword,
+        },
+        isPublic: true,
+      );
+      developer.log('✅ [AuthRemoteDataSource] Reset password successful.', name: 'AuthRemoteDataSource');
+    } catch (e, stackTrace) {
+      developer.log('❌ [AuthRemoteDataSource] Reset Password Error: $e', name: 'AuthRemoteDataSource', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
   @override
   Future<UserModel> getMe() async {
-    final responseJson = await apiClient.get(
-      ApiEndpoints.me,
-      isPublic: false,
-    );
+    developer.log('🔐 [AuthRemoteDataSource] Calling getMe()...', name: 'AuthRemoteDataSource');
+    try {
+      final responseJson = await apiClient.get(
+        ApiEndpoints.me,
+        isPublic: false,
+      );
 
-    final userData = responseJson is Map && responseJson.containsKey('user')
-        ? responseJson['user']
-        : responseJson;
+      final userData = responseJson is Map && responseJson.containsKey('user')
+          ? responseJson['user']
+          : responseJson;
 
-    return UserModel.fromJson(userData);
+      developer.log('✅ [AuthRemoteDataSource] getMe() successful. Parsing UserModel...', name: 'AuthRemoteDataSource');
+      return UserModel.fromJson(userData);
+    } catch (e, stackTrace) {
+      developer.log('❌ [AuthRemoteDataSource] getMe() API Error: $e', name: 'AuthRemoteDataSource', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
   }
 }

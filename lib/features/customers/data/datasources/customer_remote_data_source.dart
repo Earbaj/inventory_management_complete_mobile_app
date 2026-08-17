@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import '../../../../core/network/api_client.dart';
 import '../../../../core/config/env_config.dart';
 import '../models/customer_model.dart';
@@ -16,41 +17,69 @@ class CustomerRemoteDataSourceImpl implements CustomerRemoteDataSource {
 
   @override
   Future<List<CustomerModel>> getCustomers({String? search}) async {
-    final response = await apiClient.get(
-      '${EnvConfig.apiBaseUrl}/api/customers',
-      queryParameters: {
-        if (search != null && search.isNotEmpty) 'search': search,
-      },
-    );
+    developer.log('👥 [CustomerRemoteDataSource] getCustomers() called with search: "$search"', name: 'CustomerRemoteDataSource');
+    try {
+      final response = await apiClient.get(
+        '${EnvConfig.apiBaseUrl}/api/customers',
+        queryParameters: {
+          if (search != null && search.isNotEmpty) 'search': search,
+        },
+      );
 
-    final List list = response is List ? response : (response['customers'] ?? response['data'] ?? []);
-    return list.map((json) => CustomerModel.fromJson(json)).toList();
+      final List list = response is List ? response : (response['customers'] ?? response['data'] ?? []);
+      developer.log('✅ [CustomerRemoteDataSource] getCustomers() success. Parsed ${list.length} customers.', name: 'CustomerRemoteDataSource');
+      return list.map((json) => CustomerModel.fromJson(json)).toList();
+    } catch (e, stackTrace) {
+      developer.log('❌ [CustomerRemoteDataSource] getCustomers() API Error: $e', name: 'CustomerRemoteDataSource', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
   @override
   Future<CustomerModel> addCustomer(CustomerModel customer) async {
-    final response = await apiClient.post(
-      '${EnvConfig.apiBaseUrl}/api/customers',
-      body: customer.toJson(),
-    );
+    developer.log('👥 [CustomerRemoteDataSource] addCustomer() called for customer: "${customer.name}" (Phone: ${customer.phone})', name: 'CustomerRemoteDataSource');
+    try {
+      final response = await apiClient.post(
+        '${EnvConfig.apiBaseUrl}/api/customers',
+        body: customer.toJson(),
+      );
 
-    return CustomerModel.fromJson(response is Map<String, dynamic> ? response : customer.toJson());
+      developer.log('✅ [CustomerRemoteDataSource] addCustomer() success.', name: 'CustomerRemoteDataSource');
+      return CustomerModel.fromJson(response is Map<String, dynamic> ? response : customer.toJson());
+    } catch (e, stackTrace) {
+      developer.log('❌ [CustomerRemoteDataSource] addCustomer() API Error: $e', name: 'CustomerRemoteDataSource', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
   @override
   Future<CustomerModel> updateCustomer(CustomerModel customer) async {
-    final response = await apiClient.post(
-      '${EnvConfig.apiBaseUrl}/api/customers/${customer.id}',
-      body: customer.toJson(),
-    );
+    developer.log('👥 [CustomerRemoteDataSource] updateCustomer() called for customerId: "${customer.id}"', name: 'CustomerRemoteDataSource');
+    try {
+      final response = await apiClient.put(
+        '${EnvConfig.apiBaseUrl}/api/customers/${customer.id}',
+        body: customer.toJson(),
+      );
 
-    return CustomerModel.fromJson(response is Map<String, dynamic> ? response : customer.toJson());
+      developer.log('✅ [CustomerRemoteDataSource] updateCustomer() success.', name: 'CustomerRemoteDataSource');
+      return CustomerModel.fromJson(response is Map<String, dynamic> ? response : customer.toJson());
+    } catch (e, stackTrace) {
+      developer.log('❌ [CustomerRemoteDataSource] updateCustomer() API Error: $e', name: 'CustomerRemoteDataSource', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
   @override
   Future<void> deleteCustomer(String customerId) async {
-    await apiClient.post(
-      '${EnvConfig.apiBaseUrl}/api/customers/$customerId/delete',
-    );
+    developer.log('👥 [CustomerRemoteDataSource] deleteCustomer() called for customerId: "$customerId"', name: 'CustomerRemoteDataSource');
+    try {
+      await apiClient.delete(
+        '${EnvConfig.apiBaseUrl}/api/customers/$customerId',
+      );
+      developer.log('✅ [CustomerRemoteDataSource] deleteCustomer() success.', name: 'CustomerRemoteDataSource');
+    } catch (e, stackTrace) {
+      developer.log('❌ [CustomerRemoteDataSource] deleteCustomer() API Error: $e', name: 'CustomerRemoteDataSource', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
   }
 }

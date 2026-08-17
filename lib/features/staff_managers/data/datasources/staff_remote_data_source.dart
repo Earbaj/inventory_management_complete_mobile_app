@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import '../../../../core/network/api_client.dart';
 import '../../../../core/config/env_config.dart';
 import '../models/staff_model.dart';
@@ -16,38 +17,66 @@ class StaffRemoteDataSourceImpl implements StaffRemoteDataSource {
 
   @override
   Future<List<StaffModel>> getStaffMembers() async {
-    final response = await apiClient.get(
-      '${EnvConfig.apiBaseUrl}/api/staff',
-    );
+    developer.log('👥 [StaffRemoteDataSource] getStaffMembers() called...', name: 'StaffRemoteDataSource');
+    try {
+      final response = await apiClient.get(
+        '${EnvConfig.apiBaseUrl}/api/staff',
+      );
 
-    final List list = response is List ? response : (response['staff'] ?? response['data'] ?? []);
-    return list.map((json) => StaffModel.fromJson(json)).toList();
+      final List list = response is List ? response : (response['staff'] ?? response['data'] ?? []);
+      developer.log('✅ [StaffRemoteDataSource] getStaffMembers() success. Parsed ${list.length} staff members.', name: 'StaffRemoteDataSource');
+      return list.map((json) => StaffModel.fromJson(json)).toList();
+    } catch (e, stackTrace) {
+      developer.log('❌ [StaffRemoteDataSource] getStaffMembers() API Error: $e', name: 'StaffRemoteDataSource', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
   @override
   Future<StaffModel> addStaffMember(StaffModel staffModel) async {
-    final response = await apiClient.post(
-      '${EnvConfig.apiBaseUrl}/api/staff',
-      body: staffModel.toJson(),
-    );
+    developer.log('👥 [StaffRemoteDataSource] addStaffMember() called for name: "${staffModel.name}" (role: ${staffModel.role})', name: 'StaffRemoteDataSource');
+    try {
+      final response = await apiClient.post(
+        '${EnvConfig.apiBaseUrl}/api/staff',
+        body: staffModel.toJson(),
+      );
 
-    return StaffModel.fromJson(response is Map<String, dynamic> ? response : staffModel.toJson());
+      developer.log('✅ [StaffRemoteDataSource] addStaffMember() success.', name: 'StaffRemoteDataSource');
+      return StaffModel.fromJson(response is Map<String, dynamic> ? response : staffModel.toJson());
+    } catch (e, stackTrace) {
+      developer.log('❌ [StaffRemoteDataSource] addStaffMember() API Error: $e', name: 'StaffRemoteDataSource', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
   @override
   Future<StaffModel> updateStaffMember(StaffModel staffModel) async {
-    final response = await apiClient.put(
-      '${EnvConfig.apiBaseUrl}/api/staff/${staffModel.id}',
-      body: staffModel.toJson(),
-    );
+    developer.log('👥 [StaffRemoteDataSource] updateStaffMember() called for staffId: "${staffModel.id}"', name: 'StaffRemoteDataSource');
+    try {
+      final response = await apiClient.put(
+        '${EnvConfig.apiBaseUrl}/api/staff/${staffModel.id}',
+        body: staffModel.toJson(),
+      );
 
-    return StaffModel.fromJson(response is Map<String, dynamic> ? response : staffModel.toJson());
+      developer.log('✅ [StaffRemoteDataSource] updateStaffMember() success.', name: 'StaffRemoteDataSource');
+      return StaffModel.fromJson(response is Map<String, dynamic> ? response : staffModel.toJson());
+    } catch (e, stackTrace) {
+      developer.log('❌ [StaffRemoteDataSource] updateStaffMember() API Error: $e', name: 'StaffRemoteDataSource', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
   @override
   Future<void> deleteStaffMember(String staffId) async {
-    await apiClient.delete(
-      '${EnvConfig.apiBaseUrl}/api/staff/$staffId',
-    );
+    developer.log('👥 [StaffRemoteDataSource] deleteStaffMember() called for staffId: "$staffId"', name: 'StaffRemoteDataSource');
+    try {
+      await apiClient.delete(
+        '${EnvConfig.apiBaseUrl}/api/staff/$staffId',
+      );
+      developer.log('✅ [StaffRemoteDataSource] deleteStaffMember() success.', name: 'StaffRemoteDataSource');
+    } catch (e, stackTrace) {
+      developer.log('❌ [StaffRemoteDataSource] deleteStaffMember() API Error: $e', name: 'StaffRemoteDataSource', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
   }
 }

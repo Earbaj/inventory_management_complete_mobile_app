@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
 import '../config/env_config.dart';
 import '../error/failures.dart';
@@ -8,7 +9,7 @@ typedef OnUnauthorizedCallback = void Function();
 /// Core Network API Client (Dio Engine)
 ///
 /// Handles HTTP communications, automatic Bearer JWT Token injection via request interceptors,
-/// and global 401 Unauthorized session expiration handling without infinite loops.
+/// comprehensive request/response/error logging, and global 401 Unauthorized session handling.
 class ApiClient {
   late final Dio _dio;
   String? _authToken;
@@ -36,33 +37,63 @@ class ApiClient {
   /// Updates active Bearer JWT Token used in request interceptors.
   void setAuthToken(String? token) {
     _authToken = token;
+    developer.log('🔑 [ApiClient] Auth Bearer Token set: ${token != null ? "EXISTS (Length ${token.length})" : "NULL"}', name: 'ApiClient');
   }
 
   /// Clears active Bearer JWT Token on logout or session expiration.
   void clearAuthToken() {
     _authToken = null;
+    developer.log('🔑 [ApiClient] Auth Bearer Token cleared.', name: 'ApiClient');
   }
 
-  /// Sets up Dio Interceptors for request token injection and error handling.
+  /// Sets up Dio Interceptors for request token injection, detailed logging, and error handling.
   void _setupInterceptors() {
     _dio.interceptors.add(
       InterceptorsWrapper(
-        // 1. Request Interceptor: Injects Authorization Header if available
+        // 1. Request Interceptor: Injects Authorization Header & logs request details
         onRequest: (options, handler) {
           final isPublic = options.extra['isPublic'] == true;
           if (!isPublic && _authToken != null && _authToken!.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $_authToken';
           }
+
+          developer.log('🌐 [HTTP REQUEST] ${options.method} ${options.uri}', name: 'ApiClient');
+          developer.log('   Headers: ${options.headers}', name: 'ApiClient');
+          if (options.data != null) {
+            developer.log('   Payload Body: ${options.data}', name: 'ApiClient');
+          }
+          if (options.queryParameters.isNotEmpty) {
+            developer.log('   QueryParams: ${options.queryParameters}', name: 'ApiClient');
+          }
+
           return handler.next(options);
         },
 
-        // 2. Error Interceptor: Loop-Safe 401 Unauthorized Handling
+        // 2. Response Interceptor: Logs status code & response payload
+        onResponse: (response, handler) {
+          developer.log('✅ [HTTP RESPONSE ${response.statusCode}] ${response.requestOptions.method} ${response.requestOptions.uri}', name: 'ApiClient');
+          developer.log('   Data Payload: ${response.data}', name: 'ApiClient');
+          return handler.next(response);
+        },
+
+        // 3. Error Interceptor: Loop-Safe 401 Unauthorized Handling & Error Logging
         onError: (DioException error, handler) {
           final statusCode = error.response?.statusCode;
           final isPublic = error.requestOptions.extra['isPublic'] == true;
 
+          developer.log(
+            '❌ [HTTP ERROR ${statusCode ?? "NO_STATUS"}] ${error.requestOptions.method} ${error.requestOptions.uri}',
+            name: 'ApiClient',
+            error: error.error,
+          );
+          developer.log('   Error Message: ${error.message}', name: 'ApiClient');
+          if (error.response?.data != null) {
+            developer.log('   Response Error Data: ${error.response?.data}', name: 'ApiClient');
+          }
+
           // Prevent loop: Only trigger 401 auto logout on authenticated routes
           if (statusCode == 401 && !isPublic && onUnauthorized != null) {
+            developer.log('🚨 [ApiClient] 401 Unauthorized detected! Triggering auto logout callback.', name: 'ApiClient');
             onUnauthorized!();
           }
           return handler.next(error);
