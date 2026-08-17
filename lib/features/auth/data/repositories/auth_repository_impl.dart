@@ -80,17 +80,26 @@ class AuthRepositoryImpl implements AuthRepository {
       apiClient.setAuthToken(token);
     }
     final userModel = await remoteDataSource.getMe();
+    await localDataSource.saveUser(userModel);
+
     return AuthMapper.userModelToEntity(userModel);
   }
 
   @override
   Future<void> logout() async {
-    await localDataSource.clearToken();
+    await localDataSource.clearAll();
     apiClient.clearAuthToken();
   }
 
   @override
   Future<String?> getSavedToken() {
     return localDataSource.getToken();
+  }
+
+  @override
+  Future<UserEntity?> getSavedUser() async {
+    final userModel = await localDataSource.getUser();
+    if (userModel == null) return null;
+    return AuthMapper.userModelToEntity(userModel);
   }
 }

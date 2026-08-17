@@ -49,24 +49,38 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     _controller.forward();
+    _initializeApp();
+  }
 
-    Timer(
-      const Duration(seconds: 2),
-      () async {
-        if (!mounted) return;
+  Future<void> _initializeApp() async {
+    // Minimum animation display delay (1.5s)
+    final minDelayFuture = Future.delayed(const Duration(milliseconds: 1500));
 
-        final savedToken = await InjectionContainer.authRepository.getSavedToken();
-        if (savedToken != null && savedToken.isNotEmpty) {
-          try {
-            await InjectionContainer.getMeUseCase();
-            if (mounted) context.go('/dashboard');
-            return;
-          } catch (_) {}
-        }
+    // Auth status check Future
+    final authCheckFuture = _checkAuthStatus();
 
-        if (mounted) context.go('/login');
-      },
-    );
+    // Wait for BOTH minimum splash delay AND API auth check to finish concurrently
+    final results = await Future.wait([minDelayFuture, authCheckFuture]);
+    final isAuthenticated = results[1] as bool;
+
+    if (!mounted) return;
+
+    if (isAuthenticated) {
+      context.go('/dashboard');
+    } else {
+      context.go('/login');
+    }
+  }
+
+  Future<bool> _checkAuthStatus() async {
+    try {
+      final savedToken = await InjectionContainer.authRepository.getSavedToken();
+      if (savedToken != null && savedToken.isNotEmpty) {
+        await InjectionContainer.getMeUseCase();
+        return true;
+      }
+    } catch (_) {}
+    return false;
   }
 
   @override

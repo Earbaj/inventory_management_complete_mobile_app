@@ -78,51 +78,87 @@ class AppDrawer extends StatelessWidget {
 
                   const SizedBox(height: 12),
 
-                  Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
+                  FutureBuilder(
+                    future: InjectionContainer.authRepository.getSavedUser(),
+                    builder: (context, snapshot) {
+                      final user = snapshot.data;
+                      final userName = user?.name.isNotEmpty == true ? user!.name : 'Shop Owner';
+                      final userEmail = user?.email.isNotEmpty == true ? user!.email : 'admin@example.com';
+                      final userRole = user?.role.isNotEmpty == true ? user!.role.toUpperCase() : 'ADMIN';
+                      final shopName = user?.shopName;
 
-                        decoration:
-                        const BoxDecoration(
-                          color: Colors.white24,
-                          shape: BoxShape.circle,
-                        ),
+                      // Extract avatar initials (e.g. "John Doe" -> "JD")
+                      String initials = 'A';
+                      if (userName.isNotEmpty) {
+                        final parts = userName.trim().split(' ');
+                        if (parts.length >= 2) {
+                          initials = '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+                        } else if (parts[0].isNotEmpty) {
+                          initials = parts[0][0].toUpperCase();
+                        }
+                      }
 
-                        child: const Icon(
-                          Icons.person_outline,
-                          color: Colors.white,
-                        ),
-                      ),
-
-                      const SizedBox(width: 10),
-
-                      const Column(
-                        crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                      return Row(
                         children: [
-                          Text(
-                            'Admin',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight:
-                              FontWeight.w600,
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: const BoxDecoration(
+                              color: Colors.white24,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                initials,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
                             ),
                           ),
-
-                          SizedBox(height: 2),
-
-                          Text(
-                            'admin@example.com',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 11,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  userName,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '$userRole • $userEmail',
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 11,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (shopName != null && shopName.isNotEmpty) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Shop: $shopName',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
                         ],
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ],
               ),
