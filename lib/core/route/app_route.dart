@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/view/login_screen.dart';
 import '../../features/auth/presentation/view/register_screen.dart';
+import '../../features/auth/presentation/view/forgot_password_screen.dart';
+import '../../features/auth/presentation/view/reset_password_screen.dart';
 import '../../features/customer/presentation/view/customers_screen.dart';
 import '../../features/dashboard/presentation/view/dashboard_screen.dart';
 import '../../features/inventory/presentation/view/inventory_screen.dart';
@@ -42,6 +44,23 @@ class AppRoute {
         name: 'register',
         builder: (context, state) {
           return const RegisterScreen();
+        },
+      ),
+
+      GoRoute(
+        path: '/forgot-password',
+        name: 'forgot-password',
+        builder: (context, state) {
+          return const ForgotPasswordScreen();
+        },
+      ),
+
+      GoRoute(
+        path: '/reset-password',
+        name: 'reset-password',
+        builder: (context, state) {
+          final email = state.extra as String?;
+          return ResetPasswordScreen(email: email);
         },
       ),
 

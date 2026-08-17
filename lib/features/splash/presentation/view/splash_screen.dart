@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/di/injection_container.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -50,11 +51,20 @@ class _SplashScreenState extends State<SplashScreen>
     _controller.forward();
 
     Timer(
-      const Duration(seconds: 3),
-          () {
+      const Duration(seconds: 2),
+      () async {
         if (!mounted) return;
 
-        context.go('/login');
+        final savedToken = await InjectionContainer.authRepository.getSavedToken();
+        if (savedToken != null && savedToken.isNotEmpty) {
+          try {
+            await InjectionContainer.getMeUseCase();
+            if (mounted) context.go('/dashboard');
+            return;
+          } catch (_) {}
+        }
+
+        if (mounted) context.go('/login');
       },
     );
   }

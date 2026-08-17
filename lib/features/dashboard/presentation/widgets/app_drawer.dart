@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/di/injection_container.dart';
+import '../../../auth/presentation/bloc/auth_event.dart';
 
 class AppDrawer extends StatelessWidget {
   final String currentRoute;
@@ -297,9 +299,7 @@ class AppDrawer extends StatelessWidget {
             FilledButton(
               onPressed: () {
                 Navigator.pop(context);
-
-                // Firebase sign out এখানে হবে
-
+                InjectionContainer.authBloc.add(const LogoutRequestedEvent());
                 context.go('/login');
               },
 
