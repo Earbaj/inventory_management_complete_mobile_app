@@ -1,6 +1,6 @@
 import '../../../../core/network/api_client.dart';
 import '../../../../core/config/env_config.dart';
-import '../../posbilling/data/models/sale_model.dart';
+import '../../../posbilling/data/models/sale_model.dart';
 import '../models/report_summary_model.dart';
 
 abstract class ReportsRemoteDataSource {

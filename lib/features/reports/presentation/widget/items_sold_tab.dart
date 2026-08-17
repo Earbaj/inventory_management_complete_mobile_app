@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import '../../reports_models.dart';
 
 class ItemsSoldTab extends StatelessWidget {
-  final List<ReportItemSold> itemsSold;
+  final List<ReportItemSold>? itemsSold;
+  final List<InvoiceLog>? invoices;
 
   const ItemsSoldTab({
     super.key,
-    required this.itemsSold,
+    this.itemsSold,
+    this.invoices,
   });
 
   @override
@@ -14,7 +16,9 @@ class ItemsSoldTab extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    if (itemsSold.isEmpty) {
+    final List<ReportItemSold> list = itemsSold ?? invoices?.expand((inv) => inv.items).toList() ?? [];
+
+    if (list.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(32.0),
@@ -47,12 +51,12 @@ class ItemsSoldTab extends StatelessWidget {
       );
     }
 
-    final totalQuantity = itemsSold.fold<int>(0, (sum, item) => sum + item.quantity);
-    final totalRevenue = itemsSold.fold<double>(0, (sum, item) => sum + item.totalRevenue);
+    final totalQuantity = list.fold<int>(0, (sum, item) => sum + item.quantity);
+    final totalRevenue = list.fold<double>(0, (sum, item) => sum + item.totalRevenue);
 
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
-      itemCount: itemsSold.length + 1,
+      itemCount: list.length + 1,
       itemBuilder: (context, index) {
         if (index == 0) {
           // Summary Header Banner for Items Sold Tab

@@ -1,7 +1,7 @@
 import '../../../../core/error/failures.dart';
-import '../../posbilling/data/datasources/pos_local_data_source.dart';
-import '../../posbilling/data/mappers/pos_mapper.dart';
-import '../../posbilling/domain/entities/sale_entity.dart';
+import '../../../posbilling/data/datasources/pos_local_data_source.dart';
+import '../../../posbilling/data/mappers/pos_mapper.dart';
+import '../../../posbilling/domain/entities/sale_entity.dart';
 import '../../domain/entities/report_summary_entity.dart';
 import '../../domain/repositories/reports_repository.dart';
 import '../datasources/reports_local_data_source.dart';

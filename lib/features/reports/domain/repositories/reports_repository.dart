@@ -1,4 +1,4 @@
-import '../../posbilling/domain/entities/sale_entity.dart';
+import '../../../posbilling/domain/entities/sale_entity.dart';
 import '../entities/report_summary_entity.dart';
 
 /// Abstract Reports Repository Contract

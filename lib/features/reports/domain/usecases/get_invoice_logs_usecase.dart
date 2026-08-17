@@ -1,4 +1,4 @@
-import '../../posbilling/domain/entities/sale_entity.dart';
+import '../../../posbilling/domain/entities/sale_entity.dart';
 import '../repositories/reports_repository.dart';
 
 /// UseCase: Fetches sales invoice transaction logs.

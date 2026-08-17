@@ -1,5 +1,5 @@
 import 'dart:async';
-import '../../posbilling/domain/entities/sale_entity.dart';
+import '../../../posbilling/domain/entities/sale_entity.dart';
 import '../../domain/entities/report_summary_entity.dart';
 import '../../domain/usecases/get_invoice_logs_usecase.dart';
 import '../../domain/usecases/get_reports_summary_usecase.dart';

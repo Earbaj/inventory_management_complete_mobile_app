@@ -1,4 +1,4 @@
-import '../../posbilling/domain/entities/sale_entity.dart';
+import '../../../posbilling/domain/entities/sale_entity.dart';
 import '../../domain/entities/report_summary_entity.dart';
 
 abstract class ReportsState {

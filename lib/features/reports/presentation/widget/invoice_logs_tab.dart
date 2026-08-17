@@ -4,12 +4,12 @@ import 'receipt_dialog.dart';
 
 class InvoiceLogsTab extends StatelessWidget {
   final List<InvoiceLog> invoices;
-  final Function(InvoiceLog) onDeleteInvoice;
+  final Function(InvoiceLog)? onDeleteInvoice;
 
   const InvoiceLogsTab({
     super.key,
     required this.invoices,
-    required this.onDeleteInvoice,
+    this.onDeleteInvoice,
   });
 
   String _formatDate(DateTime dt) {

@@ -49,10 +49,10 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
     if (filter == DateFilterType.today) {
       start = DateTime(now.year, now.month, now.day);
       end = DateTime(now.year, now.month, now.day, 23, 59, 59);
-    } else if (filter == DateFilterType.thisWeek) {
+    } else if (filter == DateFilterType.last7Days) {
       start = now.subtract(Duration(days: now.weekday - 1));
       end = now;
-    } else if (filter == DateFilterType.thisMonth) {
+    } else if (filter == DateFilterType.last30Days) {
       start = DateTime(now.year, now.month, 1);
       end = now;
     }
