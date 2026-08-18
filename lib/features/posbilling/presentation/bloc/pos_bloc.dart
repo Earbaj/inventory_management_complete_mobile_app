@@ -40,6 +40,8 @@ class PosBloc {
       _onRemoveFromCart(event);
     } else if (event is UpdateCartQuantityEvent) {
       _onUpdateCartQuantity(event);
+    } else if (event is UpdateCartItemDiscountEvent) {
+      _onUpdateCartItemDiscount(event);
     } else if (event is SelectPosCustomerEvent) {
       _onSelectCustomer(event);
     } else if (event is ApplyDiscountEvent) {
@@ -88,6 +90,18 @@ class PosBloc {
     _emit(currentState.copyWith(cartItems: items));
   }
 
+  void _onUpdateCartItemDiscount(UpdateCartItemDiscountEvent event) {
+    final currentState = _state is PosCartState ? _state as PosCartState : const PosCartState(cartItems: []);
+    final items = List<CartItemEntity>.from(currentState.cartItems);
+
+    final index = items.indexWhere((element) => element.item.id == event.itemId);
+    if (index != -1) {
+      items[index] = items[index].copyWith(discount: event.discount);
+    }
+
+    _emit(currentState.copyWith(cartItems: items));
+  }
+
   void _onSelectCustomer(SelectPosCustomerEvent event) {
     final currentState = _state is PosCartState ? _state as PosCartState : const PosCartState(cartItems: []);
     if (event.customer == null) {
@@ -118,18 +132,19 @@ class PosBloc {
     try {
       final generatedInvoiceNo = 'INV-${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
       final netTotal = currentState.netTotal;
-      final dueAmount = (netTotal - event.paidAmount).clamp(0.0, double.infinity);
+      final paidAmount = event.paidAmount.clamp(0.0, netTotal);
+      final dueAmount = (netTotal - paidAmount).clamp(0.0, double.infinity);
 
       final saleToSubmit = SaleEntity(
         id: '',
         invoiceNo: generatedInvoiceNo,
         customer: currentState.selectedCustomer,
         items: currentState.cartItems,
-        subtotal: currentState.subtotal,
-        discountAmount: currentState.discountAmount,
+        subtotal: currentState.rawSubtotal,
+        discountAmount: currentState.totalDiscount,
         vatAmount: currentState.vatAmount,
         netTotal: netTotal,
-        paidAmount: event.paidAmount,
+        paidAmount: paidAmount,
         dueAmount: dueAmount,
         paymentMethod: event.paymentMethod,
         createdAt: DateTime.now(),

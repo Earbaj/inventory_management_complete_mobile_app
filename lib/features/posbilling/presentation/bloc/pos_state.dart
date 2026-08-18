@@ -14,7 +14,7 @@ class PosInitialState extends PosState {
 class PosCartState extends PosState {
   final List<CartItemEntity> cartItems;
   final CustomerEntity? selectedCustomer;
-  final double discountAmount;
+  final double discountAmount; // Overall order discount
 
   const PosCartState({
     required this.cartItems,
@@ -23,8 +23,22 @@ class PosCartState extends PosState {
   });
 
   int get totalItemCount => cartItems.fold(0, (sum, item) => sum + item.quantity);
+  
+  /// Total raw subtotal before item-level or overall discounts
+  double get rawSubtotal => cartItems.fold(0.0, (sum, item) => sum + item.rawSubtotal);
+  
+  /// Sum of all product-level discounts
+  double get productDiscounts => cartItems.fold(0.0, (sum, item) => sum + item.discount);
+  
+  /// Subtotal after item-level discounts but before overall discount
   double get subtotal => cartItems.fold(0.0, (sum, item) => sum + item.totalPrice);
+  
+  /// Total discounts (Product-wise discounts + Overall discount)
+  double get totalDiscount => productDiscounts + discountAmount;
+  
   double get vatAmount => 0.0; // Can be configured
+  
+  /// Final Net Total to be paid by customer
   double get netTotal => (subtotal - discountAmount + vatAmount).clamp(0.0, double.infinity);
 
   PosCartState copyWith({

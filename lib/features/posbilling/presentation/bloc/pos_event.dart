@@ -1,6 +1,5 @@
 import '../../../customers/domain/entities/customer_entity.dart';
 import '../../../inventory/domain/entities/inventory_item_entity.dart';
-import '../../domain/entities/cart_item_entity.dart';
 
 abstract class PosEvent {
   const PosEvent();
@@ -31,6 +30,17 @@ class UpdateCartQuantityEvent extends PosEvent {
   });
 }
 
+/// Event: Updates product-wise discount for a specific cart line item.
+class UpdateCartItemDiscountEvent extends PosEvent {
+  final String itemId;
+  final double discount;
+
+  const UpdateCartItemDiscountEvent({
+    required this.itemId,
+    required this.discount,
+  });
+}
+
 /// Event: Selects or attaches a customer for the sale.
 class SelectPosCustomerEvent extends PosEvent {
   final CustomerEntity? customer;
@@ -38,7 +48,7 @@ class SelectPosCustomerEvent extends PosEvent {
   const SelectPosCustomerEvent(this.customer);
 }
 
-/// Event: Applies a custom discount amount.
+/// Event: Applies a custom overall discount amount.
 class ApplyDiscountEvent extends PosEvent {
   final double discountAmount;
 

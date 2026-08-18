@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../../core/di/injection_container.dart';
@@ -26,6 +27,7 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
   final TextEditingController discountController = TextEditingController();
 
   String selectedCategory = 'All';
+  StreamSubscription<PosState>? _posSubscription;
 
   @override
   void initState() {
@@ -38,10 +40,29 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
       final value = double.tryParse(discountController.text) ?? 0.0;
       InjectionContainer.posBloc.add(ApplyDiscountEvent(value));
     });
+
+    _posSubscription = InjectionContainer.posBloc.stream.listen((state) {
+      if (!mounted) return;
+      if (state is PosCheckoutSuccessState) {
+        discountController.clear();
+        showDialog(
+          context: context,
+          builder: (_) => SaleSuccessDialog(completedSale: state.completedSale),
+        );
+      } else if (state is PosCheckoutErrorState) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(state.message),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    });
   }
 
   @override
   void dispose() {
+    _posSubscription?.cancel();
     searchController.dispose();
     discountController.dispose();
     super.dispose();
@@ -387,18 +408,12 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
           subtotal: posState.subtotal,
           discountController: discountController,
           onComplete: (paymentMethod, paidAmount) {
+            Navigator.pop(context);
+
             InjectionContainer.posBloc.add(SubmitCheckoutEvent(
               paymentMethod: paymentMethod,
               paidAmount: paidAmount,
             ));
-
-            Navigator.pop(context);
-
-            // Show Receipt Dialog
-            showDialog(
-              context: context,
-              builder: (_) => const SaleSuccessDialog(),
-            );
           },
         );
       },

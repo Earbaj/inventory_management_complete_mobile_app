@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/di/injection_container.dart';
 import '../../../customers/domain/entities/customer_entity.dart';
 import '../../domain/entities/cart_item_entity.dart';
+import '../../presentation/bloc/pos_event.dart';
 import '../../pos_customer.dart';
 import '../../pos_product.dart';
 import 'payment_options.dart';
@@ -55,13 +57,101 @@ typedef CheckOutSheet = CheckoutSheet;
 
 class _CheckoutSheetState extends State<CheckoutSheet> {
   late String _paymentMethod;
-  late TextEditingController _discountCtrl;
+  late TextEditingController _overallDiscountCtrl;
+  late TextEditingController _paidCtrl;
+  bool _isPaidEdited = false;
 
   @override
   void initState() {
     super.initState();
     _paymentMethod = widget.selectedPayment ?? 'cash';
-    _discountCtrl = widget.discountController ?? TextEditingController();
+    _overallDiscountCtrl = widget.discountController ?? TextEditingController();
+    _paidCtrl = TextEditingController();
+
+    // Default paid amount calculation
+    _updateDefaultPaidAmount();
+  }
+
+  void _updateDefaultPaidAmount() {
+    final cartList = widget.cartItems ?? [];
+    final double rawSub = widget.subtotal ?? cartList.fold<double>(0.0, (sum, i) => sum + i.totalPrice);
+    final double overallDisc = double.tryParse(_overallDiscountCtrl.text) ?? widget.discount ?? 0.0;
+    final double calcNetTotal = (rawSub - overallDisc).clamp(0.0, double.infinity);
+
+    if (!_isPaidEdited) {
+      if (_paymentMethod.toLowerCase() == 'due') {
+        _paidCtrl.text = '0';
+      } else {
+        _paidCtrl.text = calcNetTotal.toStringAsFixed(0);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    if (widget.discountController == null) {
+      _overallDiscountCtrl.dispose();
+    }
+    _paidCtrl.dispose();
+    super.dispose();
+  }
+
+  void _showProductDiscountDialog(BuildContext context, CartItemEntity cartItem) {
+    final discCtrl = TextEditingController(
+      text: cartItem.discount > 0 ? cartItem.discount.toStringAsFixed(0) : '',
+    );
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Product Discount for ${cartItem.item.name}',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Unit Price: ৳${cartItem.item.retailSellPrice.toStringAsFixed(2)} | Qty: ${cartItem.quantity}',
+              style: const TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: discCtrl,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Item Discount Amount (৳)',
+                hintText: 'Enter discount in ৳',
+                prefixText: '৳ ',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final newDisc = double.tryParse(discCtrl.text) ?? 0.0;
+              InjectionContainer.posBloc.add(UpdateCartItemDiscountEvent(
+                itemId: cartItem.item.id,
+                discount: newDisc,
+              ));
+              Navigator.pop(ctx);
+              setState(() {
+                _updateDefaultPaidAmount();
+              });
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -70,13 +160,21 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
     final colorScheme = theme.colorScheme;
 
     final cartItemsList = widget.cartItems ?? [];
-    final calcSubtotal = widget.subtotal ?? cartItemsList.fold(0.0, (sum, i) => sum! + i.totalPrice);
-    final disc = double.tryParse(_discountCtrl.text) ?? widget.discount ?? 0.0;
-    final calcTotal = (calcSubtotal! - disc).clamp(0.0, double.infinity);
+    final double rawSubtotal = cartItemsList.fold<double>(0.0, (sum, i) => sum + i.rawSubtotal);
+    final double productDiscounts = cartItemsList.fold<double>(0.0, (sum, i) => sum + i.discount);
+    final double subtotalAfterItemDiscounts = (rawSubtotal - productDiscounts).clamp(0.0, double.infinity);
+
+    final overallDisc = double.tryParse(_overallDiscountCtrl.text) ?? widget.discount ?? 0.0;
+    final calcNetTotal = (subtotalAfterItemDiscounts - overallDisc).clamp(0.0, double.infinity);
+    final totalDiscounts = productDiscounts + overallDisc;
+
     final itemCount = widget.cart?.values.fold<int>(0, (a, b) => a + b) ?? cartItemsList.fold<int>(0, (sum, i) => sum + i.quantity);
 
+    final paidAmountInput = double.tryParse(_paidCtrl.text) ?? 0.0;
+    final dueAmount = (calcNetTotal - paidAmountInput).clamp(0.0, double.infinity);
+
     return Container(
-      height: MediaQuery.sizeOf(context).height * 0.90,
+      height: MediaQuery.sizeOf(context).height * 0.92,
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
@@ -116,6 +214,59 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                 children: [
+                  // PRODUCT WISE ITEMS & DISCOUNTS
+                  if (cartItemsList.isNotEmpty) ...[
+                    const SectionTitle(title: 'Item Discounts'),
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5)),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: cartItemsList.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (context, idx) {
+                          final cItem = cartItemsList[idx];
+                          return ListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                            title: Text(
+                              cItem.item.name,
+                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                            ),
+                            subtitle: Text(
+                              'Qty: ${cItem.quantity} x ৳${cItem.item.retailSellPrice.toStringAsFixed(0)}'
+                              '${cItem.discount > 0 ? " | Item Disc: ৳${cItem.discount.toStringAsFixed(0)}" : ""}',
+                              style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '৳${cItem.totalPrice.toStringAsFixed(0)}',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                ),
+                                IconButton(
+                                  icon: Icon(
+                                    cItem.discount > 0 ? Icons.discount_rounded : Icons.discount_outlined,
+                                    size: 20,
+                                    color: cItem.discount > 0 ? colorScheme.primary : Colors.grey,
+                                  ),
+                                  onPressed: () => _showProductDiscountDialog(context, cItem),
+                                  tooltip: 'Item Discount',
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                  ],
+
+                  // PAYMENT METHOD SELECTOR
                   const SectionTitle(title: 'Payment Method'),
                   const SizedBox(height: 8),
                   Row(
@@ -126,7 +277,11 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                           icon: Icons.payments_outlined,
                           selected: _paymentMethod.toLowerCase() == 'cash',
                           onTap: () {
-                            setState(() => _paymentMethod = 'cash');
+                            setState(() {
+                              _paymentMethod = 'cash';
+                              _isPaidEdited = false;
+                              _updateDefaultPaidAmount();
+                            });
                             widget.onPaymentChanged?.call('cash');
                           },
                         ),
@@ -138,7 +293,11 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                           icon: Icons.account_balance_wallet_outlined,
                           selected: _paymentMethod.toLowerCase() == 'bkash' || _paymentMethod.toLowerCase() == 'card',
                           onTap: () {
-                            setState(() => _paymentMethod = 'bkash');
+                            setState(() {
+                              _paymentMethod = 'bkash';
+                              _isPaidEdited = false;
+                              _updateDefaultPaidAmount();
+                            });
                             widget.onPaymentChanged?.call('bkash');
                           },
                         ),
@@ -150,14 +309,65 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                           icon: Icons.money_off_rounded,
                           selected: _paymentMethod.toLowerCase() == 'due',
                           onTap: () {
-                            setState(() => _paymentMethod = 'due');
+                            setState(() {
+                              _paymentMethod = 'due';
+                              _isPaidEdited = false;
+                              _updateDefaultPaidAmount();
+                            });
                             widget.onPaymentChanged?.call('due');
                           },
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 18),
+
+                  // OVERALL DISCOUNT & PAID AMOUNT EDITING INPUTS
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _overallDiscountCtrl,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          onChanged: (_) {
+                            setState(() {
+                              _updateDefaultPaidAmount();
+                            });
+                          },
+                          decoration: InputDecoration(
+                            labelText: 'Overall Discount',
+                            hintText: '৳ 0',
+                            prefixIcon: const Icon(Icons.percent_rounded, size: 20),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: _paidCtrl,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          onChanged: (_) {
+                            setState(() {
+                              _isPaidEdited = true;
+                            });
+                          },
+                          decoration: InputDecoration(
+                            labelText: 'Paid Amount',
+                            hintText: '৳ 0',
+                            prefixIcon: const Icon(Icons.attach_money_rounded, size: 20),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  // SUMMARY BREAKDOWN BOX
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -168,22 +378,37 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                       children: [
                         SummaryRow(
                           title: 'Subtotal',
-                          value: '৳ ${calcSubtotal.toStringAsFixed(0)}',
+                          value: '৳ ${rawSubtotal.toStringAsFixed(0)}',
                         ),
-                        const SizedBox(height: 8),
-                        SummaryRow(
-                          title: 'Discount',
-                          value: '- ৳ ${disc.toStringAsFixed(0)}',
-                          valueColor: Colors.red,
-                        ),
+                        if (totalDiscounts > 0) ...[
+                          const SizedBox(height: 8),
+                          SummaryRow(
+                            title: 'Total Discount',
+                            value: '- ৳ ${totalDiscounts.toStringAsFixed(0)}',
+                            valueColor: Colors.red,
+                          ),
+                        ],
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 10),
                           child: Divider(),
                         ),
                         SummaryRow(
-                          title: 'Total',
-                          value: '৳ ${calcTotal.toStringAsFixed(0)}',
+                          title: 'Net Total',
+                          value: '৳ ${calcNetTotal.toStringAsFixed(0)}',
                           large: true,
+                        ),
+                        const SizedBox(height: 8),
+                        SummaryRow(
+                          title: 'Paid Amount',
+                          value: '৳ ${paidAmountInput.toStringAsFixed(0)}',
+                          valueColor: Colors.green[700],
+                        ),
+                        const SizedBox(height: 8),
+                        SummaryRow(
+                          title: 'Due Amount',
+                          value: '৳ ${dueAmount.toStringAsFixed(0)}',
+                          valueColor: dueAmount > 0 ? Colors.orange[800] : Colors.grey,
+                          large: dueAmount > 0,
                         ),
                       ],
                     ),
@@ -191,12 +416,15 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                 ],
               ),
             ),
+
+            // COMPLETE CHECKOUT ACTION BUTTON
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
               child: FilledButton(
                 onPressed: () {
+                  final finalPaid = double.tryParse(_paidCtrl.text) ?? paidAmountInput;
                   if (widget.onComplete != null) {
-                    widget.onComplete!(_paymentMethod, calcTotal);
+                    widget.onComplete!(_paymentMethod, finalPaid);
                   } else if (widget.onCheckout != null) {
                     widget.onCheckout!();
                   }
@@ -209,14 +437,14 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                 ),
                 child: Row(
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'Complete Checkout',
-                        style: TextStyle(fontWeight: FontWeight.w700),
+                        dueAmount > 0 ? 'Checkout with ৳${dueAmount.toStringAsFixed(0)} Due' : 'Complete Checkout',
+                        style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                     ),
                     Text(
-                      '৳ ${calcTotal.toStringAsFixed(0)}',
+                      '৳ ${calcNetTotal.toStringAsFixed(0)}',
                       style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
                     ),
                   ],
