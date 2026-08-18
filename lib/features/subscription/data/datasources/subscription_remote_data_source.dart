@@ -26,7 +26,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
     required double amount,
     required String targetTier,
   }) async {
-    developer.log('💳 [SubscriptionRemoteDataSource] submitPayment() method: $method, trxId: $transactionId, amount: $amount', name: 'SubscriptionRemoteDataSource');
+    developer.log('💳 [SubscriptionRemoteDataSource] Calling POST /api/subscription/pay with method="$method", transactionId="$transactionId", amount=$amount, targetTier="$targetTier"', name: 'SubscriptionRemoteDataSource');
     try {
       final response = await apiClient.post(
         '${EnvConfig.apiBaseUrl}/api/subscription/pay',
@@ -38,7 +38,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         },
       );
 
-      developer.log('✅ [SubscriptionRemoteDataSource] submitPayment() success.', name: 'SubscriptionRemoteDataSource');
+      developer.log('✅ [SubscriptionRemoteDataSource] Raw Response JSON: $response', name: 'SubscriptionRemoteDataSource');
       return PaymentModel.fromJson(response is Map<String, dynamic> ? response : {
         'id': DateTime.now().millisecondsSinceEpoch.toString(),
         'shopId': '1',
@@ -49,24 +49,24 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         'status': 'pending',
       });
     } catch (e, stackTrace) {
-      developer.log('❌ [SubscriptionRemoteDataSource] submitPayment() API Error: $e', name: 'SubscriptionRemoteDataSource', error: e, stackTrace: stackTrace);
+      developer.log('❌ [SubscriptionRemoteDataSource] submitPayment() Error Response: $e', name: 'SubscriptionRemoteDataSource', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }
 
   @override
   Future<List<PaymentModel>> getPaymentLogs() async {
-    developer.log('💳 [SubscriptionRemoteDataSource] getPaymentLogs() called...', name: 'SubscriptionRemoteDataSource');
+    developer.log('💳 [SubscriptionRemoteDataSource] Calling GET /api/subscription/payments...', name: 'SubscriptionRemoteDataSource');
     try {
       final response = await apiClient.get(
         '${EnvConfig.apiBaseUrl}/api/subscription/payments',
       );
 
+      developer.log('✅ [SubscriptionRemoteDataSource] Raw Response JSON: $response', name: 'SubscriptionRemoteDataSource');
       final List list = response is List ? response : (response['payments'] ?? response['data'] ?? []);
-      developer.log('✅ [SubscriptionRemoteDataSource] getPaymentLogs() success (${list.length} payments).', name: 'SubscriptionRemoteDataSource');
       return list.map((json) => PaymentModel.fromJson(json)).toList();
     } catch (e, stackTrace) {
-      developer.log('❌ [SubscriptionRemoteDataSource] getPaymentLogs() API Error: $e', name: 'SubscriptionRemoteDataSource', error: e, stackTrace: stackTrace);
+      developer.log('❌ [SubscriptionRemoteDataSource] getPaymentLogs() Error Response: $e', name: 'SubscriptionRemoteDataSource', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }

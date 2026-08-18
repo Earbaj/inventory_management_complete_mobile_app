@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/payment_entity.dart';
 import '../../domain/repositories/subscription_repository.dart';
@@ -16,6 +17,7 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
     required double amount,
     required String targetTier,
   }) async {
+    developer.log('🏛️ [SubscriptionRepository] Processing submitPayment for method: $method, trxId: $transactionId', name: 'SubscriptionRepository');
     try {
       final model = await remoteDataSource.submitPayment(
         method: method,
@@ -23,19 +25,26 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
         amount: amount,
         targetTier: targetTier,
       );
-      return SubscriptionMapper.paymentModelToEntity(model);
-    } catch (e) {
+      final entity = SubscriptionMapper.paymentModelToEntity(model);
+      developer.log('✅ [SubscriptionRepository] Mapped PaymentEntity: ID=${entity.id}, Status=${entity.status}', name: 'SubscriptionRepository');
+      return entity;
+    } catch (e, stackTrace) {
+      developer.log('❌ [SubscriptionRepository] submitPayment Error: $e', name: 'SubscriptionRepository', error: e, stackTrace: stackTrace);
       if (e is Failure) rethrow;
-      throw NetworkFailure('Failed to submit subscription payment. Please check your connection.');
+      throw NetworkFailure('Failed to submit subscription payment. Details: ${e.toString()}');
     }
   }
 
   @override
   Future<List<PaymentEntity>> getPaymentLogs() async {
+    developer.log('🏛️ [SubscriptionRepository] Fetching payment logs...', name: 'SubscriptionRepository');
     try {
       final models = await remoteDataSource.getPaymentLogs();
-      return models.map(SubscriptionMapper.paymentModelToEntity).toList();
-    } catch (_) {
+      final entities = models.map(SubscriptionMapper.paymentModelToEntity).toList();
+      developer.log('✅ [SubscriptionRepository] Successfully fetched ${entities.length} payment log entities.', name: 'SubscriptionRepository');
+      return entities;
+    } catch (e, stackTrace) {
+      developer.log('❌ [SubscriptionRepository] getPaymentLogs Error: $e', name: 'SubscriptionRepository', error: e, stackTrace: stackTrace);
       return [];
     }
   }

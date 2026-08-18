@@ -16,29 +16,29 @@ class SuperAdminRemoteDataSourceImpl implements SuperAdminRemoteDataSource {
 
   @override
   Future<List<PaymentModel>> getPendingPayments() async {
-    developer.log('👑 [SuperAdminRemoteDataSource] getPendingPayments() called...', name: 'SuperAdminRemoteDataSource');
+    developer.log('👑 [SuperAdminRemoteDataSource] Calling GET /api/admin/payments...', name: 'SuperAdminRemoteDataSource');
     try {
       final response = await apiClient.get(
         '${EnvConfig.apiBaseUrl}/api/admin/payments',
       );
 
+      developer.log('✅ [SuperAdminRemoteDataSource] Raw Response JSON: $response', name: 'SuperAdminRemoteDataSource');
       final List list = response is List ? response : (response['payments'] ?? response['data'] ?? []);
-      developer.log('✅ [SuperAdminRemoteDataSource] getPendingPayments() success (${list.length} payments).', name: 'SuperAdminRemoteDataSource');
       return list.map((json) => PaymentModel.fromJson(json)).toList();
     } catch (e, stackTrace) {
-      developer.log('❌ [SuperAdminRemoteDataSource] getPendingPayments() API Error: $e', name: 'SuperAdminRemoteDataSource', error: e, stackTrace: stackTrace);
+      developer.log('❌ [SuperAdminRemoteDataSource] getPendingPayments() Error: $e', name: 'SuperAdminRemoteDataSource', error: e, stackTrace: stackTrace);
       return [];
     }
   }
 
   @override
   Future<void> approvePayment(String paymentId) async {
-    developer.log('👑 [SuperAdminRemoteDataSource] approvePayment() for ID: $paymentId', name: 'SuperAdminRemoteDataSource');
+    developer.log('👑 [SuperAdminRemoteDataSource] Calling POST /api/admin/payments/$paymentId/approve...', name: 'SuperAdminRemoteDataSource');
     try {
-      await apiClient.post(
+      final response = await apiClient.post(
         '${EnvConfig.apiBaseUrl}/api/admin/payments/$paymentId/approve',
       );
-      developer.log('✅ [SuperAdminRemoteDataSource] Payment $paymentId approved!', name: 'SuperAdminRemoteDataSource');
+      developer.log('✅ [SuperAdminRemoteDataSource] Payment $paymentId approved! Response: $response', name: 'SuperAdminRemoteDataSource');
     } catch (e, stackTrace) {
       developer.log('❌ [SuperAdminRemoteDataSource] approvePayment() Error: $e', name: 'SuperAdminRemoteDataSource', error: e, stackTrace: stackTrace);
       rethrow;
@@ -47,12 +47,12 @@ class SuperAdminRemoteDataSourceImpl implements SuperAdminRemoteDataSource {
 
   @override
   Future<void> rejectPayment(String paymentId) async {
-    developer.log('👑 [SuperAdminRemoteDataSource] rejectPayment() for ID: $paymentId', name: 'SuperAdminRemoteDataSource');
+    developer.log('👑 [SuperAdminRemoteDataSource] Calling POST /api/admin/payments/$paymentId/reject...', name: 'SuperAdminRemoteDataSource');
     try {
-      await apiClient.post(
+      final response = await apiClient.post(
         '${EnvConfig.apiBaseUrl}/api/admin/payments/$paymentId/reject',
       );
-      developer.log('✅ [SuperAdminRemoteDataSource] Payment $paymentId rejected!', name: 'SuperAdminRemoteDataSource');
+      developer.log('✅ [SuperAdminRemoteDataSource] Payment $paymentId rejected! Response: $response', name: 'SuperAdminRemoteDataSource');
     } catch (e, stackTrace) {
       developer.log('❌ [SuperAdminRemoteDataSource] rejectPayment() Error: $e', name: 'SuperAdminRemoteDataSource', error: e, stackTrace: stackTrace);
       rethrow;
