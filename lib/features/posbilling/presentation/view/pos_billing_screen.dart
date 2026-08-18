@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
+import '../../../../core/services/barcode_scanner_service.dart';
 import '../../../customers/domain/entities/customer_entity.dart';
 import '../../../customers/presentation/bloc/customer_event.dart';
 import '../../../customers/presentation/bloc/customer_state.dart';
@@ -84,15 +85,43 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
               decoration: InputDecoration(
                 hintText: 'Search product name or SKU',
                 prefixIcon: const Icon(Icons.search_rounded),
-                suffixIcon: searchController.text.isNotEmpty
-                    ? IconButton(
+                suffixIcon: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (searchController.text.isNotEmpty)
+                      IconButton(
                         onPressed: () {
                           searchController.clear();
                           setState(() {});
                         },
                         icon: const Icon(Icons.close_rounded),
-                      )
-                    : null,
+                      ),
+                    IconButton(
+                      tooltip: 'Scan Barcode with Camera',
+                      onPressed: () async {
+                        final scannedCode = await BarcodeScannerService.scanBarcode(context);
+                        if (scannedCode != null && scannedCode.isNotEmpty) {
+                          searchController.text = scannedCode;
+                          setState(() {});
+
+                          final invState = InjectionContainer.inventoryBloc.state;
+                          if (invState is InventoryLoadedState) {
+                            final matchingItem = invState.items.firstWhere(
+                              (item) => item.sku.toLowerCase() == scannedCode.toLowerCase() || item.name.toLowerCase() == scannedCode.toLowerCase(),
+                              orElse: () => invState.items.first,
+                            );
+
+                            InjectionContainer.posBloc.add(AddToCartEvent(matchingItem));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Scanned & Added "${matchingItem.name}" to Cart!'), backgroundColor: Colors.green.shade700),
+                            );
+                          }
+                        }
+                      },
+                      icon: const Icon(Icons.qr_code_scanner_rounded, color: Colors.cyan),
+                    ),
+                  ],
+                ),
                 filled: true,
                 fillColor: colorScheme.surfaceContainerHighest,
                 border: OutlineInputBorder(

@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/services/barcode_scanner_service.dart';
 import '../../inventory_item.dart';
 import 'iinventory_add_item_sub_widget.dart';
 
@@ -275,14 +276,19 @@ class _AddItemSheetState
                       textInputAction:
                       TextInputAction.next,
 
-                      decoration:
-                      const InputDecoration(
-                        labelText:
-                        'SKU / Barcode',
-                        hintText:
-                        'e.g. WM-001',
-                        prefixIcon: Icon(
-                          Icons.qr_code_2_rounded,
+                      decoration: InputDecoration(
+                        labelText: 'SKU / Barcode',
+                        hintText: 'e.g. WM-001',
+                        prefixIcon: const Icon(Icons.qr_code_2_rounded),
+                        suffixIcon: IconButton(
+                          tooltip: 'Scan Barcode with Camera',
+                          onPressed: () async {
+                            final code = await BarcodeScannerService.scanBarcode(context);
+                            if (code != null && code.isNotEmpty) {
+                              skuController.text = code;
+                            }
+                          },
+                          icon: const Icon(Icons.qr_code_scanner_rounded, color: Colors.cyan),
                         ),
                       ),
 
