@@ -597,7 +597,7 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
       builder: (context, snapshot) {
         final state = snapshot.data;
 
-        if (state is ReturnsLoadingState && state is! ReturnsLoadedState) {
+        if (state is ReturnsLoadingState) {
           return const Center(child: CircularProgressIndicator());
         }
 

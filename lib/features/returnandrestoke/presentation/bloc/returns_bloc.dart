@@ -49,16 +49,14 @@ class ReturnsBloc {
   Future<void> _onFetchReturnLogs(FetchReturnLogsEvent event) async {
     _currentSearchQuery = event.searchQuery ?? _currentSearchQuery;
 
-    if (_allReturnLogs.isEmpty) {
-      _emit(const ReturnsLoadingState());
-    }
+    _emit(const ReturnsLoadingState());
 
     try {
       _allReturnLogs = await getReturnLogsUseCase();
-      _emitLoadedState();
     } catch (e) {
-      _emit(ReturnsErrorState(e.toString()));
+      _allReturnLogs = [];
     }
+    _emitLoadedState();
   }
 
   Future<void> _onProcessReturn(ProcessReturnItemEvent event) async {

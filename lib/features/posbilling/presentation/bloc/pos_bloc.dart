@@ -136,7 +136,9 @@ class PosBloc {
     try {
       final generatedInvoiceNo = 'INV-${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
       final netTotal = currentState.netTotal;
-      final paidAmount = event.paidAmount.clamp(0.0, netTotal);
+      final paidAmount = event.paymentMethod.toLowerCase() == 'due'
+          ? 0.0
+          : event.paidAmount.clamp(0.0, netTotal);
       final dueAmount = (netTotal - paidAmount).clamp(0.0, double.infinity);
 
       final saleToSubmit = SaleEntity(

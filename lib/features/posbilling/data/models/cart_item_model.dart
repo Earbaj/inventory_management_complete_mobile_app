@@ -38,6 +38,16 @@ class CartItemModel {
     );
   }
 
+  Map<String, dynamic> toApiJson() {
+    return {
+      'itemId': item.id,
+      'quantity': quantity,
+      'unitPrice': item.retailSellPrice,
+      'discount': 0.0,
+      'discountType': 'amount',
+    };
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'itemId': item.id,

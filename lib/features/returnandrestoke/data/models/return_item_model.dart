@@ -28,36 +28,50 @@ class ReturnItemModel {
     this.createdAt,
   });
 
+  static double _parseDouble(dynamic val) {
+    if (val == null) return 0.0;
+    if (val is num) return val.toDouble();
+    if (val is String) return double.tryParse(val) ?? 0.0;
+    return 0.0;
+  }
+
+  static int _parseInt(dynamic val) {
+    if (val == null) return 0;
+    if (val is num) return val.toInt();
+    if (val is String) return int.tryParse(val) ?? 0;
+    return 0;
+  }
+
   factory ReturnItemModel.fromJson(Map<String, dynamic> json) {
     return ReturnItemModel(
       id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
-      invoiceNo: json['invoiceNo'] ?? json['invoice_no'] ?? '',
-      itemId: json['itemId'] ?? json['item_id'] ?? '',
-      itemName: json['itemName'] ?? json['item_name'] ?? '',
-      customerName: json['customerName'] ?? json['customer_name'],
-      returnQuantity: (json['returnQuantity'] ?? json['quantity'] ?? 1) as int,
-      unitPrice: (json['unitPrice'] ?? json['unit_price'] ?? 0.0).toDouble(),
-      totalRefundAmount: (json['totalRefundAmount'] ?? json['refund_amount'] ?? 0.0).toDouble(),
-      refundMethod: json['refundMethod'] ?? json['refund_method'] ?? 'cash',
-      isRestocked: json['isRestocked'] ?? json['is_restocked'] ?? true,
-      reason: json['reason'],
-      createdAt: json['createdAt'] ?? json['created_at'],
+      invoiceNo: json['invoiceNo']?.toString() ?? json['invoice_no']?.toString() ?? json['invoiceNumber']?.toString() ?? '',
+      itemId: json['itemId']?.toString() ?? json['item_id']?.toString() ?? '',
+      itemName: json['itemName']?.toString() ?? json['item_name']?.toString() ?? json['name']?.toString() ?? '',
+      customerName: json['customerName']?.toString() ?? json['customer_name']?.toString(),
+      returnQuantity: _parseInt(json['returnQuantity'] ?? json['quantity'] ?? json['qty'] ?? 1),
+      unitPrice: _parseDouble(json['unitPrice'] ?? json['unit_price'] ?? json['price']),
+      totalRefundAmount: _parseDouble(json['totalRefundAmount'] ?? json['refund_amount'] ?? json['totalPrice']),
+      refundMethod: json['refundMethod']?.toString() ?? json['refund_method']?.toString() ?? 'cash',
+      isRestocked: json['isRestocked'] == true || json['is_restocked'] == true,
+      reason: json['reason']?.toString(),
+      createdAt: json['createdAt']?.toString() ?? json['created_at']?.toString() ?? json['date']?.toString(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      if (id.isNotEmpty) 'id': id,
       'invoiceNo': invoiceNo,
       'itemId': itemId,
       'itemName': itemName,
-      if (customerName != null) 'customerName': customerName,
+      if (customerName != null && customerName!.isNotEmpty) 'customerName': customerName,
       'returnQuantity': returnQuantity,
       'unitPrice': unitPrice,
       'totalRefundAmount': totalRefundAmount,
       'refundMethod': refundMethod,
       'isRestocked': isRestocked,
-      if (reason != null) 'reason': reason,
+      if (reason != null && reason!.isNotEmpty) 'reason': reason,
       if (createdAt != null) 'createdAt': createdAt,
     };
   }

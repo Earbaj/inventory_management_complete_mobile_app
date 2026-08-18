@@ -73,21 +73,23 @@ class SaleModel {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'invoiceNo': invoiceNo,
-      if (customer != null) 'customerId': customer!.id,
-      if (customer != null) 'customerName': customer!.name,
-      if (customer != null) 'customer': customer!.toJson(),
-      'items': items.map((e) => e.toJson()).toList(),
-      'subtotal': subtotal,
-      'discountAmount': discountAmount,
-      'vatAmount': vatAmount,
-      'netTotal': netTotal,
+    final Map<String, dynamic> map = {
+      'items': items.map((e) => e.toApiJson()).toList(),
+      'discount': discountAmount,
       'paidAmount': paidAmount,
-      'dueAmount': dueAmount,
       'paymentMethod': paymentMethod,
-      if (createdAt != null) 'createdAt': createdAt,
     };
+
+    if (customer != null && customer!.id.isNotEmpty) {
+      map['customerId'] = customer!.id;
+      map['customerName'] = customer!.name;
+      map['customerPhone'] = customer!.phone;
+    }
+
+    if (invoiceNo.isNotEmpty) {
+      map['invoiceNo'] = invoiceNo;
+    }
+
+    return map;
   }
 }

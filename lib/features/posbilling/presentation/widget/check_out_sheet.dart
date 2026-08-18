@@ -344,7 +344,8 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                               onTap: () {
                                 setState(() {
                                   _paymentMethod = 'due';
-                                  _isPaidEdited = false;
+                                  _paidCtrl.text = '0';
+                                  _isPaidEdited = true;
                                 });
                                 widget.onPaymentChanged?.call('due');
                               },
@@ -378,6 +379,7 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                             child: TextField(
                               controller: _paidCtrl,
                               keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              enabled: _paymentMethod.toLowerCase() != 'due',
                               onChanged: (_) {
                                 setState(() {
                                   _isPaidEdited = true;
@@ -452,7 +454,13 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
                   child: FilledButton(
                     onPressed: () {
-                      final finalPaid = double.tryParse(_paidCtrl.text) ?? paidAmountInput;
+                      final double finalPaid;
+                      if (_paymentMethod.toLowerCase() == 'due') {
+                        finalPaid = 0.0;
+                      } else {
+                        finalPaid = double.tryParse(_paidCtrl.text) ?? calcNetTotal;
+                      }
+
                       if (widget.onComplete != null) {
                         widget.onComplete!(_paymentMethod, finalPaid);
                       } else if (widget.onCheckout != null) {
