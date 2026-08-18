@@ -93,4 +93,17 @@ class ApiEndpoints {
 
   /// Helper for updating staff permissions (PATCH /api/staff/:id/permissions) - Admin Only
   static String staffPermissions(String id) => '$baseUrl/api/staff/$id/permissions';
+
+  // ===========================================================================
+  // RECYCLE BIN & DATA RECOVERY ENDPOINTS
+  // ===========================================================================
+
+  /// List all soft-deleted items (GET /api/trash) - Authenticated
+  static String get trash => '$baseUrl/api/trash';
+
+  /// Restore soft-deleted item (POST /api/trash/restore/:entityType/:id) - Authenticated
+  static String trashRestore(String entityType, String id) => '$baseUrl/api/trash/restore/$entityType/$id';
+
+  /// Permanently hard-delete item (DELETE /api/trash/permanent/:entityType/:id) - Shop Admin Only
+  static String trashPermanent(String entityType, String id) => '$baseUrl/api/trash/permanent/$entityType/$id';
 }

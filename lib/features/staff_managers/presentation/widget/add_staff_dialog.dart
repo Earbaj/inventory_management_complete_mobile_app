@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/error/failures.dart';
 import '../../domain/entities/staff_entity.dart';
 import '../../staff_manager_model.dart';
 import '../bloc/staff_event.dart';
@@ -26,6 +27,7 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
 
   StaffRole _selectedRole = StaffRole.manager;
   bool _obscurePassword = true;
+  bool isSaving = false;
 
   @override
   void dispose() {
@@ -37,38 +39,47 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
     super.dispose();
   }
 
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      final roleStr = switch (_selectedRole) {
-        StaffRole.seniorManager => 'admin',
-        StaffRole.manager => 'manager',
-        StaffRole.cashier => 'cashier',
-        StaffRole.inventoryStaff => 'staff',
-      };
+  Future<void> _submitForm() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
-      final newStaffEntity = StaffEntity(
-        id: '',
-        name: _nameController.text.trim(),
-        email: _emailController.text.trim(),
-        phone: _phoneController.text.trim(),
-        password: _passwordController.text.trim(),
-        role: roleStr,
-        isActive: true,
-        createdAt: DateTime.now(),
-      );
+    setState(() {
+      isSaving = true;
+    });
 
-      InjectionContainer.staffBloc.add(AddStaffEvent(newStaffEntity));
+    final roleStr = switch (_selectedRole) {
+      StaffRole.seniorManager => 'admin',
+      StaffRole.manager => 'manager',
+      StaffRole.cashier => 'cashier',
+      StaffRole.inventoryStaff => 'staff',
+    };
+
+    final newStaffEntity = StaffEntity(
+      id: '',
+      name: _nameController.text.trim(),
+      email: _emailController.text.trim(),
+      phone: _phoneController.text.trim(),
+      password: _passwordController.text.trim(),
+      role: roleStr,
+      isActive: true,
+      createdAt: DateTime.now(),
+    );
+
+    try {
+      final savedStaff = await InjectionContainer.addStaffMemberUseCase(newStaffEntity);
+      InjectionContainer.staffBloc.add(AddStaffEvent(savedStaff));
 
       if (widget.onAdd != null) {
         widget.onAdd!(
           StaffMember(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
-            name: _nameController.text.trim(),
-            email: _emailController.text.trim(),
-            phone: _phoneController.text.trim(),
+            id: savedStaff.id,
+            name: savedStaff.name,
+            email: savedStaff.email,
+            phone: savedStaff.phone,
             role: _selectedRole,
             status: StaffStatus.active,
-            joinedDate: DateTime.now(),
+            joinedDate: savedStaff.createdAt,
             assignedBranch: _branchController.text.trim().isEmpty
                 ? 'Main Branch'
                 : _branchController.text.trim(),
@@ -77,8 +88,97 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
         );
       }
 
-      Navigator.pop(context, true);
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          isSaving = false;
+        });
+
+        final rawMsg = e is Failure ? e.message : e.toString();
+        final cleanMsg = rawMsg
+            .replaceAll('Exception: ', '')
+            .replaceAll('ServerFailure: ', '')
+            .replaceAll('NetworkFailure: ', '');
+
+        final isFreeTierLimit = cleanMsg.toLowerCase().contains('free tier') ||
+            cleanMsg.toLowerCase().contains('limited to 1') ||
+            cleanMsg.toLowerCase().contains('upgrade');
+
+        if (isFreeTierLimit) {
+          _showFreeTierLimitDialog(context, cleanMsg);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.error_outline_rounded, color: Colors.white),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(cleanMsg)),
+                ],
+              ),
+              backgroundColor: Colors.red.shade700,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          );
+        }
+      }
     }
+  }
+
+  void _showFreeTierLimitDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade100,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.workspace_premium_rounded, color: Colors.amber, size: 28),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Manager Limit Reached',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            message,
+            style: const TextStyle(fontSize: 14, height: 1.4),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Close'),
+            ),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              icon: const Icon(Icons.star_rounded, color: Colors.amber),
+              label: const Text('Upgrade Plan'),
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -119,7 +219,7 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
                       ),
                     ),
                     IconButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: isSaving ? null : () => Navigator.pop(context),
                       icon: const Icon(Icons.close_rounded, color: Colors.white),
                     ),
                   ],
@@ -265,14 +365,20 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           OutlinedButton(
-                            onPressed: () => Navigator.pop(context),
+                            onPressed: isSaving ? null : () => Navigator.pop(context),
                             child: const Text('Cancel'),
                           ),
                           const SizedBox(width: 12),
                           FilledButton.icon(
-                            onPressed: _submitForm,
-                            icon: const Icon(Icons.check_rounded),
-                            label: const Text('Save Staff'),
+                            onPressed: isSaving ? null : _submitForm,
+                            icon: isSaving
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                  )
+                                : const Icon(Icons.check_rounded),
+                            label: Text(isSaving ? 'Saving...' : 'Save Staff'),
                           ),
                         ],
                       ),

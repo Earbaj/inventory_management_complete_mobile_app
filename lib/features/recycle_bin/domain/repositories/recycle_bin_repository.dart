@@ -1,0 +1,24 @@
+import '../entities/trash_item_entity.dart';
+
+/// Repository interface contract for Recycle Bin & Data Recovery operations.
+abstract class RecycleBinRepository {
+  /// Fetches soft-deleted items (GET /api/trash).
+  Future<List<TrashItemEntity>> getTrashItems({
+    String? entityType,
+    String? search,
+    int page = 1,
+    int limit = 20,
+  });
+
+  /// Restores soft-deleted item back to active database list (POST /api/trash/restore/:entityType/:id).
+  Future<void> restoreItem({
+    required String entityType,
+    required String id,
+  });
+
+  /// Permanently hard-deletes record from MongoDB (DELETE /api/trash/permanent/:entityType/:id).
+  Future<void> permanentDeleteItem({
+    required String entityType,
+    required String id,
+  });
+}

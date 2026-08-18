@@ -34,6 +34,13 @@ import '../../features/posbilling/domain/repositories/pos_repository.dart';
 import '../../features/posbilling/domain/usecases/create_sale_usecase.dart';
 import '../../features/posbilling/domain/usecases/get_sales_logs_usecase.dart';
 import '../../features/posbilling/presentation/bloc/pos_bloc.dart';
+import '../../features/recycle_bin/data/datasources/recycle_bin_remote_data_source.dart';
+import '../../features/recycle_bin/data/repositories/recycle_bin_repository_impl.dart';
+import '../../features/recycle_bin/domain/repositories/recycle_bin_repository.dart';
+import '../../features/recycle_bin/domain/usecases/get_trash_items_usecase.dart';
+import '../../features/recycle_bin/domain/usecases/permanent_delete_trash_item_usecase.dart';
+import '../../features/recycle_bin/domain/usecases/restore_trash_item_usecase.dart';
+import '../../features/recycle_bin/presentation/bloc/recycle_bin_bloc.dart';
 import '../../features/reports/data/datasources/reports_local_data_source.dart';
 import '../../features/reports/data/datasources/reports_remote_data_source.dart';
 import '../../features/reports/data/repositories/reports_repository_impl.dart';
@@ -104,6 +111,7 @@ class InjectionContainer {
   static late final StaffRemoteDataSource staffRemoteDataSource;
   static late final SubscriptionRemoteDataSource subscriptionRemoteDataSource;
   static late final SuperAdminRemoteDataSource superAdminRemoteDataSource;
+  static late final RecycleBinRemoteDataSource recycleBinRemoteDataSource;
 
   // Repositories
   static late final AuthRepository authRepository;
@@ -115,6 +123,7 @@ class InjectionContainer {
   static late final SettingsRepository settingsRepository;
   static late final StaffRepository staffRepository;
   static late final SubscriptionRepository subscriptionRepository;
+  static late final RecycleBinRepository recycleBinRepository;
 
   // Use Cases
   static late final LoginUseCase loginUseCase;
@@ -154,6 +163,10 @@ class InjectionContainer {
 
   static late final SubmitPaymentUseCase submitPaymentUseCase;
 
+  static late final GetTrashItemsUseCase getTrashItemsUseCase;
+  static late final RestoreTrashItemUseCase restoreTrashItemUseCase;
+  static late final PermanentDeleteTrashItemUseCase permanentDeleteTrashItemUseCase;
+
   // BLoC State Controllers
   static late final AuthBloc authBloc;
   static late final InventoryBloc inventoryBloc;
@@ -165,6 +178,7 @@ class InjectionContainer {
   static late final StaffBloc staffBloc;
   static late final SubscriptionBloc subscriptionBloc;
   static late final SuperAdminBloc superAdminBloc;
+  static late final RecycleBinBloc recycleBinBloc;
 
   /// Initializes all singletons and dependencies.
   static Future<void> init() async {
@@ -198,6 +212,7 @@ class InjectionContainer {
 
     subscriptionRemoteDataSource = SubscriptionRemoteDataSourceImpl(apiClient);
     superAdminRemoteDataSource = SuperAdminRemoteDataSourceImpl(apiClient);
+    recycleBinRemoteDataSource = RecycleBinRemoteDataSourceImpl(apiClient);
 
     // 3. Repositories
     authRepository = AuthRepositoryImpl(
@@ -246,6 +261,10 @@ class InjectionContainer {
       remoteDataSource: subscriptionRemoteDataSource,
     );
 
+    recycleBinRepository = RecycleBinRepositoryImpl(
+      remoteDataSource: recycleBinRemoteDataSource,
+    );
+
     // UseCases
     loginUseCase = LoginUseCase(authRepository);
     registerUseCase = RegisterUseCase(authRepository);
@@ -283,6 +302,10 @@ class InjectionContainer {
     deleteStaffMemberUseCase = DeleteStaffMemberUseCase(staffRepository);
 
     submitPaymentUseCase = SubmitPaymentUseCase(subscriptionRepository);
+
+    getTrashItemsUseCase = GetTrashItemsUseCase(recycleBinRepository);
+    restoreTrashItemUseCase = RestoreTrashItemUseCase(recycleBinRepository);
+    permanentDeleteTrashItemUseCase = PermanentDeleteTrashItemUseCase(recycleBinRepository);
 
     // 4. BLoC State Management Instances
     authBloc = AuthBloc(
@@ -344,6 +367,12 @@ class InjectionContainer {
 
     superAdminBloc = SuperAdminBloc(
       remoteDataSource: superAdminRemoteDataSource,
+    );
+
+    recycleBinBloc = RecycleBinBloc(
+      getTrashItemsUseCase: getTrashItemsUseCase,
+      restoreTrashItemUseCase: restoreTrashItemUseCase,
+      permanentDeleteTrashItemUseCase: permanentDeleteTrashItemUseCase,
     );
   }
 }

@@ -243,6 +243,13 @@ class AppDrawer extends StatelessWidget {
                         currentRoute: currentRoute,
                       ),
                       _DrawerItem(
+                        title: 'Recycle Bin ♻️',
+                        icon: Icons.delete_sweep_outlined,
+                        activeIcon: Icons.delete_sweep_rounded,
+                        route: '/recycle-bin',
+                        currentRoute: currentRoute,
+                      ),
+                      _DrawerItem(
                         title: 'Settings',
                         icon: Icons.settings_outlined,
                         activeIcon: Icons.settings_rounded,

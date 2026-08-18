@@ -74,8 +74,8 @@ class StaffRemoteDataSourceImpl implements StaffRemoteDataSource {
 
       developer.log('✅ [StaffRemoteDataSource] addStaffMember() success.', name: 'StaffRemoteDataSource');
       return StaffModel.fromJson(response is Map<String, dynamic> ? response : staffModel.toJson());
-    } catch (e, stackTrace) {
-      developer.log('❌ [StaffRemoteDataSource] addStaffMember() API Error: $e', name: 'StaffRemoteDataSource', error: e, stackTrace: stackTrace);
+    } catch (e) {
+      developer.log('⚠️ [StaffRemoteDataSource] addStaffMember() API Error: $e', name: 'StaffRemoteDataSource');
       rethrow;
     }
   }

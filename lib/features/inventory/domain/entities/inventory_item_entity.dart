@@ -34,6 +34,12 @@ class InventoryItemEntity {
   /// Computed property: true if stock quantity is 0 or less.
   bool get isOutOfStock => stockQuantity <= 0;
 
+  /// Alias getter for selling price.
+  double get sellPrice => retailSellPrice;
+
+  /// Alias getter for purchase/buying price.
+  double get buyPrice => purchasePrice;
+
   /// Creates a modified copy of [InventoryItemEntity].
   InventoryItemEntity copyWith({
     String? id,

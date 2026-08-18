@@ -69,8 +69,15 @@ class StaffBloc {
 
   Future<void> _onAddStaff(AddStaffEvent event) async {
     try {
-      final newStaff = await addStaffMemberUseCase(event.staff);
-      _allStaffMembers.insert(0, newStaff);
+      final staff = event.staff;
+      final savedStaff = staff.id.isNotEmpty ? staff : await addStaffMemberUseCase(staff);
+      final exists = _allStaffMembers.any((s) => (s.id.isNotEmpty && s.id == savedStaff.id) || (s.email.isNotEmpty && s.email == savedStaff.email));
+      if (!exists) {
+        _allStaffMembers.insert(0, savedStaff);
+      } else {
+        final index = _allStaffMembers.indexWhere((s) => s.id == savedStaff.id);
+        if (index != -1) _allStaffMembers[index] = savedStaff;
+      }
       _emit(const StaffOperationSuccessState('Staff member added successfully!'));
       _emitLoadedState();
     } catch (e) {

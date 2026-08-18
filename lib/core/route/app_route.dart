@@ -10,6 +10,7 @@ import '../../features/dashboard/presentation/view/dashboard_screen.dart';
 import '../../features/inventory/presentation/view/inventory_screen.dart';
 import '../../features/posbilling/presentation/view/pos_billing_screen.dart';
 import '../../features/returnandrestoke/presentation/view/returns_screen.dart';
+import '../../features/recycle_bin/presentation/view/recycle_bin_screen.dart';
 import '../../features/reports/presentation/view/reports_screen.dart';
 import '../../features/settings/presentation/view/settings_screen.dart';
 import '../../features/staff_managers/presentation/view/staff_managers_screen.dart';
@@ -123,6 +124,13 @@ class AppRoute {
             path: '/staff-managers',
             builder: (context, state) {
               return const StaffManagersScreen();
+            },
+          ),
+
+          GoRoute(
+            path: '/recycle-bin',
+            builder: (context, state) {
+              return const RecycleBinScreen();
             },
           ),
 
