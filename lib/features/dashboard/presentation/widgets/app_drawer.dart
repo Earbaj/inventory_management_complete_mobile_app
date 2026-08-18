@@ -243,9 +243,16 @@ class AppDrawer extends StatelessWidget {
                   _DrawerItem(
                     title: 'Settings',
                     icon: Icons.settings_outlined,
-                    activeIcon:
-                    Icons.settings_rounded,
+                    activeIcon: Icons.settings_rounded,
                     route: '/settings',
+                    currentRoute: currentRoute,
+                  ),
+
+                  _DrawerItem(
+                    title: 'Super Admin Portal 👑',
+                    icon: Icons.admin_panel_settings_outlined,
+                    activeIcon: Icons.admin_panel_settings_rounded,
+                    route: '/super-admin',
                     currentRoute: currentRoute,
                   ),
                 ],

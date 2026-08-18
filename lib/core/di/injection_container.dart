@@ -67,6 +67,15 @@ import '../../features/staff_managers/domain/usecases/delete_staff_member_usecas
 import '../../features/staff_managers/domain/usecases/get_staff_members_usecase.dart';
 import '../../features/staff_managers/domain/usecases/update_staff_member_usecase.dart';
 import '../../features/staff_managers/presentation/bloc/staff_bloc.dart';
+
+import '../../features/subscription/data/datasources/subscription_remote_data_source.dart';
+import '../../features/subscription/data/repositories/subscription_repository_impl.dart';
+import '../../features/subscription/domain/repositories/subscription_repository.dart';
+import '../../features/subscription/domain/usecases/submit_payment_usecase.dart';
+import '../../features/subscription/presentation/bloc/subscription_bloc.dart';
+
+import '../../features/super_admin/data/datasources/super_admin_remote_data_source.dart';
+import '../../features/super_admin/presentation/bloc/super_admin_bloc.dart';
 import '../network/api_client.dart';
 
 /// Service Locator / Dependency Injection Container
@@ -93,6 +102,8 @@ class InjectionContainer {
   static late final SettingsRemoteDataSource settingsRemoteDataSource;
   static late final StaffLocalDataSource staffLocalDataSource;
   static late final StaffRemoteDataSource staffRemoteDataSource;
+  static late final SubscriptionRemoteDataSource subscriptionRemoteDataSource;
+  static late final SuperAdminRemoteDataSource superAdminRemoteDataSource;
 
   // Repositories
   static late final AuthRepository authRepository;
@@ -103,8 +114,9 @@ class InjectionContainer {
   static late final ReturnsRepository returnsRepository;
   static late final SettingsRepository settingsRepository;
   static late final StaffRepository staffRepository;
+  static late final SubscriptionRepository subscriptionRepository;
 
-  // UseCases - Auth
+  // Use Cases
   static late final LoginUseCase loginUseCase;
   static late final RegisterUseCase registerUseCase;
   static late final ForgotPasswordUseCase forgotPasswordUseCase;
@@ -112,42 +124,37 @@ class InjectionContainer {
   static late final GetMeUseCase getMeUseCase;
   static late final LogoutUseCase logoutUseCase;
 
-  // UseCases - Inventory
   static late final GetInventoryItemsUseCase getInventoryItemsUseCase;
   static late final AddInventoryItemUseCase addInventoryItemUseCase;
   static late final UpdateInventoryItemUseCase updateInventoryItemUseCase;
   static late final DeleteInventoryItemUseCase deleteInventoryItemUseCase;
 
-  // UseCases - Customer
   static late final GetCustomersUseCase getCustomersUseCase;
   static late final AddCustomerUseCase addCustomerUseCase;
   static late final UpdateCustomerUseCase updateCustomerUseCase;
   static late final DeleteCustomerUseCase deleteCustomerUseCase;
 
-  // UseCases - POS
   static late final CreateSaleUseCase createSaleUseCase;
   static late final GetSalesLogsUseCase getSalesLogsUseCase;
 
-  // UseCases - Reports
   static late final GetReportsSummaryUseCase getReportsSummaryUseCase;
   static late final GetInvoiceLogsUseCase getInvoiceLogsUseCase;
 
-  // UseCases - Returns
   static late final ProcessReturnUseCase processReturnUseCase;
   static late final GetReturnLogsUseCase getReturnLogsUseCase;
 
-  // UseCases - Settings
   static late final GetShopProfileUseCase getShopProfileUseCase;
   static late final UpdateShopProfileUseCase updateShopProfileUseCase;
   static late final UpgradeSubscriptionUseCase upgradeSubscriptionUseCase;
 
-  // UseCases - Staff
   static late final GetStaffMembersUseCase getStaffMembersUseCase;
   static late final AddStaffMemberUseCase addStaffMemberUseCase;
   static late final UpdateStaffMemberUseCase updateStaffMemberUseCase;
   static late final DeleteStaffMemberUseCase deleteStaffMemberUseCase;
 
-  // BLoC State Management
+  static late final SubmitPaymentUseCase submitPaymentUseCase;
+
+  // BLoC State Controllers
   static late final AuthBloc authBloc;
   static late final InventoryBloc inventoryBloc;
   static late final CustomerBloc customerBloc;
@@ -156,11 +163,15 @@ class InjectionContainer {
   static late final ReturnsBloc returnsBloc;
   static late final SettingsBloc settingsBloc;
   static late final StaffBloc staffBloc;
+  static late final SubscriptionBloc subscriptionBloc;
+  static late final SuperAdminBloc superAdminBloc;
 
-  /// Initializes all dependencies at app startup in [main].
-  static void init() {
-    // 1. Network & Data Sources
+  /// Initializes all singletons and dependencies.
+  static Future<void> init() async {
+    // 1. Core Network Infrastructure
     apiClient = ApiClient();
+
+    // 2. Data Sources
     authLocalDataSource = AuthLocalDataSourceImpl();
     authRemoteDataSource = AuthRemoteDataSourceImpl(apiClient);
 
@@ -185,11 +196,13 @@ class InjectionContainer {
     staffLocalDataSource = StaffLocalDataSourceImpl();
     staffRemoteDataSource = StaffRemoteDataSourceImpl(apiClient);
 
-    // 2. Repository Contract Implementation
+    subscriptionRemoteDataSource = SubscriptionRemoteDataSourceImpl(apiClient);
+    superAdminRemoteDataSource = SuperAdminRemoteDataSourceImpl(apiClient);
+
+    // 3. Repositories
     authRepository = AuthRepositoryImpl(
       remoteDataSource: authRemoteDataSource,
       localDataSource: authLocalDataSource,
-      apiClient: apiClient,
     );
 
     inventoryRepository = InventoryRepositoryImpl(
@@ -210,7 +223,6 @@ class InjectionContainer {
     reportsRepository = ReportsRepositoryImpl(
       remoteDataSource: reportsRemoteDataSource,
       localDataSource: reportsLocalDataSource,
-      posLocalDataSource: posLocalDataSource,
     );
 
     returnsRepository = ReturnsRepositoryImpl(
@@ -228,7 +240,11 @@ class InjectionContainer {
       localDataSource: staffLocalDataSource,
     );
 
-    // 3. Domain UseCases
+    subscriptionRepository = SubscriptionRepositoryImpl(
+      remoteDataSource: subscriptionRemoteDataSource,
+    );
+
+    // UseCases
     loginUseCase = LoginUseCase(authRepository);
     registerUseCase = RegisterUseCase(authRepository);
     forgotPasswordUseCase = ForgotPasswordUseCase(authRepository);
@@ -263,6 +279,8 @@ class InjectionContainer {
     addStaffMemberUseCase = AddStaffMemberUseCase(staffRepository);
     updateStaffMemberUseCase = UpdateStaffMemberUseCase(staffRepository);
     deleteStaffMemberUseCase = DeleteStaffMemberUseCase(staffRepository);
+
+    submitPaymentUseCase = SubmitPaymentUseCase(subscriptionRepository);
 
     // 4. BLoC State Management Instances
     authBloc = AuthBloc(
@@ -315,6 +333,14 @@ class InjectionContainer {
       addStaffMemberUseCase: addStaffMemberUseCase,
       updateStaffMemberUseCase: updateStaffMemberUseCase,
       deleteStaffMemberUseCase: deleteStaffMemberUseCase,
+    );
+
+    subscriptionBloc = SubscriptionBloc(
+      submitPaymentUseCase: submitPaymentUseCase,
+    );
+
+    superAdminBloc = SuperAdminBloc(
+      remoteDataSource: superAdminRemoteDataSource,
     );
   }
 }

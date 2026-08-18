@@ -11,7 +11,9 @@ import '../../features/inventory/presentation/view/inventory_screen.dart';
 import '../../features/posbilling/presentation/view/pos_billing_screen.dart';
 import '../../features/returnandrestoke/presentation/view/returns_screen.dart';
 import '../../features/reports/presentation/view/reports_screen.dart';
+import '../../features/settings/presentation/view/settings_screen.dart';
 import '../../features/staff_managers/presentation/view/staff_managers_screen.dart';
+import '../../features/super_admin/presentation/view/super_admin_screen.dart';
 import '../../features/splash/presentation/view/splash_screen.dart';
 import '../../features/dashboard/presentation/widgets/app_drawer.dart';
 
@@ -74,9 +76,6 @@ class AppRoute {
           );
         },
         routes: [
-          // =========================
-          // DASHBOARD
-          // =========================
           GoRoute(
             path: '/dashboard',
             name: 'dashboard',
@@ -85,9 +84,6 @@ class AppRoute {
             },
           ),
 
-          // =========================
-          // OTHER PAGES
-          // =========================
           GoRoute(
             path: '/pos-billing',
             builder: (context, state) {
@@ -133,9 +129,14 @@ class AppRoute {
           GoRoute(
             path: '/settings',
             builder: (context, state) {
-              return const PlaceholderPage(
-                title: 'Settings',
-              );
+              return const SettingsScreen();
+            },
+          ),
+
+          GoRoute(
+            path: '/super-admin',
+            builder: (context, state) {
+              return const SuperAdminScreen();
             },
           ),
         ],
@@ -143,39 +144,3 @@ class AppRoute {
     ],
   );
 }
-
-
-class PlaceholderPage extends StatelessWidget {
-  final String title;
-
-  const PlaceholderPage({
-    super.key,
-    required this.title,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () {
-            AppRoute.shellScaffoldKey.currentState?.openDrawer();
-          },
-          icon: const Icon(
-            Icons.menu_rounded,
-          ),
-        ),
-        title: Text(title),
-      ),
-      body: Center(
-        child: Text(
-          title,
-          style: Theme.of(context)
-              .textTheme
-              .headlineMedium,
-        ),
-      ),
-    );
-  }
-}
-
