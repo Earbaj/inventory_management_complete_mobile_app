@@ -178,7 +178,7 @@ class _BluetoothPrinterModalState extends State<_BluetoothPrinterModal> {
           // ESC/POS RECEIPT PREVIEW BOX
           Container(
             width: double.infinity,
-            maxHeight: 140,
+            height: 140,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: Colors.grey.shade100,

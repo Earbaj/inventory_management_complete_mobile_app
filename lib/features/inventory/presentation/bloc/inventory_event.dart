@@ -7,11 +7,15 @@ abstract class InventoryEvent {
 
 /// Event: Fetches inventory items with optional search and category filters.
 class FetchInventoryItemsEvent extends InventoryEvent {
+  final int page;
+  final int limit;
   final String? searchQuery;
   final String? category;
   final InventoryFilter filter;
 
   const FetchInventoryItemsEvent({
+    this.page = 1,
+    this.limit = 20,
     this.searchQuery,
     this.category,
     this.filter = InventoryFilter.all,

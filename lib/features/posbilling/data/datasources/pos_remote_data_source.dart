@@ -5,7 +5,7 @@ import '../models/sale_model.dart';
 
 abstract class PosRemoteDataSource {
   Future<SaleModel> createSale(SaleModel sale);
-  Future<List<SaleModel>> getSalesLogs();
+  Future<List<SaleModel>> getSalesLogs({int page = 1, int limit = 20});
 }
 
 class PosRemoteDataSourceImpl implements PosRemoteDataSource {
@@ -31,11 +31,15 @@ class PosRemoteDataSourceImpl implements PosRemoteDataSource {
   }
 
   @override
-  Future<List<SaleModel>> getSalesLogs() async {
-    developer.log('🛒 [PosRemoteDataSource] getSalesLogs() called...', name: 'PosRemoteDataSource');
+  Future<List<SaleModel>> getSalesLogs({int page = 1, int limit = 20}) async {
+    developer.log('🛒 [PosRemoteDataSource] getSalesLogs() page: $page, limit: $limit...', name: 'PosRemoteDataSource');
     try {
       final response = await apiClient.get(
         '${EnvConfig.apiBaseUrl}/api/sales',
+        queryParameters: {
+          'page': page,
+          'limit': limit,
+        },
       );
 
       final List list = response is List ? response : (response['sales'] ?? response['data'] ?? []);

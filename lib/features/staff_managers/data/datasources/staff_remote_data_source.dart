@@ -4,7 +4,7 @@ import '../../../../core/config/env_config.dart';
 import '../models/staff_model.dart';
 
 abstract class StaffRemoteDataSource {
-  Future<List<StaffModel>> getStaffMembers();
+  Future<List<StaffModel>> getStaffMembers({int page = 1, int limit = 20});
   Future<StaffModel> addStaffMember(StaffModel staffModel);
   Future<StaffModel> updateStaffMember(StaffModel staffModel);
   Future<void> deleteStaffMember(String staffId);
@@ -16,11 +16,15 @@ class StaffRemoteDataSourceImpl implements StaffRemoteDataSource {
   StaffRemoteDataSourceImpl(this.apiClient);
 
   @override
-  Future<List<StaffModel>> getStaffMembers() async {
-    developer.log('👥 [StaffRemoteDataSource] getStaffMembers() called...', name: 'StaffRemoteDataSource');
+  Future<List<StaffModel>> getStaffMembers({int page = 1, int limit = 20}) async {
+    developer.log('👥 [StaffRemoteDataSource] getStaffMembers() page: $page, limit: $limit...', name: 'StaffRemoteDataSource');
     try {
       final response = await apiClient.get(
         '${EnvConfig.apiBaseUrl}/api/staff',
+        queryParameters: {
+          'page': page,
+          'limit': limit,
+        },
       );
 
       final List list = response is List ? response : (response['staff'] ?? response['data'] ?? []);

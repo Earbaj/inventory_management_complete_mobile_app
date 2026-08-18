@@ -60,7 +60,10 @@ class CustomerBloc {
     }
 
     try {
-      _allCustomers = await getCustomersUseCase(null);
+      _allCustomers = await getCustomersUseCase(
+        page: event.page,
+        limit: event.limit,
+      );
       _emitLoadedState();
     } catch (e) {
       _emit(CustomerErrorState(e.toString()));

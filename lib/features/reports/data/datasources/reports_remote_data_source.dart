@@ -6,7 +6,7 @@ import '../models/report_summary_model.dart';
 
 abstract class ReportsRemoteDataSource {
   Future<ReportSummaryModel> getReportsSummary({DateTime? startDate, DateTime? endDate});
-  Future<List<SaleModel>> getInvoiceLogs({String? query, DateTime? startDate, DateTime? endDate});
+  Future<List<SaleModel>> getInvoiceLogs({int page = 1, int limit = 20, String? query, DateTime? startDate, DateTime? endDate});
 }
 
 class ReportsRemoteDataSourceImpl implements ReportsRemoteDataSource {
@@ -53,12 +53,20 @@ class ReportsRemoteDataSourceImpl implements ReportsRemoteDataSource {
   }
 
   @override
-  Future<List<SaleModel>> getInvoiceLogs({String? query, DateTime? startDate, DateTime? endDate}) async {
-    developer.log('📊 [ReportsRemoteDataSource] getInvoiceLogs() called with query: "$query"', name: 'ReportsRemoteDataSource');
+  Future<List<SaleModel>> getInvoiceLogs({
+    int page = 1,
+    int limit = 20,
+    String? query,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    developer.log('📊 [ReportsRemoteDataSource] getInvoiceLogs() page: $page, limit: $limit, query: "$query"', name: 'ReportsRemoteDataSource');
     try {
       final response = await apiClient.get(
         '${EnvConfig.apiBaseUrl}/api/sales',
         queryParameters: {
+          'page': page,
+          'limit': limit,
           if (query != null && query.isNotEmpty) 'search': query,
           if (startDate != null) 'startDate': startDate.toIso8601String(),
           if (endDate != null) 'endDate': endDate.toIso8601String(),

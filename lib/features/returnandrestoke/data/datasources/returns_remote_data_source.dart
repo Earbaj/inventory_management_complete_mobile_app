@@ -5,7 +5,7 @@ import '../models/return_item_model.dart';
 
 abstract class ReturnsRemoteDataSource {
   Future<ReturnItemModel> processReturn(ReturnItemModel returnModel);
-  Future<List<ReturnItemModel>> getReturnLogs();
+  Future<List<ReturnItemModel>> getReturnLogs({int page = 1, int limit = 20});
 }
 
 class ReturnsRemoteDataSourceImpl implements ReturnsRemoteDataSource {
@@ -31,11 +31,15 @@ class ReturnsRemoteDataSourceImpl implements ReturnsRemoteDataSource {
   }
 
   @override
-  Future<List<ReturnItemModel>> getReturnLogs() async {
-    developer.log('🔄 [ReturnsRemoteDataSource] getReturnLogs() called...', name: 'ReturnsRemoteDataSource');
+  Future<List<ReturnItemModel>> getReturnLogs({int page = 1, int limit = 20}) async {
+    developer.log('🔄 [ReturnsRemoteDataSource] getReturnLogs() page: $page, limit: $limit...', name: 'ReturnsRemoteDataSource');
     try {
       final response = await apiClient.get(
         '${EnvConfig.apiBaseUrl}/api/returns',
+        queryParameters: {
+          'page': page,
+          'limit': limit,
+        },
       );
 
       final List list = response is List ? response : (response['returns'] ?? response['data'] ?? []);

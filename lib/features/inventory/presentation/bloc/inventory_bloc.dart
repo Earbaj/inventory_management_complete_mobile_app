@@ -66,6 +66,8 @@ class InventoryBloc {
 
     try {
       _allItems = await getItemsUseCase(GetInventoryItemsParams(
+        page: event.page,
+        limit: event.limit,
         searchQuery: null,
         category: null,
       ));

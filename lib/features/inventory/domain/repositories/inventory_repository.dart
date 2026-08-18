@@ -2,6 +2,8 @@ import '../entities/inventory_item_entity.dart';
 
 abstract class InventoryRepository {
   Future<List<InventoryItemEntity>> getInventoryItems({
+    int page = 1,
+    int limit = 20,
     String? searchQuery,
     String? category,
   });

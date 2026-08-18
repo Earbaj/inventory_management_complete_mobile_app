@@ -5,6 +5,8 @@ import '../models/inventory_item_model.dart';
 
 abstract class InventoryRemoteDataSource {
   Future<List<InventoryItemModel>> getItems({
+    int page = 1,
+    int limit = 20,
     String? search,
     String? category,
   });
@@ -20,14 +22,18 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
 
   @override
   Future<List<InventoryItemModel>> getItems({
+    int page = 1,
+    int limit = 20,
     String? search,
     String? category,
   }) async {
-    developer.log('📦 [InventoryRemoteDataSource] getItems() called with search: "$search", category: "$category"', name: 'InventoryRemoteDataSource');
+    developer.log('📦 [InventoryRemoteDataSource] getItems() page: $page, limit: $limit, search: "$search", category: "$category"', name: 'InventoryRemoteDataSource');
     try {
       final response = await apiClient.get(
         '${EnvConfig.apiBaseUrl}/api/items',
         queryParameters: {
+          'page': page,
+          'limit': limit,
           if (search != null && search.isNotEmpty) 'search': search,
           if (category != null && category != 'All') 'category': category,
         },

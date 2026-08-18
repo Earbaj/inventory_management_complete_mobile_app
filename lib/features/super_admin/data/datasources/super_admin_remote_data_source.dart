@@ -4,7 +4,7 @@ import '../../../../core/network/api_client.dart';
 import '../../../subscription/data/models/payment_model.dart';
 
 abstract class SuperAdminRemoteDataSource {
-  Future<List<PaymentModel>> getPendingPayments();
+  Future<List<PaymentModel>> getPendingPayments({int page = 1, int limit = 20});
   Future<void> approvePayment(String paymentId);
   Future<void> rejectPayment(String paymentId);
 }
@@ -15,11 +15,15 @@ class SuperAdminRemoteDataSourceImpl implements SuperAdminRemoteDataSource {
   SuperAdminRemoteDataSourceImpl(this.apiClient);
 
   @override
-  Future<List<PaymentModel>> getPendingPayments() async {
-    developer.log('👑 [SuperAdminRemoteDataSource] Calling GET /api/admin/payments...', name: 'SuperAdminRemoteDataSource');
+  Future<List<PaymentModel>> getPendingPayments({int page = 1, int limit = 20}) async {
+    developer.log('👑 [SuperAdminRemoteDataSource] Calling GET /api/admin/payments (page: $page, limit: $limit)...', name: 'SuperAdminRemoteDataSource');
     try {
       final response = await apiClient.get(
         '${EnvConfig.apiBaseUrl}/api/admin/payments',
+        queryParameters: {
+          'page': page,
+          'limit': limit,
+        },
       );
 
       developer.log('✅ [SuperAdminRemoteDataSource] Raw Response JSON: $response', name: 'SuperAdminRemoteDataSource');

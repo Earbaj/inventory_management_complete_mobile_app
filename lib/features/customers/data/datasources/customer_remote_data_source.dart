@@ -4,7 +4,11 @@ import '../../../../core/config/env_config.dart';
 import '../models/customer_model.dart';
 
 abstract class CustomerRemoteDataSource {
-  Future<List<CustomerModel>> getCustomers({String? search});
+  Future<List<CustomerModel>> getCustomers({
+    int page = 1,
+    int limit = 20,
+    String? search,
+  });
   Future<CustomerModel> addCustomer(CustomerModel customer);
   Future<CustomerModel> updateCustomer(CustomerModel customer);
   Future<void> deleteCustomer(String customerId);
@@ -16,12 +20,18 @@ class CustomerRemoteDataSourceImpl implements CustomerRemoteDataSource {
   CustomerRemoteDataSourceImpl(this.apiClient);
 
   @override
-  Future<List<CustomerModel>> getCustomers({String? search}) async {
-    developer.log('👥 [CustomerRemoteDataSource] getCustomers() called with search: "$search"', name: 'CustomerRemoteDataSource');
+  Future<List<CustomerModel>> getCustomers({
+    int page = 1,
+    int limit = 20,
+    String? search,
+  }) async {
+    developer.log('👥 [CustomerRemoteDataSource] getCustomers() page: $page, limit: $limit, search: "$search"', name: 'CustomerRemoteDataSource');
     try {
       final response = await apiClient.get(
         '${EnvConfig.apiBaseUrl}/api/customers',
         queryParameters: {
+          'page': page,
+          'limit': limit,
           if (search != null && search.isNotEmpty) 'search': search,
         },
       );

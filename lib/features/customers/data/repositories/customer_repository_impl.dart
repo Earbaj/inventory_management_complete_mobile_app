@@ -15,9 +15,17 @@ class CustomerRepositoryImpl implements CustomerRepository {
   });
 
   @override
-  Future<List<CustomerEntity>> getCustomers({String? searchQuery}) async {
+  Future<List<CustomerEntity>> getCustomers({
+    int page = 1,
+    int limit = 20,
+    String? searchQuery,
+  }) async {
     try {
-      final remoteModels = await remoteDataSource.getCustomers(search: searchQuery);
+      final remoteModels = await remoteDataSource.getCustomers(
+        page: page,
+        limit: limit,
+        search: searchQuery,
+      );
       await localDataSource.cacheCustomers(remoteModels);
       return remoteModels.map(CustomerMapper.modelToEntity).toList();
     } catch (_) {

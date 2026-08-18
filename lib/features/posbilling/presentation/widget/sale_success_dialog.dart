@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/services/bluetooth_printer_service.dart';
-import '../domain/entities/sale_entity.dart';
+import '../../domain/entities/sale_entity.dart';
 
 class SaleSuccessDialog extends StatelessWidget {
   final SaleEntity? completedSale;

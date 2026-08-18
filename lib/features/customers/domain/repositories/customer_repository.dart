@@ -3,7 +3,11 @@ import '../entities/customer_entity.dart';
 /// Abstract Customer Repository Interface Contract
 abstract class CustomerRepository {
   /// Fetches customers list with optional search query (name/phone).
-  Future<List<CustomerEntity>> getCustomers({String? searchQuery});
+  Future<List<CustomerEntity>> getCustomers({
+    int page = 1,
+    int limit = 20,
+    String? searchQuery,
+  });
 
   /// Adds a new customer.
   Future<CustomerEntity> addCustomer(CustomerEntity customer);

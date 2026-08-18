@@ -6,9 +6,15 @@ abstract class CustomerEvent {
 
 /// Event: Fetches customers list with optional search query.
 class FetchCustomersEvent extends CustomerEvent {
+  final int page;
+  final int limit;
   final String? searchQuery;
 
-  const FetchCustomersEvent([this.searchQuery]);
+  const FetchCustomersEvent({
+    this.page = 1,
+    this.limit = 20,
+    this.searchQuery,
+  });
 }
 
 /// Event: Adds a new customer.

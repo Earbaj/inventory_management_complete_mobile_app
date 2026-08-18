@@ -16,11 +16,15 @@ class InventoryRepositoryImpl implements InventoryRepository {
 
   @override
   Future<List<InventoryItemEntity>> getInventoryItems({
+    int page = 1,
+    int limit = 20,
     String? searchQuery,
     String? category,
   }) async {
     try {
       final remoteModels = await remoteDataSource.getItems(
+        page: page,
+        limit: limit,
         search: searchQuery,
         category: category,
       );
