@@ -1,11 +1,14 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
+import '../../domain/entities/staff_entity.dart';
 import '../bloc/staff_event.dart';
 import '../bloc/staff_state.dart';
 import '../../staff_manager_model.dart';
 import '../widget/add_staff_dialog.dart';
+import '../widget/manage_permissions_sheet.dart';
 import '../widget/staff_card.dart';
 
 class StaffManagersScreen extends StatefulWidget {
@@ -18,16 +21,39 @@ class StaffManagersScreen extends StatefulWidget {
 class _StaffManagersScreenState extends State<StaffManagersScreen> {
   final TextEditingController _searchController = TextEditingController();
   StaffRole? _selectedRoleFilter;
+  StreamSubscription<StaffState>? _staffSubscription;
 
   @override
   void initState() {
     super.initState();
+    _staffSubscription = InjectionContainer.staffBloc.stream.listen((state) {
+      if (!mounted) return;
+      if (state is StaffOperationSuccessState) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(state.message),
+            backgroundColor: Colors.green.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else if (state is StaffErrorState) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(state.message),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    });
+
     // Dispatch initial fetch to StaffBloc
     InjectionContainer.staffBloc.add(const FetchStaffEvent());
   }
 
   @override
   void dispose() {
+    _staffSubscription?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -37,14 +63,58 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
   }
 
   void _openAddStaffDialog() async {
-    final result = await showDialog<StaffMember>(
+    await showDialog(
       context: context,
       builder: (context) => const AddStaffDialog(),
     );
+  }
 
-    if (result != null) {
-      InjectionContainer.staffBloc.add(FetchStaffEvent(_searchController.text));
-    }
+  void _openManagePermissions(BuildContext context, StaffEntity staff) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ManagePermissionsSheet(staff: staff),
+    );
+  }
+
+  void _confirmDeleteStaff(BuildContext context, String staffId, String staffName) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.red),
+              SizedBox(width: 10),
+              Text('Delete Staff Member?'),
+            ],
+          ),
+          content: Text(
+            'Are you sure you want to remove "$staffName" from your shop staff list?\n\nThis action will delete their account permanently.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade700,
+                foregroundColor: Colors.white,
+              ),
+              icon: const Icon(Icons.delete_forever_rounded),
+              label: const Text('Delete'),
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                InjectionContainer.staffBloc.add(DeleteStaffEvent(staffId));
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -73,7 +143,7 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openAddStaffDialog,
         icon: const Icon(Icons.person_add_rounded),
-        label: const Text('Add Staff'),
+        label: const Text('Add Manager'),
       ),
       body: StreamBuilder<StaffState>(
         stream: InjectionContainer.staffBloc.stream,
@@ -143,7 +213,10 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
           }
 
           final loadedState = state is StaffLoadedState ? state : null;
-          final staffEntities = loadedState?.filteredStaff ?? [];
+          // Filter out Admin/SuperAdmin accounts so only Managers appear
+          final staffEntities = (loadedState?.filteredStaff ?? [])
+              .where((e) => e.role.toLowerCase() != 'admin' && e.role.toLowerCase() != 'superadmin')
+              .toList();
 
           final List<StaffMember> staffList = staffEntities.map((e) {
             return StaffMember(
@@ -151,9 +224,12 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
               name: e.name,
               email: e.email,
               phone: e.phone,
-              role: e.role.toLowerCase() == 'admin'
-                  ? StaffRole.seniorManager
-                  : (e.role.toLowerCase() == 'manager' ? StaffRole.manager : StaffRole.cashier),
+              role: switch (e.role.toLowerCase()) {
+                'admin' || 'senior_manager' => StaffRole.seniorManager,
+                'manager' => StaffRole.manager,
+                'staff' || 'inventory_staff' => StaffRole.inventoryStaff,
+                _ => StaffRole.cashier,
+              },
               status: e.isActive ? StaffStatus.active : StaffStatus.inactive,
               joinedDate: e.createdAt,
               assignedBranch: 'Main Branch',
@@ -170,7 +246,7 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
                   controller: _searchController,
                   onChanged: _onSearchChanged,
                   decoration: InputDecoration(
-                    hintText: 'Search staff by name, phone or role',
+                    hintText: 'Search manager by name, phone or email',
                     prefixIcon: const Icon(Icons.search_rounded),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
@@ -198,7 +274,7 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
                 child: Row(
                   children: [
                     FilterChip(
-                      label: const Text('All Roles'),
+                      label: const Text('All Managers'),
                       selected: _selectedRoleFilter == null,
                       onSelected: (_) {
                         setState(() => _selectedRoleFilter = null);
@@ -226,26 +302,29 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
               Expanded(
                 child: staffList.isEmpty
                     ? const Center(
-                        child: Text('No staff members found.', style: TextStyle(color: Colors.grey)),
+                        child: Text('No managers found.', style: TextStyle(color: Colors.grey)),
                       )
                     : ListView.builder(
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
                         itemCount: staffList.length,
                         itemBuilder: (context, index) {
                           final staff = staffList[index];
+                          final entity = staffEntities[index];
                           return StaffCard(
                             staff: staff,
                             onToggleStatus: () {
-                              // Toggle Active/Inactive Status in StaffBloc
                               InjectionContainer.staffBloc.add(UpdateStaffEvent(
-                                staffEntities[index].copyWith(isActive: !staffEntities[index].isActive),
+                                entity.copyWith(isActive: !entity.isActive),
                               ));
                             },
+                            onManagePermissions: () {
+                              _openManagePermissions(context, entity);
+                            },
                             onEdit: () {
-                              // Edit staff dialog
+                              _openManagePermissions(context, entity);
                             },
                             onDelete: () {
-                              InjectionContainer.staffBloc.add(DeleteStaffEvent(staff.id));
+                              _confirmDeleteStaff(context, entity.id, entity.name);
                             },
                           );
                         },

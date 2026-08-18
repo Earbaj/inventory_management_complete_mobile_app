@@ -73,4 +73,24 @@ class ApiEndpoints {
 
   /// Helper for fetching shop profile & managers (GET /api/admin/shops/:id) - SuperAdmin Only
   static String adminShopById(String id) => '$baseUrl/api/admin/shops/$id';
+
+  // ===========================================================================
+  // INVENTORY & CATEGORY ENDPOINTS
+  // ===========================================================================
+
+  /// Endpoint for product categories (GET / POST /api/categories) - Authenticated
+  static String get categories => '$baseUrl/api/categories';
+
+  // ===========================================================================
+  // STAFF & MANAGER ENDPOINTS
+  // ===========================================================================
+
+  /// Endpoint for staff list & creation (GET / POST /api/staff) - Authenticated
+  static String get staff => '$baseUrl/api/staff';
+
+  /// Helper for staff details & delete (GET / DELETE /api/staff/:id) - Authenticated
+  static String staffById(String id) => '$baseUrl/api/staff/$id';
+
+  /// Helper for updating staff permissions (PATCH /api/staff/:id/permissions) - Admin Only
+  static String staffPermissions(String id) => '$baseUrl/api/staff/$id/permissions';
 }

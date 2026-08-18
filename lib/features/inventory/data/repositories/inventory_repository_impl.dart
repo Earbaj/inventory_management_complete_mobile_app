@@ -64,11 +64,8 @@ class InventoryRepositoryImpl implements InventoryRepository {
       final currentCache = await localDataSource.getCachedItems();
       await localDataSource.cacheItems([savedModel, ...currentCache]);
       return InventoryMapper.modelToEntity(savedModel);
-    } catch (_) {
-      final currentCache = await localDataSource.getCachedItems();
-      final updatedList = [modelToSave, ...currentCache];
-      await localDataSource.cacheItems(updatedList);
-      return item;
+    } catch (e) {
+      rethrow;
     }
   }
 
@@ -84,14 +81,8 @@ class InventoryRepositoryImpl implements InventoryRepository {
         await localDataSource.cacheItems(currentCache);
       }
       return InventoryMapper.modelToEntity(updatedModel);
-    } catch (_) {
-      final currentCache = await localDataSource.getCachedItems();
-      final index = currentCache.indexWhere((el) => el.id == item.id);
-      if (index != -1) {
-        currentCache[index] = modelToUpdate;
-        await localDataSource.cacheItems(currentCache);
-      }
-      return item;
+    } catch (e) {
+      rethrow;
     }
   }
 

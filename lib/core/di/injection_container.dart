@@ -300,6 +300,7 @@ class InjectionContainer {
       addItemUseCase: addInventoryItemUseCase,
       updateItemUseCase: updateInventoryItemUseCase,
       deleteItemUseCase: deleteInventoryItemUseCase,
+      remoteDataSource: inventoryRemoteDataSource,
     );
 
     customerBloc = CustomerBloc(

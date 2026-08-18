@@ -1,5 +1,6 @@
 import 'dart:developer' as developer;
 import '../../../../core/network/api_client.dart';
+import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/config/env_config.dart';
 import '../models/inventory_item_model.dart';
 
@@ -13,6 +14,8 @@ abstract class InventoryRemoteDataSource {
   Future<InventoryItemModel> addItem(InventoryItemModel item);
   Future<InventoryItemModel> updateItem(InventoryItemModel item);
   Future<void> deleteItem(String itemId);
+  Future<List<String>> getCategories();
+  Future<void> createCategory(String name, {String? description});
 }
 
 class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
@@ -59,8 +62,8 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
 
       developer.log('✅ [InventoryRemoteDataSource] addItem() success.', name: 'InventoryRemoteDataSource');
       return InventoryItemModel.fromJson(response is Map<String, dynamic> ? response : item.toJson());
-    } catch (e, stackTrace) {
-      developer.log('❌ [InventoryRemoteDataSource] addItem() API Error: $e', name: 'InventoryRemoteDataSource', error: e, stackTrace: stackTrace);
+    } catch (e) {
+      developer.log('⚠️ [InventoryRemoteDataSource] addItem() API Error: $e', name: 'InventoryRemoteDataSource');
       rethrow;
     }
   }
@@ -92,6 +95,37 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
       developer.log('✅ [InventoryRemoteDataSource] deleteItem() success.', name: 'InventoryRemoteDataSource');
     } catch (e, stackTrace) {
       developer.log('❌ [InventoryRemoteDataSource] deleteItem() API Error: $e', name: 'InventoryRemoteDataSource', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<List<String>> getCategories() async {
+    developer.log('📦 [InventoryRemoteDataSource] getCategories() calling GET ${ApiEndpoints.categories}', name: 'InventoryRemoteDataSource');
+    try {
+      final response = await apiClient.get(ApiEndpoints.categories);
+      final List list = response is List ? response : (response['categories'] ?? response['data'] ?? []);
+      return list.map((c) => (c is Map ? c['name'] : c).toString()).toList();
+    } catch (e, stackTrace) {
+      developer.log('⚠️ [InventoryRemoteDataSource] getCategories() error: $e', name: 'InventoryRemoteDataSource', error: e, stackTrace: stackTrace);
+      return [];
+    }
+  }
+
+  @override
+  Future<void> createCategory(String name, {String? description}) async {
+    developer.log('📦 [InventoryRemoteDataSource] createCategory() calling POST ${ApiEndpoints.categories} with name: "$name"', name: 'InventoryRemoteDataSource');
+    try {
+      final response = await apiClient.post(
+        ApiEndpoints.categories,
+        body: {
+          'name': name,
+          if (description != null && description.isNotEmpty) 'description': description,
+        },
+      );
+      developer.log('✅ [InventoryRemoteDataSource] createCategory() success: $response', name: 'InventoryRemoteDataSource');
+    } catch (e, stackTrace) {
+      developer.log('❌ [InventoryRemoteDataSource] createCategory() API Error: $e', name: 'InventoryRemoteDataSource', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }

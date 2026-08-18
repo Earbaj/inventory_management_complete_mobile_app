@@ -6,6 +6,7 @@ class StaffCard extends StatelessWidget {
   final VoidCallback onDelete;
   final dynamic onToggleStatus;
   final VoidCallback? onEdit;
+  final VoidCallback? onManagePermissions;
 
   const StaffCard({
     super.key,
@@ -13,6 +14,7 @@ class StaffCard extends StatelessWidget {
     required this.onDelete,
     this.onToggleStatus,
     this.onEdit,
+    this.onManagePermissions,
   });
 
   String _formatDate(DateTime dt) {
@@ -138,6 +140,15 @@ class StaffCard extends StatelessWidget {
                   ),
                 ),
 
+                // Manage Permissions Button
+                if (onManagePermissions != null)
+                  IconButton(
+                    onPressed: onManagePermissions,
+                    icon: Icon(Icons.admin_panel_settings_outlined, color: colorScheme.primary),
+                    tooltip: 'Manage Permissions',
+                    visualDensity: VisualDensity.compact,
+                  ),
+
                 // Delete Button (Admin action)
                 IconButton(
                   onPressed: () => _confirmDelete(context),
@@ -252,12 +263,6 @@ class StaffCard extends StatelessWidget {
             onPressed: () {
               Navigator.pop(context);
               onDelete();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('${staff.name} deleted successfully.'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
             },
             child: const Text('Delete'),
           ),

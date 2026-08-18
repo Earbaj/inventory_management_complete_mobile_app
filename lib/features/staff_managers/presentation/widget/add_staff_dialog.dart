@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../../../core/di/injection_container.dart';
+import '../../domain/entities/staff_entity.dart';
 import '../../staff_manager_model.dart';
+import '../bloc/staff_event.dart';
 
 class AddStaffDialog extends StatefulWidget {
   final Function(StaffMember)? onAdd;
@@ -18,39 +21,63 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _branchController = TextEditingController(text: 'Main Branch');
 
   StaffRole _selectedRole = StaffRole.manager;
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
+    _passwordController.dispose();
     _branchController.dispose();
     super.dispose();
   }
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
-      final newStaff = StaffMember(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+      final roleStr = switch (_selectedRole) {
+        StaffRole.seniorManager => 'admin',
+        StaffRole.manager => 'manager',
+        StaffRole.cashier => 'cashier',
+        StaffRole.inventoryStaff => 'staff',
+      };
+
+      final newStaffEntity = StaffEntity(
+        id: '',
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         phone: _phoneController.text.trim(),
-        role: _selectedRole,
-        status: StaffStatus.active,
-        joinedDate: DateTime.now(),
-        assignedBranch: _branchController.text.trim().isEmpty
-            ? 'Main Branch'
-            : _branchController.text.trim(),
-        salesServedCount: 0,
+        password: _passwordController.text.trim(),
+        role: roleStr,
+        isActive: true,
+        createdAt: DateTime.now(),
       );
 
+      InjectionContainer.staffBloc.add(AddStaffEvent(newStaffEntity));
+
       if (widget.onAdd != null) {
-        widget.onAdd!(newStaff);
+        widget.onAdd!(
+          StaffMember(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            name: _nameController.text.trim(),
+            email: _emailController.text.trim(),
+            phone: _phoneController.text.trim(),
+            role: _selectedRole,
+            status: StaffStatus.active,
+            joinedDate: DateTime.now(),
+            assignedBranch: _branchController.text.trim().isEmpty
+                ? 'Main Branch'
+                : _branchController.text.trim(),
+            salesServedCount: 0,
+          ),
+        );
       }
-      Navigator.pop(context, newStaff);
+
+      Navigator.pop(context, true);
     }
   }
 
@@ -138,6 +165,37 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
                           }
                           if (!value.contains('@')) {
                             return 'Enter a valid email';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Password
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: _obscurePassword,
+                        decoration: InputDecoration(
+                          labelText: 'Account Password *',
+                          hintText: 'Minimum 6 characters',
+                          prefixIcon: const Icon(Icons.lock_outline_rounded),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter password';
+                          }
+                          if (value.trim().length < 6) {
+                            return 'Password must be at least 6 characters';
                           }
                           return null;
                         },

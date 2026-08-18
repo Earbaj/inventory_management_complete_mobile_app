@@ -42,3 +42,11 @@ class DeleteInventoryItemEvent extends InventoryEvent {
 
   const DeleteInventoryItemEvent(this.itemId);
 }
+
+/// Event: Creates a new product category.
+class CreateCategoryEvent extends InventoryEvent {
+  final String name;
+  final String? description;
+
+  const CreateCategoryEvent({required this.name, this.description});
+}

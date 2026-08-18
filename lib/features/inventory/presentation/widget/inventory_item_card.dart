@@ -1,150 +1,108 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
 import '../../inventory_item.dart';
 import 'inventory_item_details_sub_widgets.dart';
 
-class InventoryItemCard
-    extends StatelessWidget {
-
+class InventoryItemCard extends StatelessWidget {
   final InventoryItem item;
   final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   const InventoryItemCard({
+    super.key,
     required this.item,
     required this.onEdit,
+    required this.onDelete,
   });
 
   @override
   Widget build(BuildContext context) {
-
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final bool outOfStock =
-        item.isOutOfStock;
-
-    final bool lowStock =
-        item.isLowStock;
+    final bool outOfStock = item.isOutOfStock;
+    final bool lowStock = item.isLowStock;
 
     return Container(
-      margin:
-      const EdgeInsets.only(
-        bottom: 10,
-      ),
-
-      padding:
-      const EdgeInsets.all(13),
-
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-
-        borderRadius:
-        BorderRadius.circular(16),
-
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: theme.dividerColor
-              .withValues(alpha: 0.6),
+          color: theme.dividerColor.withValues(alpha: 0.6),
         ),
       ),
-
       child: Column(
         children: [
-
           Row(
-            crossAxisAlignment:
-            CrossAxisAlignment.start,
-
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               // PRODUCT ICON
-
               Container(
                 width: 52,
                 height: 52,
-
                 decoration: BoxDecoration(
-                  color: colorScheme
-                      .surfaceContainerHighest,
-
-                  borderRadius:
-                  BorderRadius.circular(13),
+                  color: colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(13),
                 ),
-
                 child: Icon(
                   Icons.inventory_2_outlined,
-                  color:
-                  colorScheme.primary,
+                  color: colorScheme.primary,
                   size: 26,
                 ),
               ),
-
               const SizedBox(width: 12),
 
-              // NAME / SKU
-
+              // NAME / SKU & ACTIONS
               Expanded(
                 child: Column(
-                  crossAxisAlignment:
-                  CrossAxisAlignment.start,
-
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
                     Row(
                       children: [
-
                         Expanded(
                           child: Text(
                             item.name,
                             maxLines: 1,
-                            overflow:
-                            TextOverflow.ellipsis,
-
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 16,
-                              fontWeight:
-                              FontWeight.w700,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
-
                         IconButton(
+                          tooltip: 'Edit Item',
                           onPressed: onEdit,
-                          visualDensity:
-                          VisualDensity.compact,
+                          visualDensity: VisualDensity.compact,
                           icon: const Icon(
                             Icons.edit_outlined,
                             size: 20,
                           ),
                         ),
+                        IconButton(
+                          tooltip: 'Delete Item',
+                          onPressed: onDelete,
+                          visualDensity: VisualDensity.compact,
+                          icon: const Icon(
+                            Icons.delete_outline_rounded,
+                            color: Colors.redAccent,
+                            size: 20,
+                          ),
+                        ),
                       ],
                     ),
-
                     const SizedBox(height: 2),
-
                     Text(
                       'SKU: ${item.sku}',
-                      style: theme
-                          .textTheme
-                          .bodySmall,
+                      style: theme.textTheme.bodySmall,
                     ),
-
                     const SizedBox(height: 4),
-
                     Row(
                       children: [
-
-                        StatusBadge(
-                          text: item.category,
-                        ),
-
-                        const SizedBox(
-                          width: 6,
-                        ),
-
-                        StatusBadge(
-                          text: item.unit,
-                        ),
+                        StatusBadge(text: item.category),
+                        const SizedBox(width: 6),
+                        StatusBadge(text: item.unit),
                       ],
                     ),
                   ],
@@ -154,45 +112,35 @@ class InventoryItemCard
           ),
 
           const SizedBox(height: 12),
-
           const Divider(height: 1),
-
           const SizedBox(height: 11),
 
           // ============================
           // DETAILS
           // ============================
-
           Row(
             children: [
-
               Expanded(
                 child: ItemDetail(
                   title: 'Stock',
-                  value:
-                  '${item.stockQuantity} ${item.unit}',
-                  valueColor:
-                  outOfStock
+                  value: '${item.stockQuantity} ${item.unit}',
+                  valueColor: outOfStock
                       ? Colors.red
                       : lowStock
-                      ? Colors.orange
-                      : null,
+                          ? Colors.orange
+                          : null,
                 ),
               ),
-
               Expanded(
                 child: ItemDetail(
                   title: 'Sell Price',
-                  value:
-                  '৳ ${item.retailSellPrice.toStringAsFixed(0)}',
+                  value: '৳ ${item.retailSellPrice.toStringAsFixed(0)}',
                 ),
               ),
-
               Expanded(
                 child: ItemDetail(
                   title: 'Purchase',
-                  value:
-                  '৳ ${item.purchasePrice.toStringAsFixed(0)}',
+                  value: '৳ ${item.purchasePrice.toStringAsFixed(0)}',
                 ),
               ),
             ],
@@ -201,22 +149,18 @@ class InventoryItemCard
           const SizedBox(height: 10),
 
           // ============================
-          // STOCK STATUS
+          // STOCK ALERT
           // ============================
-
           if (outOfStock)
-            StockAlert(
+            const StockAlert(
               text: 'Out of stock',
-              icon:
-              Icons.remove_shopping_cart_outlined,
+              icon: Icons.remove_shopping_cart_outlined,
               isError: true,
             )
           else if (lowStock)
             StockAlert(
-              text:
-              'Low stock • Minimum ${item.lowStockQuantity}',
-              icon:
-              Icons.warning_amber_rounded,
+              text: 'Low stock • Minimum ${item.lowStockQuantity}',
+              icon: Icons.warning_amber_rounded,
               isError: false,
             ),
         ],

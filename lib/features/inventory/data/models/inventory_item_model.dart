@@ -27,32 +27,51 @@ class InventoryItemModel {
   });
 
   factory InventoryItemModel.fromJson(Map<String, dynamic> json) {
+    int parseInt(dynamic val, int defaultVal) {
+      if (val == null) return defaultVal;
+      if (val is int) return val;
+      if (val is num) return val.toInt();
+      if (val is String) return int.tryParse(val) ?? defaultVal;
+      return defaultVal;
+    }
+
+    double parseDouble(dynamic val) {
+      if (val == null) return 0.0;
+      if (val is double) return val;
+      if (val is num) return val.toDouble();
+      if (val is String) return double.tryParse(val) ?? 0.0;
+      return 0.0;
+    }
+
     return InventoryItemModel(
       id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
-      name: json['name'] ?? '',
-      sku: json['sku'] ?? '',
-      category: json['category'] ?? 'General',
-      unit: json['unit'] ?? 'Piece',
-      stockQuantity: (json['stockQuantity'] ?? json['stock_quantity'] ?? 0) as int,
-      lowStockQuantity: (json['lowStockQuantity'] ?? json['low_stock_quantity'] ?? 5) as int,
-      retailSellPrice: (json['retailSellPrice'] ?? json['retail_sell_price'] ?? json['price'] ?? 0.0).toDouble(),
-      purchasePrice: (json['purchasePrice'] ?? json['purchase_price'] ?? json['buyPrice'] ?? 0.0).toDouble(),
-      createdAt: json['createdAt'] ?? json['created_at'],
-      updatedAt: json['updatedAt'] ?? json['updated_at'],
+      name: json['name']?.toString() ?? '',
+      sku: json['sku']?.toString() ?? '',
+      category: json['category']?.toString() ?? 'General',
+      unit: json['unit']?.toString() ?? 'pcs',
+      stockQuantity: parseInt(json['stockQuantity'] ?? json['stock_quantity'], 0),
+      lowStockQuantity: parseInt(json['lowStockQuantity'] ?? json['lowStockThreshold'] ?? json['low_stock_quantity'], 5),
+      retailSellPrice: parseDouble(json['retailSellPrice'] ?? json['sellPrice'] ?? json['retail_sell_price'] ?? json['price']),
+      purchasePrice: parseDouble(json['purchasePrice'] ?? json['buyPrice'] ?? json['purchase_price']),
+      createdAt: json['createdAt']?.toString() ?? json['created_at']?.toString(),
+      updatedAt: json['updatedAt']?.toString() ?? json['updated_at']?.toString(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      if (id.isNotEmpty) 'id': id,
       'name': name,
       'sku': sku,
       'category': category,
       'unit': unit,
       'stockQuantity': stockQuantity,
       'lowStockQuantity': lowStockQuantity,
+      'lowStockThreshold': lowStockQuantity,
       'retailSellPrice': retailSellPrice,
+      'sellPrice': retailSellPrice,
       'purchasePrice': purchasePrice,
+      'buyPrice': purchasePrice,
       if (createdAt != null) 'createdAt': createdAt,
       if (updatedAt != null) 'updatedAt': updatedAt,
     };

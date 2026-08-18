@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
@@ -27,10 +28,32 @@ class _InventoryScreenState extends State<InventoryScreen> {
   final TextEditingController searchController = TextEditingController();
   InventoryFilter selectedFilter = InventoryFilter.all;
   String selectedCategory = 'All';
+  StreamSubscription<InventoryState>? _blocSubscription;
 
   @override
   void initState() {
     super.initState();
+    _blocSubscription = InjectionContainer.inventoryBloc.stream.listen((state) {
+      if (!mounted) return;
+      if (state is InventoryOperationSuccessState) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(state.message),
+            backgroundColor: Colors.green.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else if (state is InventoryErrorState) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(state.message),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    });
+
     // Dispatch initial fetch event to InventoryBloc
     InjectionContainer.inventoryBloc.add(
       FetchInventoryItemsEvent(
@@ -43,6 +66,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   @override
   void dispose() {
+    _blocSubscription?.cancel();
     searchController.dispose();
     super.dispose();
   }
@@ -80,6 +104,79 @@ class _InventoryScreenState extends State<InventoryScreen> {
         category: selectedCategory,
         filter: filter,
       ),
+    );
+  }
+  void _showAddCategoryDialog(BuildContext context) {
+    final nameController = TextEditingController();
+    final descController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Icon(Icons.category_rounded, color: Colors.teal),
+              SizedBox(width: 10),
+              Text('Create Category'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  labelText: 'Category Name *',
+                  hintText: 'e.g. Electronics, Grocery',
+                  prefixIcon: Icon(Icons.label_outlined),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: descController,
+                decoration: const InputDecoration(
+                  labelText: 'Description (Optional)',
+                  hintText: 'Category summary',
+                  prefixIcon: Icon(Icons.description_outlined),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Colors.white,
+              ),
+              icon: const Icon(Icons.check_rounded),
+              label: const Text('Create Category'),
+              onPressed: () {
+                final categoryName = nameController.text.trim();
+                if (categoryName.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter category name')),
+                  );
+                  return;
+                }
+                Navigator.pop(dialogContext);
+                InjectionContainer.inventoryBloc.add(
+                  CreateCategoryEvent(
+                    name: categoryName,
+                    description: descController.text.trim().isNotEmpty ? descController.text.trim() : null,
+                  ),
+                );
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -245,10 +342,18 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 child: ListView.separated(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   scrollDirection: Axis.horizontal,
-                  itemCount: categories.length,
+                  itemCount: categories.length + 1,
                   separatorBuilder: (_, __) => const SizedBox(width: 8),
                   itemBuilder: (context, index) {
-                    final category = categories[index];
+                    if (index == 0) {
+                      return ActionChip(
+                        avatar: const Icon(Icons.add_rounded, size: 18),
+                        label: const Text('Add Category'),
+                        onPressed: () => _showAddCategoryDialog(context),
+                      );
+                    }
+
+                    final category = categories[index - 1];
                     final selected = selectedCategory == category;
 
                     return ChoiceChip(
@@ -277,6 +382,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
                             onEdit: () {
                               _openAddItemSheet(existingItem: item);
                             },
+                            onDelete: () {
+                              _confirmDeleteItem(context, item);
+                            },
                           );
                         },
                       ),
@@ -288,6 +396,45 @@ class _InventoryScreenState extends State<InventoryScreen> {
     );
   }
 
+  void _confirmDeleteItem(BuildContext context, InventoryItemEntity item) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.red),
+              SizedBox(width: 10),
+              Text('Delete Item?'),
+            ],
+          ),
+          content: Text(
+            'Are you sure you want to delete "${item.name}" (SKU: ${item.sku})?\n\nThis action will remove the item from your inventory.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade700,
+                foregroundColor: Colors.white,
+              ),
+              icon: const Icon(Icons.delete_forever_rounded),
+              label: const Text('Delete Item'),
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                InjectionContainer.inventoryBloc.add(DeleteInventoryItemEvent(item.id));
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   // ADD / EDIT ITEM BOTTOM SHEET
   void _openAddItemSheet({
     InventoryItemEntity? existingItem,
@@ -296,25 +443,21 @@ class _InventoryScreenState extends State<InventoryScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) {
+      builder: (sheetContext) {
         return AddItemSheet(
           existingItem: existingItem,
-          onSave: (item) {
+          onSave: (item) async {
             if (existingItem == null) {
-              InjectionContainer.inventoryBloc.add(AddInventoryItemEvent(item));
+              final savedItem = await InjectionContainer.addInventoryItemUseCase(item);
+              InjectionContainer.inventoryBloc.add(AddInventoryItemEvent(savedItem));
             } else {
-              InjectionContainer.inventoryBloc.add(UpdateInventoryItemEvent(item));
+              final updatedItem = await InjectionContainer.updateInventoryItemUseCase(item);
+              InjectionContainer.inventoryBloc.add(UpdateInventoryItemEvent(updatedItem));
             }
 
-            Navigator.pop(context);
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  existingItem == null ? 'Item added successfully' : 'Item updated successfully',
-                ),
-              ),
-            );
+            if (sheetContext.mounted) {
+              Navigator.pop(sheetContext);
+            }
           },
         );
       },
