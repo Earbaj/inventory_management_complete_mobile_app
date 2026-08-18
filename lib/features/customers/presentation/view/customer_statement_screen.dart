@@ -54,7 +54,7 @@ class CustomerStatementScreen extends StatelessWidget {
     if (calc == 0.0 && customer.totalDue > 0) {
       return customer.totalDue;
     }
-    return calc;
+    return calc.abs();
   }
 
   void _exportPdf(BuildContext context) {
@@ -217,12 +217,12 @@ class CustomerStatementScreen extends StatelessWidget {
                 Text('Current Balance', style: theme.textTheme.bodyMedium),
                 const SizedBox(height: 5),
                 Text(
-                  '৳ ${currentBalance.toStringAsFixed(2)}',
+                  '৳ ${customer.totalDue.toStringAsFixed(2)}',
                   style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: colorScheme.primary),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  currentBalance > 0 ? 'Due from customer' : 'No outstanding due',
+                  customer.totalDue > 0 ? 'Due from customer' : 'No outstanding due',
                   style: theme.textTheme.bodySmall,
                 ),
                 if (currentBalance > 0) ...[

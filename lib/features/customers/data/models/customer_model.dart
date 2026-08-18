@@ -32,8 +32,11 @@ class CustomerModel {
   }
 
   factory CustomerModel.fromJson(Map<String, dynamic> json) {
-    final rawDue = json['totalDue'] ?? json['total_due'] ?? json['due'] ?? json['closingBalance'] ?? json['closing_balance'];
+    final rawDue = json['closingBalance'] ?? json['closing_balance'] ?? json['totalDue'] ?? json['total_due'] ?? json['due'];
     final rawOpening = json['openingBalance'] ?? json['opening_balance'];
+
+    final parsedDue = _parseDouble(rawDue);
+    final parsedOpening = _parseDouble(rawOpening);
 
     return CustomerModel(
       id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
@@ -41,8 +44,8 @@ class CustomerModel {
       phone: json['phone']?.toString() ?? '',
       email: json['email']?.toString(),
       address: json['address']?.toString(),
-      totalDue: _parseDouble(rawDue),
-      openingBalance: _parseDouble(rawOpening),
+      totalDue: parsedDue.abs(),
+      openingBalance: parsedOpening.abs(),
       notes: json['notes']?.toString(),
       createdAt: json['createdAt']?.toString() ?? json['created_at']?.toString(),
       updatedAt: json['updatedAt']?.toString() ?? json['updated_at']?.toString(),
