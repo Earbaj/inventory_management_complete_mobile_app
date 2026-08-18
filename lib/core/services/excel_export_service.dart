@@ -43,7 +43,7 @@ class ExcelExportService {
     for (final sale in sales) {
       final dateStr = '${sale.createdAt.day}/${sale.createdAt.month}/${sale.createdAt.year}';
       final customerName = sale.customer?.name ?? 'Walk-in Customer';
-      buffer.writeln('$dateStr,"${sale.invoiceNo}","$customerName",${sale.totalAmount},${sale.discountAmount},${sale.taxAmount},${sale.netTotal},${sale.paidAmount},${sale.dueAmount},"${sale.paymentMethod}"');
+      buffer.writeln('$dateStr,"${sale.invoiceNo}","$customerName",${sale.subtotal},${sale.discountAmount},${sale.vatAmount},${sale.netTotal},${sale.paidAmount},${sale.dueAmount},"${sale.paymentMethod}"');
     }
 
     return buffer.toString();

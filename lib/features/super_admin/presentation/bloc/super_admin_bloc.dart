@@ -1,6 +1,6 @@
 import 'dart:async';
+import '../../../subscription/data/mappers/subscription_mapper.dart';
 import '../../data/datasources/super_admin_remote_data_source.dart';
-import '../../subscription/data/mappers/subscription_mapper.dart';
 import 'super_admin_event.dart';
 import 'super_admin_state.dart';
 

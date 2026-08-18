@@ -203,6 +203,7 @@ class InjectionContainer {
     authRepository = AuthRepositoryImpl(
       remoteDataSource: authRemoteDataSource,
       localDataSource: authLocalDataSource,
+      apiClient: apiClient,
     );
 
     inventoryRepository = InventoryRepositoryImpl(
@@ -223,6 +224,7 @@ class InjectionContainer {
     reportsRepository = ReportsRepositoryImpl(
       remoteDataSource: reportsRemoteDataSource,
       localDataSource: reportsLocalDataSource,
+      posLocalDataSource: posLocalDataSource,
     );
 
     returnsRepository = ReturnsRepositoryImpl(

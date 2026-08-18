@@ -1,4 +1,5 @@
-import '../../subscription/domain/entities/payment_entity.dart';
+
+import '../../../subscription/domain/entities/payment_entity.dart';
 
 abstract class SuperAdminState {
   const SuperAdminState();

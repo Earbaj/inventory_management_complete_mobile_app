@@ -78,9 +78,9 @@ class PdfExportService {
         </table>
 
         <div class="total-section">
-          <div class="total-row"><span>Subtotal:</span> <span>$currencySymbol${sale.totalAmount.toStringAsFixed(2)}</span></div>
+          <div class="total-row"><span>Subtotal:</span> <span>$currencySymbol${sale.subtotal.toStringAsFixed(2)}</span></div>
           <div class="total-row"><span>Discount:</span> <span>-$currencySymbol${sale.discountAmount.toStringAsFixed(2)}</span></div>
-          <div class="total-row"><span>VAT:</span> <span>+$currencySymbol${sale.taxAmount.toStringAsFixed(2)}</span></div>
+          <div class="total-row"><span>VAT:</span> <span>+$currencySymbol${sale.vatAmount.toStringAsFixed(2)}</span></div>
           <div class="total-row grand"><span>Net Total:</span> <span>$currencySymbol${sale.netTotal.toStringAsFixed(2)}</span></div>
           <div class="total-row" style="color: #16a34a;"><span>Paid Amount:</span> <span>$currencySymbol${sale.paidAmount.toStringAsFixed(2)}</span></div>
           <div class="total-row" style="color: #dc2626; font-weight: bold;"><span>Due Amount:</span> <span>$currencySymbol${sale.dueAmount.toStringAsFixed(2)}</span></div>

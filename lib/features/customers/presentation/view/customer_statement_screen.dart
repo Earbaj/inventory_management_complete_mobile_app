@@ -75,7 +75,7 @@ class CustomerStatementScreen extends StatelessWidget {
               const Text('PDF Printable Statement generated successfully!'),
               const SizedBox(height: 12),
               Container(
-                maxHeight: 200,
+                constraints: const BoxConstraints(maxHeight: 200),
                 padding: const EdgeInsets.all(8),
                 color: Colors.grey.shade100,
                 child: Text(
@@ -135,7 +135,7 @@ class CustomerStatementScreen extends StatelessWidget {
               const Text('Excel CSV Statement exported successfully!'),
               const SizedBox(height: 12),
               Container(
-                maxHeight: 200,
+                constraints: const BoxConstraints(maxHeight: 200),
                 padding: const EdgeInsets.all(8),
                 color: Colors.grey.shade100,
                 child: Text(

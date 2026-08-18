@@ -1,7 +1,7 @@
 import 'dart:developer' as developer;
 import '../../../../core/config/env_config.dart';
 import '../../../../core/network/api_client.dart';
-import '../../subscription/data/models/payment_model.dart';
+import '../../../subscription/data/models/payment_model.dart';
 
 abstract class SuperAdminRemoteDataSource {
   Future<List<PaymentModel>> getPendingPayments();
