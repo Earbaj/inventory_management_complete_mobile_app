@@ -31,6 +31,13 @@ class SaleModel {
     this.createdAt,
   });
 
+  static double _parseDouble(dynamic val) {
+    if (val == null) return 0.0;
+    if (val is num) return val.toDouble();
+    if (val is String) return double.tryParse(val) ?? 0.0;
+    return 0.0;
+  }
+
   factory SaleModel.fromJson(Map<String, dynamic> json) {
     final List rawItems = json['items'] ?? [];
     final List<CartItemModel> parsedItems = rawItems
@@ -43,24 +50,25 @@ class SaleModel {
     } else if (json['customerName'] != null) {
       parsedCustomer = CustomerModel(
         id: json['customerId']?.toString() ?? '',
-        name: json['customerName'] ?? '',
-        phone: json['customerPhone'] ?? '',
+        name: json['customerName']?.toString() ?? '',
+        phone: json['customerPhone']?.toString() ?? '',
+        openingBalance: 0.0,
       );
     }
 
     return SaleModel(
       id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
-      invoiceNo: json['invoiceNo'] ?? json['invoice_no'] ?? json['invoiceId'] ?? '',
+      invoiceNo: json['invoiceNo']?.toString() ?? json['invoice_no']?.toString() ?? json['invoiceId']?.toString() ?? '',
       customer: parsedCustomer,
       items: parsedItems,
-      subtotal: (json['subtotal'] ?? 0.0).toDouble(),
-      discountAmount: (json['discountAmount'] ?? json['discount'] ?? 0.0).toDouble(),
-      vatAmount: (json['vatAmount'] ?? json['vat'] ?? 0.0).toDouble(),
-      netTotal: (json['netTotal'] ?? json['total'] ?? 0.0).toDouble(),
-      paidAmount: (json['paidAmount'] ?? json['paid'] ?? 0.0).toDouble(),
-      dueAmount: (json['dueAmount'] ?? json['due'] ?? 0.0).toDouble(),
-      paymentMethod: json['paymentMethod'] ?? json['payment_method'] ?? 'cash',
-      createdAt: json['createdAt'] ?? json['created_at'],
+      subtotal: _parseDouble(json['subtotal']),
+      discountAmount: _parseDouble(json['discountAmount'] ?? json['discount']),
+      vatAmount: _parseDouble(json['vatAmount'] ?? json['vat']),
+      netTotal: _parseDouble(json['netTotal'] ?? json['total']),
+      paidAmount: _parseDouble(json['paidAmount'] ?? json['paid']),
+      dueAmount: _parseDouble(json['dueAmount'] ?? json['due']),
+      paymentMethod: json['paymentMethod']?.toString() ?? json['payment_method']?.toString() ?? 'cash',
+      createdAt: json['createdAt']?.toString() ?? json['created_at']?.toString(),
     );
   }
 

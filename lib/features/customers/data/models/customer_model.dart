@@ -24,21 +24,28 @@ class CustomerModel {
     this.updatedAt,
   });
 
+  static double _parseDouble(dynamic val) {
+    if (val == null) return 0.0;
+    if (val is num) return val.toDouble();
+    if (val is String) return double.tryParse(val) ?? 0.0;
+    return 0.0;
+  }
+
   factory CustomerModel.fromJson(Map<String, dynamic> json) {
-    final parsedDue = (json['totalDue'] ?? json['total_due'] ?? json['due'] ?? json['openingBalance'] ?? json['opening_balance'] ?? 0.0).toDouble();
-    final parsedOpeningBalance = (json['openingBalance'] ?? json['opening_balance'] ?? json['totalDue'] ?? json['total_due'] ?? 0.0).toDouble();
+    final rawDue = json['totalDue'] ?? json['total_due'] ?? json['due'] ?? json['closingBalance'] ?? json['closing_balance'];
+    final rawOpening = json['openingBalance'] ?? json['opening_balance'];
 
     return CustomerModel(
       id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
-      name: json['name'] ?? '',
-      phone: json['phone'] ?? '',
-      email: json['email'],
-      address: json['address'],
-      totalDue: parsedDue,
-      openingBalance: parsedOpeningBalance,
-      notes: json['notes'],
-      createdAt: json['createdAt'] ?? json['created_at'],
-      updatedAt: json['updatedAt'] ?? json['updated_at'],
+      name: json['name']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? '',
+      email: json['email']?.toString(),
+      address: json['address']?.toString(),
+      totalDue: _parseDouble(rawDue),
+      openingBalance: _parseDouble(rawOpening),
+      notes: json['notes']?.toString(),
+      createdAt: json['createdAt']?.toString() ?? json['created_at']?.toString(),
+      updatedAt: json['updatedAt']?.toString() ?? json['updated_at']?.toString(),
     );
   }
 

@@ -10,6 +10,13 @@ class CartItemModel {
     required this.quantity,
   });
 
+  static double _parseDouble(dynamic val) {
+    if (val == null) return 0.0;
+    if (val is num) return val.toDouble();
+    if (val is String) return double.tryParse(val) ?? 0.0;
+    return 0.0;
+  }
+
   factory CartItemModel.fromJson(Map<String, dynamic> json) {
     final itemData = json['item'] is Map<String, dynamic>
         ? json['item']
@@ -21,8 +28,8 @@ class CartItemModel {
             'unit': json['unit'] ?? 'Piece',
             'stockQuantity': json['stockQuantity'] ?? 100,
             'lowStockQuantity': json['lowStockQuantity'] ?? 5,
-            'retailSellPrice': (json['unitPrice'] ?? json['retailSellPrice'] ?? 0.0).toDouble(),
-            'purchasePrice': (json['purchasePrice'] ?? 0.0).toDouble(),
+            'retailSellPrice': _parseDouble(json['unitPrice'] ?? json['retailSellPrice']),
+            'purchasePrice': _parseDouble(json['purchasePrice']),
           };
 
     return CartItemModel(
