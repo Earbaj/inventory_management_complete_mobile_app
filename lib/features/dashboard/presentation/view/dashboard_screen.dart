@@ -202,25 +202,26 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                     },
                   ),
 
-                  // 3. Outstanding Dues (ReportsBloc / CustomerBloc)
-                  StreamBuilder<ReportsState>(
-                    stream: InjectionContainer.reportsBloc.stream,
-                    initialData: InjectionContainer.reportsBloc.state,
+                  // 3. Outstanding Dues (CustomerBloc / ReportsBloc)
+                  StreamBuilder<CustomerState>(
+                    stream: InjectionContainer.customerBloc.stream,
+                    initialData: InjectionContainer.customerBloc.state,
                     builder: (context, snapshot) {
-                      final reportsState = snapshot.data is ReportsLoadedState ? snapshot.data : InjectionContainer.reportsBloc.state;
-                      final summary = reportsState is ReportsLoadedState ? reportsState.summary : null;
-                      final logs = reportsState is ReportsLoadedState ? reportsState.invoiceLogs : null;
+                      final custState = snapshot.data is CustomerLoadedState
+                          ? snapshot.data
+                          : InjectionContainer.customerBloc.state;
 
-                      double due = summary != null ? (summary.totalDue > 0 ? summary.totalDue : summary.dueRevenue) : 0.0;
-
-                      if (due == 0.0 && logs != null && logs.isNotEmpty) {
-                        due = logs.fold<double>(0.0, (sum, s) => sum + s.dueAmount);
+                      double due = 0.0;
+                      if (custState is CustomerLoadedState && custState.customers.isNotEmpty) {
+                        due = custState.customers.fold<double>(0.0, (sum, c) => sum + c.totalDue);
                       }
 
                       if (due == 0.0) {
-                        final customerState = InjectionContainer.customerBloc.state;
-                        if (customerState is CustomerLoadedState) {
-                          due = customerState.customers.fold<double>(0.0, (sum, c) => sum + c.totalDue);
+                        final reportsState = InjectionContainer.reportsBloc.state;
+                        if (reportsState is ReportsLoadedState && reportsState.summary != null) {
+                          due = reportsState.summary!.totalDue > 0
+                              ? reportsState.summary!.totalDue
+                              : reportsState.summary!.dueRevenue;
                         }
                       }
 

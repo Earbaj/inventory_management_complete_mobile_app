@@ -1,4 +1,8 @@
 import 'dart:async';
+import '../../../../core/di/injection_container.dart';
+import '../../../customers/presentation/bloc/customer_event.dart';
+import '../../../inventory/presentation/bloc/inventory_event.dart';
+import '../../../reports/presentation/bloc/reports_event.dart';
 import '../../domain/entities/return_item_entity.dart';
 import '../../domain/usecases/get_return_logs_usecase.dart';
 import '../../domain/usecases/process_return_usecase.dart';
@@ -62,6 +66,13 @@ class ReturnsBloc {
       final processedItem = await processReturnUseCase(event.returnItem);
       _allReturnLogs.insert(0, processedItem);
       _emit(const ReturnsOperationSuccessState('Item return processed & inventory restocked successfully!'));
+
+      try {
+        InjectionContainer.inventoryBloc.add(FetchInventoryItemsEvent());
+        InjectionContainer.reportsBloc.add(FetchReportsEvent());
+        InjectionContainer.customerBloc.add(FetchCustomersEvent());
+      } catch (_) {}
+
       _emitLoadedState();
     } catch (e) {
       _emit(ReturnsErrorState(e.toString()));

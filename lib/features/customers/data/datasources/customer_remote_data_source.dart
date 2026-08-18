@@ -18,6 +18,11 @@ abstract class CustomerRemoteDataSource {
     String paymentMethod = 'cash',
     String? note,
   });
+  Future<Map<String, dynamic>> getCustomerLedger({
+    required String customerId,
+    int page = 1,
+    int limit = 50,
+  });
 }
 
 class CustomerRemoteDataSourceImpl implements CustomerRemoteDataSource {
@@ -120,6 +125,29 @@ class CustomerRemoteDataSourceImpl implements CustomerRemoteDataSource {
       developer.log('✅ [CustomerRemoteDataSource] collectCustomerPayment() success.', name: 'CustomerRemoteDataSource');
     } catch (e, stackTrace) {
       developer.log('❌ [CustomerRemoteDataSource] collectCustomerPayment() API Error: $e', name: 'CustomerRemoteDataSource', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> getCustomerLedger({
+    required String customerId,
+    int page = 1,
+    int limit = 50,
+  }) async {
+    developer.log('👥 [CustomerRemoteDataSource] getCustomerLedger() customerId: "$customerId"', name: 'CustomerRemoteDataSource');
+    try {
+      final response = await apiClient.get(
+        '${EnvConfig.apiBaseUrl}/api/customers/$customerId/ledger',
+        queryParameters: {
+          'page': page,
+          'limit': limit,
+        },
+      );
+      developer.log('✅ [CustomerRemoteDataSource] getCustomerLedger() success.', name: 'CustomerRemoteDataSource');
+      return response is Map<String, dynamic> ? response : {'data': response};
+    } catch (e, stackTrace) {
+      developer.log('❌ [CustomerRemoteDataSource] getCustomerLedger() API Error: $e', name: 'CustomerRemoteDataSource', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }
