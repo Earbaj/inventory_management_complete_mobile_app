@@ -223,11 +223,16 @@ class ApiClient {
 
   /// Maps [DioException] instances to domain [Failure] objects.
   Failure _handleDioError(DioException e) {
+    if (e.type == DioExceptionType.connectionError) {
+      return NetworkFailure(
+        'Unable to connect to backend server (${EnvConfig.apiBaseUrl}). Please ensure the backend server is running and accessible.',
+      );
+    }
+
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.sendTimeout ||
-        e.type == DioExceptionType.receiveTimeout ||
-        e.type == DioExceptionType.connectionError) {
-      return const NetworkFailure('Network connection timeout. Please check your internet.');
+        e.type == DioExceptionType.receiveTimeout) {
+      return const NetworkFailure('Network connection timeout. Please check your internet connection.');
     }
 
     final statusCode = e.response?.statusCode;
