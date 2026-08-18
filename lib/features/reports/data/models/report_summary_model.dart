@@ -37,7 +37,7 @@ class ReportSummaryModel {
     final rev = parseDouble(json['totalRevenue'] ?? json['totalSalesRevenue'] ?? json['total_revenue'] ?? json['revenue']);
     final salesCnt = parseInt(json['totalSalesCount'] ?? json['totalInvoices'] ?? json['totalInvoicesCount'] ?? json['total_sales_count'] ?? json['salesCount']);
     final disc = parseDouble(json['totalDiscount'] ?? json['total_discount']);
-    final due = parseDouble(json['totalDue'] ?? json['totalDueAmount'] ?? json['total_due']);
+    final due = parseDouble(json['totalDue'] ?? json['totalDueAmount'] ?? json['total_due'] ?? json['dueRevenue'] ?? json['totalCustomerDue'] ?? json['outstandingDue'] ?? json['due']);
     final cash = parseDouble(json['cashRevenue'] ?? json['totalPaidCollected'] ?? json['cash_revenue']);
     final digital = parseDouble(json['digitalRevenue'] ?? json['digital_revenue']);
     final dueRev = parseDouble(json['dueRevenue'] ?? json['totalCustomerDue'] ?? json['due_revenue']);

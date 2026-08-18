@@ -37,3 +37,18 @@ class DeleteCustomerEvent extends CustomerEvent {
 
   const DeleteCustomerEvent(this.customerId);
 }
+
+/// Event: Collects payment against customer due balance (POST /api/payments).
+class CollectCustomerPaymentEvent extends CustomerEvent {
+  final String customerId;
+  final double amount;
+  final String paymentMethod;
+  final String? note;
+
+  const CollectCustomerPaymentEvent({
+    required this.customerId,
+    required this.amount,
+    this.paymentMethod = 'cash',
+    this.note,
+  });
+}

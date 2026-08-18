@@ -14,7 +14,7 @@ class RecentTransactions extends StatelessWidget {
       stream: InjectionContainer.reportsBloc.stream,
       initialData: InjectionContainer.reportsBloc.state,
       builder: (context, snapshot) {
-        final state = snapshot.data;
+        final state = snapshot.data is ReportsLoadedState ? snapshot.data : InjectionContainer.reportsBloc.state;
         final logs = state is ReportsLoadedState ? state.invoiceLogs : [];
 
         return Container(

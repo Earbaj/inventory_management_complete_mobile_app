@@ -12,6 +12,12 @@ abstract class CustomerRemoteDataSource {
   Future<CustomerModel> addCustomer(CustomerModel customer);
   Future<CustomerModel> updateCustomer(CustomerModel customer);
   Future<void> deleteCustomer(String customerId);
+  Future<void> collectCustomerPayment({
+    required String customerId,
+    required double amount,
+    String paymentMethod = 'cash',
+    String? note,
+  });
 }
 
 class CustomerRemoteDataSourceImpl implements CustomerRemoteDataSource {
@@ -89,6 +95,31 @@ class CustomerRemoteDataSourceImpl implements CustomerRemoteDataSource {
       developer.log('✅ [CustomerRemoteDataSource] deleteCustomer() success.', name: 'CustomerRemoteDataSource');
     } catch (e, stackTrace) {
       developer.log('❌ [CustomerRemoteDataSource] deleteCustomer() API Error: $e', name: 'CustomerRemoteDataSource', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> collectCustomerPayment({
+    required String customerId,
+    required double amount,
+    String paymentMethod = 'cash',
+    String? note,
+  }) async {
+    developer.log('👥 [CustomerRemoteDataSource] collectCustomerPayment() called for customerId: "$customerId", amount: ৳$amount', name: 'CustomerRemoteDataSource');
+    try {
+      await apiClient.post(
+        '${EnvConfig.apiBaseUrl}/api/payments',
+        body: {
+          'customerId': customerId,
+          'amount': amount,
+          'paymentMethod': paymentMethod,
+          if (note != null && note.isNotEmpty) 'note': note,
+        },
+      );
+      developer.log('✅ [CustomerRemoteDataSource] collectCustomerPayment() success.', name: 'CustomerRemoteDataSource');
+    } catch (e, stackTrace) {
+      developer.log('❌ [CustomerRemoteDataSource] collectCustomerPayment() API Error: $e', name: 'CustomerRemoteDataSource', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }

@@ -4,9 +4,12 @@ import '../../../../core/route/app_route.dart';
 import '../../../customers/domain/entities/customer_entity.dart';
 import '../../../customers/presentation/bloc/customer_event.dart';
 import '../../../customers/presentation/bloc/customer_state.dart';
+import '../../../posbilling/domain/entities/sale_entity.dart';
+import '../../../reports/presentation/bloc/reports_state.dart';
 import '../../customer.dart';
 import '../../customer_transaction.dart';
 import '../widget/add_customer_sheet.dart';
+import '../widget/collect_payment_sheet.dart';
 import '../widget/customer_card.dart';
 import '../widget/customer_summary.dart';
 import '../widget/empty_customer_state.dart';
@@ -56,6 +59,11 @@ class _CustomersScreenState extends State<CustomersScreen> {
         ),
         title: const Text('Customers'),
         actions: [
+          IconButton(
+            onPressed: () => _openCollectPaymentSheet(),
+            icon: const Icon(Icons.payments_rounded, color: Colors.green),
+            tooltip: 'Receive Payment',
+          ),
           IconButton(
             onPressed: () {
               InjectionContainer.customerBloc.add(FetchCustomersEvent(searchQuery: searchController.text));
@@ -198,6 +206,9 @@ class _CustomersScreenState extends State<CustomersScreen> {
                             onStatement: () {
                               _openStatement(customer);
                             },
+                            onCollectPayment: () {
+                              _openCollectPaymentSheet(preSelectedCustomer: customer);
+                            },
                           );
                         },
                       ),
@@ -240,6 +251,18 @@ class _CustomersScreenState extends State<CustomersScreen> {
     );
   }
 
+  // COLLECT PAYMENT SHEET
+  void _openCollectPaymentSheet({CustomerEntity? preSelectedCustomer}) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return CollectPaymentSheet(preSelectedCustomer: preSelectedCustomer);
+      },
+    );
+  }
+
   // DELETE CUSTOMER
   void _deleteCustomer(CustomerEntity customer) {
     showDialog(
@@ -277,12 +300,54 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
   // VIEW STATEMENT
   void _openStatement(CustomerEntity customer) {
+    final reportsState = InjectionContainer.reportsBloc.state;
+    final allLogs = reportsState is ReportsLoadedState ? reportsState.invoiceLogs : <SaleEntity>[];
+
+    final customerSales = allLogs.where((sale) {
+      final matchId = sale.customer?.id.isNotEmpty == true && sale.customer!.id == customer.id;
+      final matchName = sale.customer?.name.isNotEmpty == true &&
+          sale.customer!.name.trim().toLowerCase() == customer.name.trim().toLowerCase();
+      final matchPhone = sale.customer?.phone.isNotEmpty == true &&
+          customer.phone.isNotEmpty &&
+          sale.customer!.phone.trim() == customer.phone.trim();
+
+      return matchId || matchName || matchPhone;
+    }).toList();
+
+    final List<CustomerTransaction> customerTransactions = [];
+    for (final sale in customerSales) {
+      // 1. Add Sale invoice entry
+      customerTransactions.add(CustomerTransaction(
+        id: '${sale.id}_sale',
+        date: sale.createdAt ?? DateTime.now(),
+        reference: sale.invoiceNo,
+        type: TransactionType.sale,
+        amount: sale.netTotal,
+        note: 'Sales Invoice (${sale.items.length} items)',
+      ));
+
+      // 2. Add Paid amount entry if paidAmount > 0
+      if (sale.paidAmount > 0) {
+        customerTransactions.add(CustomerTransaction(
+          id: '${sale.id}_pay',
+          date: sale.createdAt ?? DateTime.now(),
+          reference: 'PAY-${sale.invoiceNo}',
+          type: TransactionType.payment,
+          amount: sale.paidAmount,
+          note: 'Payment via ${sale.paymentMethod}',
+        ));
+      }
+    }
+
+    customerTransactions.sort((a, b) => b.date.compareTo(a.date));
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => CustomerStatementScreen(
           customer: customer,
-          transactions: transactions[customer.id] ?? const [],
+          transactions: customerTransactions,
+          customerSales: customerSales,
         ),
       ),
     );

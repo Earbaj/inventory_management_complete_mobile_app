@@ -1,6 +1,9 @@
 import 'dart:async';
+import '../../../../core/di/injection_container.dart';
+import '../../../reports/presentation/bloc/reports_event.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../../domain/usecases/add_customer_usecase.dart';
+import '../../domain/usecases/collect_customer_payment_usecase.dart';
 import '../../domain/usecases/delete_customer_usecase.dart';
 import '../../domain/usecases/get_customers_usecase.dart';
 import '../../domain/usecases/update_customer_usecase.dart';
@@ -12,6 +15,7 @@ class CustomerBloc {
   final AddCustomerUseCase addCustomerUseCase;
   final UpdateCustomerUseCase updateCustomerUseCase;
   final DeleteCustomerUseCase deleteCustomerUseCase;
+  final CollectCustomerPaymentUseCase collectCustomerPaymentUseCase;
 
   CustomerState _state = const CustomerInitialState();
   final _stateController = StreamController<CustomerState>.broadcast();
@@ -27,6 +31,7 @@ class CustomerBloc {
     required this.addCustomerUseCase,
     required this.updateCustomerUseCase,
     required this.deleteCustomerUseCase,
+    required this.collectCustomerPaymentUseCase,
   });
 
   void add(CustomerEvent event) {
@@ -49,6 +54,8 @@ class CustomerBloc {
       await _onUpdateCustomer(event);
     } else if (event is DeleteCustomerEvent) {
       await _onDeleteCustomer(event);
+    } else if (event is CollectCustomerPaymentEvent) {
+      await _onCollectPayment(event);
     }
   }
 
@@ -101,6 +108,25 @@ class CustomerBloc {
       _allCustomers.removeWhere((c) => c.id == event.customerId);
       _emit(const CustomerOperationSuccessState('Customer deleted successfully!'));
       _emitLoadedState();
+    } catch (e) {
+      _emit(CustomerErrorState(e.toString()));
+    }
+  }
+
+  Future<void> _onCollectPayment(CollectCustomerPaymentEvent event) async {
+    try {
+      await collectCustomerPaymentUseCase(
+        customerId: event.customerId,
+        amount: event.amount,
+        paymentMethod: event.paymentMethod,
+        note: event.note,
+      );
+      _emit(const CustomerOperationSuccessState('Payment collected successfully!'));
+
+      await _onFetchCustomers(FetchCustomersEvent(searchQuery: _currentSearchQuery));
+      try {
+        InjectionContainer.reportsBloc.add(const FetchReportsEvent());
+      } catch (_) {}
     } catch (e) {
       _emit(CustomerErrorState(e.toString()));
     }

@@ -18,7 +18,7 @@ class TopSellingItems extends StatelessWidget {
       stream: InjectionContainer.reportsBloc.stream,
       initialData: InjectionContainer.reportsBloc.state,
       builder: (context, reportsSnapshot) {
-        final reportsState = reportsSnapshot.data;
+        final reportsState = reportsSnapshot.data is ReportsLoadedState ? reportsSnapshot.data : InjectionContainer.reportsBloc.state;
         final List<SaleEntity> logs = reportsState is ReportsLoadedState ? reportsState.invoiceLogs : [];
 
         // Aggregate item sales count across logs
@@ -102,7 +102,7 @@ class TopSellingItems extends StatelessWidget {
                   stream: InjectionContainer.inventoryBloc.stream,
                   initialData: InjectionContainer.inventoryBloc.state,
                   builder: (context, invSnapshot) {
-                    final invState = invSnapshot.data;
+                    final invState = invSnapshot.data is InventoryLoadedState ? invSnapshot.data : InjectionContainer.inventoryBloc.state;
                     final items = invState is InventoryLoadedState ? invState.items : [];
 
                     if (items.isEmpty) {

@@ -17,4 +17,12 @@ abstract class CustomerRepository {
 
   /// Soft-deletes a customer.
   Future<void> deleteCustomer(String customerId);
+
+  /// Process payment against customer due balance.
+  Future<void> collectCustomerPayment({
+    required String customerId,
+    required double amount,
+    String paymentMethod = 'cash',
+    String? note,
+  });
 }

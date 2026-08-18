@@ -93,4 +93,24 @@ class CustomerRepositoryImpl implements CustomerRepository {
       throw NetworkFailure('Failed to delete customer. Please try again.');
     }
   }
+
+  @override
+  Future<void> collectCustomerPayment({
+    required String customerId,
+    required double amount,
+    String paymentMethod = 'cash',
+    String? note,
+  }) async {
+    try {
+      await remoteDataSource.collectCustomerPayment(
+        customerId: customerId,
+        amount: amount,
+        paymentMethod: paymentMethod,
+        note: note,
+      );
+    } catch (e) {
+      if (e is Failure) rethrow;
+      throw NetworkFailure('Failed to process customer payment. Please try again.');
+    }
+  }
 }

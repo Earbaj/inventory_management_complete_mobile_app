@@ -4,6 +4,10 @@ import '../../domain/entities/cart_item_entity.dart';
 import '../../domain/entities/sale_entity.dart';
 import '../../domain/usecases/create_sale_usecase.dart';
 import '../../domain/usecases/get_sales_logs_usecase.dart';
+import '../../../../core/di/injection_container.dart';
+import '../../../customers/presentation/bloc/customer_event.dart';
+import '../../../inventory/presentation/bloc/inventory_event.dart';
+import '../../../reports/presentation/bloc/reports_event.dart';
 import 'pos_event.dart';
 import 'pos_state.dart';
 
@@ -153,6 +157,13 @@ class PosBloc {
       final completedSale = await createSaleUseCase(saleToSubmit);
       _emit(PosCheckoutSuccessState(completedSale));
       _emit(const PosCartState(cartItems: []));
+
+      // Refresh ReportsBloc, CustomerBloc, and InventoryBloc so Dashboard updates immediately
+      try {
+        InjectionContainer.reportsBloc.add(const FetchReportsEvent());
+        InjectionContainer.customerBloc.add(const FetchCustomersEvent());
+        InjectionContainer.inventoryBloc.add(const FetchInventoryItemsEvent());
+      } catch (_) {}
     } catch (e) {
       _emit(PosCheckoutErrorState(e.toString()));
     }

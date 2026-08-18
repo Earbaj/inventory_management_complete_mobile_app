@@ -22,8 +22,11 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAliveClientMixin {
   String selectedPeriod = 'This Month';
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -36,6 +39,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -161,7 +165,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     stream: InjectionContainer.reportsBloc.stream,
                     initialData: InjectionContainer.reportsBloc.state,
                     builder: (context, snapshot) {
-                      final state = snapshot.data;
+                      final state = snapshot.data is ReportsLoadedState ? snapshot.data : InjectionContainer.reportsBloc.state;
                       final summary = state is ReportsLoadedState ? state.summary : null;
                       final revenue = summary != null ? summary.totalRevenue : 0.0;
 
@@ -182,7 +186,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     stream: InjectionContainer.reportsBloc.stream,
                     initialData: InjectionContainer.reportsBloc.state,
                     builder: (context, snapshot) {
-                      final state = snapshot.data;
+                      final state = snapshot.data is ReportsLoadedState ? snapshot.data : InjectionContainer.reportsBloc.state;
                       final summary = state is ReportsLoadedState ? state.summary : null;
                       final salesCount = summary != null ? summary.totalSalesCount : 0;
 
@@ -203,9 +207,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     stream: InjectionContainer.reportsBloc.stream,
                     initialData: InjectionContainer.reportsBloc.state,
                     builder: (context, snapshot) {
-                      final state = snapshot.data;
-                      final summary = state is ReportsLoadedState ? state.summary : null;
-                      final due = summary != null ? summary.totalDue : 0.0;
+                      final reportsState = snapshot.data is ReportsLoadedState ? snapshot.data : InjectionContainer.reportsBloc.state;
+                      final summary = reportsState is ReportsLoadedState ? reportsState.summary : null;
+                      final logs = reportsState is ReportsLoadedState ? reportsState.invoiceLogs : null;
+
+                      double due = summary != null ? (summary.totalDue > 0 ? summary.totalDue : summary.dueRevenue) : 0.0;
+
+                      if (due == 0.0 && logs != null && logs.isNotEmpty) {
+                        due = logs.fold<double>(0.0, (sum, s) => sum + s.dueAmount);
+                      }
+
+                      if (due == 0.0) {
+                        final customerState = InjectionContainer.customerBloc.state;
+                        if (customerState is CustomerLoadedState) {
+                          due = customerState.customers.fold<double>(0.0, (sum, c) => sum + c.totalDue);
+                        }
+                      }
 
                       return StatCard(
                         title: 'Outstanding Due',
@@ -224,7 +241,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     stream: InjectionContainer.inventoryBloc.stream,
                     initialData: InjectionContainer.inventoryBloc.state,
                     builder: (context, snapshot) {
-                      final state = snapshot.data;
+                      final state = snapshot.data is InventoryLoadedState ? snapshot.data : InjectionContainer.inventoryBloc.state;
                       final lowStockCount = state is InventoryLoadedState
                           ? state.items.where((i) => i.isLowStock || i.isOutOfStock).length
                           : 0;
@@ -245,7 +262,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     stream: InjectionContainer.customerBloc.stream,
                     initialData: InjectionContainer.customerBloc.state,
                     builder: (context, snapshot) {
-                      final state = snapshot.data;
+                      final state = snapshot.data is CustomerLoadedState ? snapshot.data : InjectionContainer.customerBloc.state;
                       final customerCount = state is CustomerLoadedState ? state.customers.length : 0;
 
                       return StatCard(
@@ -265,7 +282,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     stream: InjectionContainer.inventoryBloc.stream,
                     initialData: InjectionContainer.inventoryBloc.state,
                     builder: (context, snapshot) {
-                      final state = snapshot.data;
+                      final state = snapshot.data is InventoryLoadedState ? snapshot.data : InjectionContainer.inventoryBloc.state;
                       final totalItems = state is InventoryLoadedState ? state.items.length : 0;
 
                       return StatCard(

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../../core/services/excel_export_service.dart';
 import '../../../../core/services/pdf_export_service.dart';
+import '../../../posbilling/domain/entities/sale_entity.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../../customer.dart';
 import '../../customer_transaction.dart';
+import '../widget/collect_payment_sheet.dart';
 import '../widget/customer_statement_customer_header.dart';
 import '../widget/customer_statement_summary_card.dart';
 import '../widget/no_transaction_card.dart';
@@ -12,33 +14,47 @@ import '../widget/transaction_card.dart';
 class CustomerStatementScreen extends StatelessWidget {
   final Customer customer;
   final List<CustomerTransaction> transactions;
+  final List<SaleEntity> customerSales;
 
   const CustomerStatementScreen({
     super.key,
     required this.customer,
     required this.transactions,
+    this.customerSales = const [],
   });
 
   double get totalSales {
-    return transactions
+    final calc = transactions
         .where((transaction) => transaction.type == TransactionType.sale)
-        .fold(0, (sum, transaction) => sum + transaction.amount);
+        .fold<double>(0.0, (sum, transaction) => sum + transaction.amount);
+    if (calc == 0.0 && customerSales.isNotEmpty) {
+      return customerSales.fold<double>(0.0, (sum, s) => sum + s.netTotal);
+    }
+    return calc;
   }
 
   double get totalPayments {
-    return transactions
+    final calc = transactions
         .where((transaction) => transaction.type == TransactionType.payment)
-        .fold(0, (sum, transaction) => sum + transaction.amount);
+        .fold<double>(0.0, (sum, transaction) => sum + transaction.amount);
+    if (calc == 0.0 && customerSales.isNotEmpty) {
+      return customerSales.fold<double>(0.0, (sum, s) => sum + s.paidAmount);
+    }
+    return calc;
   }
 
   double get totalReturns {
     return transactions
         .where((transaction) => transaction.type == TransactionType.returnInvoice)
-        .fold(0, (sum, transaction) => sum + transaction.amount);
+        .fold<double>(0.0, (sum, transaction) => sum + transaction.amount);
   }
 
   double get currentBalance {
-    return customer.openingBalance + totalSales - totalPayments - totalReturns;
+    final calc = customer.openingBalance + totalSales - totalPayments - totalReturns;
+    if (calc == 0.0 && customer.totalDue > 0) {
+      return customer.totalDue;
+    }
+    return calc;
   }
 
   void _exportPdf(BuildContext context) {
@@ -53,7 +69,7 @@ class CustomerStatementScreen extends StatelessWidget {
 
     final htmlContent = PdfExportService.generateCustomerLedgerHtml(
       customer: customerEntity,
-      customerSales: const [],
+      customerSales: customerSales,
       shopName: 'Smart Inventory Store',
       currencySymbol: '৳',
     );
@@ -115,7 +131,7 @@ class CustomerStatementScreen extends StatelessWidget {
 
     final csvContent = ExcelExportService.generateCustomerLedgerCsv(
       customer: customerEntity,
-      customerSales: const [],
+      customerSales: customerSales,
     );
 
     showDialog(
@@ -209,6 +225,25 @@ class CustomerStatementScreen extends StatelessWidget {
                   currentBalance > 0 ? 'Due from customer' : 'No outstanding due',
                   style: theme.textTheme.bodySmall,
                 ),
+                if (currentBalance > 0) ...[
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (ctx) => CollectPaymentSheet(preSelectedCustomer: customer),
+                      );
+                    },
+                    icon: const Icon(Icons.payments_rounded, size: 18),
+                    label: const Text('Receive Payment Collection'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.green[700],
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
