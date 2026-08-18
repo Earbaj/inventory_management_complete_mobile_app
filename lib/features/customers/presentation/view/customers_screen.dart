@@ -38,7 +38,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
   }
 
   void _onSearchChanged(String query) {
-    InjectionContainer.customerBloc.add(FetchCustomersEvent(query));
+    InjectionContainer.customerBloc.add(FetchCustomersEvent(searchQuery: query));
   }
 
   @override
@@ -58,7 +58,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
         actions: [
           IconButton(
             onPressed: () {
-              InjectionContainer.customerBloc.add(FetchCustomersEvent(searchController.text));
+              InjectionContainer.customerBloc.add(FetchCustomersEvent(searchQuery: searchController.text));
             },
             icon: const Icon(Icons.refresh_rounded),
           ),
@@ -123,7 +123,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
                     const SizedBox(height: 24),
                     ElevatedButton.icon(
                       onPressed: () {
-                        InjectionContainer.customerBloc.add(FetchCustomersEvent(searchController.text));
+                        InjectionContainer.customerBloc.add(FetchCustomersEvent(searchQuery: searchController.text));
                       },
                       icon: const Icon(Icons.refresh_rounded),
                       label: const Text('Try Again'),
