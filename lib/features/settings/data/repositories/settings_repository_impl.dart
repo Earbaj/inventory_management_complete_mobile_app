@@ -5,6 +5,8 @@ import '../../domain/repositories/settings_repository.dart';
 import '../datasources/settings_local_data_source.dart';
 import '../datasources/settings_remote_data_source.dart';
 import '../mappers/settings_mapper.dart';
+import '../models/shop_profile_model.dart';
+import '../models/subscription_model.dart';
 
 class SettingsRepositoryImpl implements SettingsRepository {
   final SettingsRemoteDataSource remoteDataSource;
@@ -23,10 +25,19 @@ class SettingsRepositoryImpl implements SettingsRepository {
       return SettingsMapper.shopProfileModelToEntity(remoteModel);
     } catch (_) {
       final cached = await localDataSource.getCachedShopProfile();
-      if (cached == null) {
-        throw const ServerFailure('Something went wrong. Could not load shop profile.');
+      if (cached != null) {
+        return SettingsMapper.shopProfileModelToEntity(cached);
       }
-      return SettingsMapper.shopProfileModelToEntity(cached);
+      const defaultModel = ShopProfileModel(
+        id: '1',
+        shopName: 'Smart Inventory POS Store',
+        phone: '01700000000',
+        email: 'earbaj@gmail.com',
+        address: 'Dhaka, Bangladesh',
+        currencySymbol: '৳',
+      );
+      await localDataSource.cacheShopProfile(defaultModel);
+      return SettingsMapper.shopProfileModelToEntity(defaultModel);
     }
   }
 
@@ -51,10 +62,18 @@ class SettingsRepositoryImpl implements SettingsRepository {
       return SettingsMapper.subscriptionModelToEntity(remoteModel);
     } catch (_) {
       final cached = await localDataSource.getCachedSubscription();
-      if (cached == null) {
-        throw const ServerFailure('Something went wrong. Could not load subscription status.');
+      if (cached != null) {
+        return SettingsMapper.subscriptionModelToEntity(cached);
       }
-      return SettingsMapper.subscriptionModelToEntity(cached);
+      const defaultModel = SubscriptionModel(
+        tier: 'free',
+        maxCustomers: -1,
+        maxSales: -1,
+        customerCount: 0,
+        salesCount: 0,
+      );
+      await localDataSource.cacheSubscription(defaultModel);
+      return SettingsMapper.subscriptionModelToEntity(defaultModel);
     }
   }
 

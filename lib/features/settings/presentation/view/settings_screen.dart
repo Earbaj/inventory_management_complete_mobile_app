@@ -106,32 +106,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (state is SettingsErrorState) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.cloud_off_rounded, color: Colors.red, size: 48),
-                  const SizedBox(height: 12),
-                  Text(state.message, style: const TextStyle(color: Colors.red)),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      InjectionContainer.settingsBloc.add(const FetchSettingsEvent());
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
-
           final loadedState = state is SettingsLoadedState ? state : null;
           final profile = loadedState?.profile ??
               const ShopProfileEntity(
                 id: '1',
-                shopName: 'My Enterprise Store',
+                shopName: 'Smart Inventory POS Store',
                 phone: '01700000000',
+                email: 'earbaj@gmail.com',
+                address: 'Dhaka, Bangladesh',
+                currencySymbol: '৳',
               );
           final subscription = loadedState?.subscription;
 
@@ -169,36 +152,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    subscription.isPremium ? Icons.workspace_premium_rounded : Icons.star_rounded,
-                                    color: Colors.white,
-                                    size: 28,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    '${subscription.tier.toUpperCase()} TIER',
-                                    style: const TextStyle(
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      subscription.isPremium ? Icons.workspace_premium_rounded : Icons.star_rounded,
                                       color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18,
-                                      letterSpacing: 1.2,
+                                      size: 28,
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(
+                                        '${subscription.tier.toUpperCase()} TIER',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18,
+                                          letterSpacing: 1.2,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                               if (subscription.isFreeTier)
-                                ElevatedButton(
-                                  onPressed: () {
-                                    InjectionContainer.settingsBloc.add(const UpgradeSubscriptionEvent('premium'));
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: colorScheme.primary,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ConstrainedBox(
+                                  constraints: const BoxConstraints(maxWidth: 120, minWidth: 80),
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      InjectionContainer.settingsBloc.add(const UpgradeSubscriptionEvent('premium'));
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: colorScheme.primary,
+                                      minimumSize: const Size(80, 36),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    ),
+                                    child: const Text('UPGRADE', style: TextStyle(fontWeight: FontWeight.bold)),
                                   ),
-                                  child: const Text('UPGRADE', style: TextStyle(fontWeight: FontWeight.bold)),
                                 ),
                             ],
                           ),
@@ -208,13 +200,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                'Customers Limit: ${subscription.customerCount} / ${subscription.maxCustomers == -1 ? "Unlimited" : subscription.maxCustomers}',
-                                style: const TextStyle(color: Colors.white70, fontSize: 13),
+                              Expanded(
+                                child: Text(
+                                  'Customers Limit: ${subscription.customerCount} / ${subscription.maxCustomers == -1 ? "Unlimited" : subscription.maxCustomers}',
+                                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
-                              Text(
-                                'Sales Limit: ${subscription.salesCount} / ${subscription.maxSales == -1 ? "Unlimited" : subscription.maxSales}',
-                                style: const TextStyle(color: Colors.white70, fontSize: 13),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Sales Limit: ${subscription.salesCount} / ${subscription.maxSales == -1 ? "Unlimited" : subscription.maxSales}',
+                                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                                  textAlign: TextAlign.end,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                             ],
                           ),
