@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../reports/presentation/bloc/reports_state.dart';
 import '../../../inventory/presentation/bloc/inventory_state.dart';
-
 import '../../../posbilling/domain/entities/sale_entity.dart';
 import '../../../posbilling/domain/entities/cart_item_entity.dart';
 
@@ -21,13 +20,14 @@ class TopSellingItems extends StatelessWidget {
         final reportsState = reportsSnapshot.data is ReportsLoadedState ? reportsSnapshot.data : InjectionContainer.reportsBloc.state;
         final List<SaleEntity> logs = reportsState is ReportsLoadedState ? reportsState.invoiceLogs : [];
 
-        // Aggregate item sales count across logs
+        // Aggregate item sales count and total revenue strictly from API logs
         final Map<String, int> itemSalesCount = {};
+        final Map<String, double> itemSalesRevenue = {};
         for (final SaleEntity sale in logs) {
           for (final CartItemEntity cartItem in sale.items) {
             final String itemName = cartItem.item.name;
-            final int currentQty = itemSalesCount[itemName] ?? 0;
-            itemSalesCount[itemName] = currentQty + cartItem.quantity;
+            itemSalesCount[itemName] = (itemSalesCount[itemName] ?? 0) + cartItem.quantity;
+            itemSalesRevenue[itemName] = (itemSalesRevenue[itemName] ?? 0.0) + cartItem.totalPrice;
           }
         }
 
@@ -62,6 +62,10 @@ class TopSellingItems extends StatelessWidget {
 
               if (sortedItems.isNotEmpty)
                 ...sortedItems.take(5).map((entry) {
+                  final String itemName = entry.key;
+                  final int qtySold = entry.value;
+                  final double revenue = itemSalesRevenue[itemName] ?? 0.0;
+
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 7),
                     child: Row(
@@ -77,20 +81,29 @@ class TopSellingItems extends StatelessWidget {
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: Text(
-                            entry.key,
-                            style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-                            overflow: TextOverflow.ellipsis,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                itemName,
+                                style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                '$qtySold pcs sold',
+                                style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
+                              ),
+                            ],
                           ),
                         ),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              '${entry.value}',
+                              '৳ ${revenue.toStringAsFixed(0)}',
                               style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
                             ),
-                            Text('Sold', style: theme.textTheme.bodySmall),
+                            Text('Revenue', style: theme.textTheme.bodySmall?.copyWith(fontSize: 10)),
                           ],
                         ),
                       ],
@@ -108,7 +121,7 @@ class TopSellingItems extends StatelessWidget {
                     if (items.isEmpty) {
                       return const Padding(
                         padding: EdgeInsets.symmetric(vertical: 12),
-                        child: Text('No items added yet.', style: TextStyle(color: Colors.grey)),
+                        child: Text('No sales recorded yet.', style: TextStyle(color: Colors.grey)),
                       );
                     }
 

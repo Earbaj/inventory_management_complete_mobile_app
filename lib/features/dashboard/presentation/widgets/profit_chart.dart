@@ -21,31 +21,23 @@ class ProfitChart extends StatelessWidget {
 
         final double totalRev = summary?.totalRevenue ?? 0.0;
         final double totalDisc = summary?.totalDiscount ?? 0.0;
-        // Estimated Net Profit = Revenue minus discounts & estimated item cost (~65% margin)
         final double estProfit = totalRev > 0 ? (totalRev - totalDisc) * 0.35 : 0.0;
 
-        List<FlSpot> spots = [];
+        final List<FlSpot> spots = [];
         if (logs.isNotEmpty) {
-          final recentLogs = logs.take(7).toList();
-          for (int i = 0; i < recentLogs.length; i++) {
-            spots.add(FlSpot(i.toDouble(), (recentLogs[i].netTotal * 0.35) / 1000));
+          final sortedLogs = List.from(logs)..sort((a, b) => (a.createdAt ?? DateTime.now()).compareTo(b.createdAt ?? DateTime.now()));
+          for (int i = 0; i < sortedLogs.length; i++) {
+            spots.add(FlSpot(i.toDouble(), sortedLogs[i].netTotal * 0.35));
           }
         }
 
-        if (spots.length < 2) {
-          spots = const [
-            FlSpot(0, 2),
-            FlSpot(1, 4),
-            FlSpot(2, 6),
-            FlSpot(3, 5),
-            FlSpot(4, 9),
-            FlSpot(5, 8),
-            FlSpot(6, 12),
-          ];
+        if (spots.isEmpty) {
+          spots.add(const FlSpot(0, 0));
         }
 
-        double maxY = spots.map((s) => s.y).reduce((a, b) => a > b ? a : b) + 5;
-        if (maxY < 10) maxY = 25;
+        double maxY = spots.map((s) => s.y).reduce((a, b) => a > b ? a : b);
+        if (maxY <= 0) maxY = 100;
+        maxY = maxY * 1.25;
 
         return Container(
           padding: const EdgeInsets.all(16),
@@ -89,13 +81,13 @@ class ProfitChart extends StatelessWidget {
                 child: LineChart(
                   LineChartData(
                     minX: 0,
-                    maxX: (spots.length - 1).toDouble(),
+                    maxX: (spots.length == 1 ? 1 : spots.length - 1).toDouble(),
                     minY: 0,
                     maxY: maxY,
                     gridData: FlGridData(
                       show: true,
                       drawVerticalLine: false,
-                      horizontalInterval: (maxY / 4).clamp(1.0, 100.0),
+                      horizontalInterval: (maxY / 4).clamp(1.0, 10000.0),
                       getDrawingHorizontalLine: (value) {
                         return FlLine(color: theme.dividerColor.withValues(alpha: 0.4), strokeWidth: 1);
                       },
@@ -107,11 +99,11 @@ class ProfitChart extends StatelessWidget {
                       leftTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
-                          reservedSize: 35,
-                          interval: (maxY / 4).clamp(1.0, 100.0),
+                          reservedSize: 42,
+                          interval: (maxY / 4).clamp(1.0, 10000.0),
                           getTitlesWidget: (value, meta) {
                             return Text(
-                              '${value.toInt()}K',
+                              '৳${value.toInt()}',
                               style: theme.textTheme.bodySmall?.copyWith(fontSize: 9),
                             );
                           },
@@ -127,7 +119,7 @@ class ProfitChart extends StatelessWidget {
                             return Padding(
                               padding: const EdgeInsets.only(top: 8),
                               child: Text(
-                                'Day ${idx + 1}',
+                                'Inv ${idx + 1}',
                                 style: theme.textTheme.bodySmall?.copyWith(fontSize: 9),
                               ),
                             );
@@ -137,10 +129,10 @@ class ProfitChart extends StatelessWidget {
                     ),
                     lineTouchData: LineTouchData(
                       touchTooltipData: LineTouchTooltipData(
-                        getTooltipItems: (spots) {
-                          return spots.map((spot) {
+                        getTooltipItems: (touchedSpots) {
+                          return touchedSpots.map((spot) {
                             return LineTooltipItem(
-                              '৳ ${(spot.y * 1000).toStringAsFixed(0)} Profit',
+                              '৳ ${spot.y.toStringAsFixed(0)} Profit',
                               const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                             );
                           }).toList();
@@ -149,7 +141,7 @@ class ProfitChart extends StatelessWidget {
                     ),
                     lineBarsData: [
                       LineChartBarData(
-                        spots: spots,
+                        spots: spots.length == 1 ? [spots[0], FlSpot(1, spots[0].y)] : spots,
                         isCurved: true,
                         color: profitColor,
                         barWidth: 3,

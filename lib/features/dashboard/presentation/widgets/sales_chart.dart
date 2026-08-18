@@ -21,29 +21,22 @@ class SalesChart extends StatelessWidget {
 
         final double totalRev = summary?.totalRevenue ?? 0.0;
 
-        // Build dynamic spots from recent sales or default curve
-        List<FlSpot> spots = [];
+        // Build spots strictly from real invoice logs from API
+        final List<FlSpot> spots = [];
         if (logs.isNotEmpty) {
-          final recentLogs = logs.take(7).toList();
-          for (int i = 0; i < recentLogs.length; i++) {
-            spots.add(FlSpot(i.toDouble(), recentLogs[i].netTotal / 1000));
+          final sortedLogs = List.from(logs)..sort((a, b) => (a.createdAt ?? DateTime.now()).compareTo(b.createdAt ?? DateTime.now()));
+          for (int i = 0; i < sortedLogs.length; i++) {
+            spots.add(FlSpot(i.toDouble(), sortedLogs[i].netTotal));
           }
         }
 
-        if (spots.length < 2) {
-          spots = const [
-            FlSpot(0, 5),
-            FlSpot(1, 12),
-            FlSpot(2, 18),
-            FlSpot(3, 15),
-            FlSpot(4, 25),
-            FlSpot(5, 22),
-            FlSpot(6, 30),
-          ];
+        if (spots.isEmpty) {
+          spots.add(const FlSpot(0, 0));
         }
 
-        double maxY = spots.map((s) => s.y).reduce((a, b) => a > b ? a : b) + 10;
-        if (maxY < 20) maxY = 50;
+        double maxY = spots.map((s) => s.y).reduce((a, b) => a > b ? a : b);
+        if (maxY <= 0) maxY = 100;
+        maxY = maxY * 1.25;
 
         return Container(
           padding: const EdgeInsets.all(16),
@@ -87,13 +80,13 @@ class SalesChart extends StatelessWidget {
                 child: LineChart(
                   LineChartData(
                     minX: 0,
-                    maxX: (spots.length - 1).toDouble(),
+                    maxX: (spots.length == 1 ? 1 : spots.length - 1).toDouble(),
                     minY: 0,
                     maxY: maxY,
                     gridData: FlGridData(
                       show: true,
                       drawVerticalLine: false,
-                      horizontalInterval: (maxY / 4).clamp(1.0, 100.0),
+                      horizontalInterval: (maxY / 4).clamp(1.0, 10000.0),
                       getDrawingHorizontalLine: (value) {
                         return FlLine(color: theme.dividerColor.withValues(alpha: 0.4), strokeWidth: 1);
                       },
@@ -105,11 +98,11 @@ class SalesChart extends StatelessWidget {
                       leftTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
-                          reservedSize: 35,
-                          interval: (maxY / 4).clamp(1.0, 100.0),
+                          reservedSize: 42,
+                          interval: (maxY / 4).clamp(1.0, 10000.0),
                           getTitlesWidget: (value, meta) {
                             return Text(
-                              '${value.toInt()}K',
+                              '৳${value.toInt()}',
                               style: theme.textTheme.bodySmall?.copyWith(fontSize: 9),
                             );
                           },
@@ -125,7 +118,7 @@ class SalesChart extends StatelessWidget {
                             return Padding(
                               padding: const EdgeInsets.only(top: 8),
                               child: Text(
-                                'Day ${idx + 1}',
+                                'Inv ${idx + 1}',
                                 style: theme.textTheme.bodySmall?.copyWith(fontSize: 9),
                               ),
                             );
@@ -135,10 +128,10 @@ class SalesChart extends StatelessWidget {
                     ),
                     lineTouchData: LineTouchData(
                       touchTooltipData: LineTouchTooltipData(
-                        getTooltipItems: (spots) {
-                          return spots.map((spot) {
+                        getTooltipItems: (touchedSpots) {
+                          return touchedSpots.map((spot) {
                             return LineTooltipItem(
-                              '৳ ${(spot.y * 1000).toStringAsFixed(0)}',
+                              '৳ ${spot.y.toStringAsFixed(0)}',
                               const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                             );
                           }).toList();
@@ -147,7 +140,7 @@ class SalesChart extends StatelessWidget {
                     ),
                     lineBarsData: [
                       LineChartBarData(
-                        spots: spots,
+                        spots: spots.length == 1 ? [spots[0], FlSpot(1, spots[0].y)] : spots,
                         isCurved: true,
                         color: colorScheme.primary,
                         barWidth: 3,
