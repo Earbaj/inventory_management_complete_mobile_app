@@ -1,5 +1,5 @@
 import 'dart:developer' as developer;
-import '../../../../core/config/env_config.dart';
+import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/network/api_client.dart';
 import '../models/payment_model.dart';
 
@@ -26,17 +26,30 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
     required double amount,
     required String targetTier,
   }) async {
-    developer.log('💳 [SubscriptionRemoteDataSource] Calling POST /api/subscription/pay with method="$method", transactionId="$transactionId", amount=$amount, targetTier="$targetTier"', name: 'SubscriptionRemoteDataSource');
+    developer.log('💳 [SubscriptionRemoteDataSource] Calling POST ${ApiEndpoints.submitManualPayment} with method="$method", transactionId="$transactionId", amount=$amount, targetTier="$targetTier"', name: 'SubscriptionRemoteDataSource');
     try {
-      final response = await apiClient.post(
-        '${EnvConfig.apiBaseUrl}/api/subscription/pay',
-        body: {
-          'method': method,
-          'transactionId': transactionId,
-          'amount': amount,
-          'targetTier': targetTier,
-        },
-      );
+      dynamic response;
+      try {
+        response = await apiClient.post(
+          ApiEndpoints.submitManualPayment,
+          body: {
+            'method': method,
+            'transactionId': transactionId,
+            'amount': amount,
+            'targetTier': targetTier,
+          },
+        );
+      } catch (_) {
+        response = await apiClient.post(
+          '${ApiEndpoints.baseUrl}/api/subscription/pay',
+          body: {
+            'method': method,
+            'transactionId': transactionId,
+            'amount': amount,
+            'targetTier': targetTier,
+          },
+        );
+      }
 
       developer.log('✅ [SubscriptionRemoteDataSource] Raw Response JSON: $response', name: 'SubscriptionRemoteDataSource');
       return PaymentModel.fromJson(response is Map<String, dynamic> ? response : {
@@ -56,11 +69,14 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
 
   @override
   Future<List<PaymentModel>> getPaymentLogs() async {
-    developer.log('💳 [SubscriptionRemoteDataSource] Calling GET /api/subscription/payments...', name: 'SubscriptionRemoteDataSource');
+    developer.log('💳 [SubscriptionRemoteDataSource] Calling GET ${ApiEndpoints.myPayments}...', name: 'SubscriptionRemoteDataSource');
     try {
-      final response = await apiClient.get(
-        '${EnvConfig.apiBaseUrl}/api/subscription/payments',
-      );
+      dynamic response;
+      try {
+        response = await apiClient.get(ApiEndpoints.myPayments);
+      } catch (_) {
+        response = await apiClient.get('${ApiEndpoints.baseUrl}/api/subscription/payments');
+      }
 
       developer.log('✅ [SubscriptionRemoteDataSource] Raw Response JSON: $response', name: 'SubscriptionRemoteDataSource');
       final List list = response is List ? response : (response['payments'] ?? response['data'] ?? []);

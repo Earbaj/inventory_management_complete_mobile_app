@@ -1,5 +1,6 @@
-
 import '../../../subscription/domain/entities/payment_entity.dart';
+import '../../data/models/super_admin_metrics_model.dart';
+import '../../data/models/shop_item_model.dart';
 
 abstract class SuperAdminState {
   const SuperAdminState();
@@ -13,9 +14,18 @@ class SuperAdminLoadingState extends SuperAdminState {
   const SuperAdminLoadingState();
 }
 
-class SuperAdminLoadedState extends SuperAdminState {
+class SuperAdminDashboardLoadedState extends SuperAdminState {
+  final SuperAdminMetricsModel metrics;
   final List<PaymentEntity> payments;
-  const SuperAdminLoadedState(this.payments);
+  final List<ShopItemModel> shops;
+  final String? actionMessage;
+
+  const SuperAdminDashboardLoadedState({
+    required this.metrics,
+    required this.payments,
+    required this.shops,
+    this.actionMessage,
+  });
 }
 
 class SuperAdminErrorState extends SuperAdminState {

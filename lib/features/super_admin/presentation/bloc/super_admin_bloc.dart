@@ -27,29 +27,50 @@ class SuperAdminBloc {
   }
 
   Future<void> _handleEvent(SuperAdminEvent event) async {
-    if (event is FetchPendingPaymentsEvent) {
+    if (event is FetchSuperAdminDashboardEvent || event is FetchPendingPaymentsEvent) {
       _emit(const SuperAdminLoadingState());
-      try {
-        final models = await remoteDataSource.getPendingPayments();
-        final entities = models.map(SubscriptionMapper.paymentModelToEntity).toList();
-        _emit(SuperAdminLoadedState(entities));
-      } catch (e) {
-        _emit(SuperAdminErrorState(e.toString()));
-      }
+      await _loadDashboardData();
     } else if (event is ApprovePaymentEvent) {
       try {
         await remoteDataSource.approvePayment(event.paymentId);
-        add(const FetchPendingPaymentsEvent());
+        await _loadDashboardData(actionMessage: 'Payment #${event.paymentId} successfully approved!');
       } catch (e) {
         _emit(SuperAdminErrorState(e.toString()));
       }
     } else if (event is RejectPaymentEvent) {
       try {
         await remoteDataSource.rejectPayment(event.paymentId);
-        add(const FetchPendingPaymentsEvent());
+        await _loadDashboardData(actionMessage: 'Payment #${event.paymentId} rejected.');
       } catch (e) {
         _emit(SuperAdminErrorState(e.toString()));
       }
+    } else if (event is DeleteShopEvent) {
+      try {
+        await remoteDataSource.deleteShop(event.shopId);
+        await _loadDashboardData(actionMessage: 'Shop #${event.shopId} deletion requested.');
+      } catch (e) {
+        _emit(SuperAdminErrorState(e.toString()));
+      }
+    }
+  }
+
+  Future<void> _loadDashboardData({String? actionMessage}) async {
+    try {
+      final metrics = await remoteDataSource.getSuperAdminMetrics();
+      final paymentModels = await remoteDataSource.getPendingPayments();
+      final paymentEntities = paymentModels.map(SubscriptionMapper.paymentModelToEntity).toList();
+      final shops = await remoteDataSource.getShopsList();
+
+      _emit(
+        SuperAdminDashboardLoadedState(
+          metrics: metrics,
+          payments: paymentEntities,
+          shops: shops,
+          actionMessage: actionMessage,
+        ),
+      );
+    } catch (e) {
+      _emit(SuperAdminErrorState(e.toString()));
     }
   }
 

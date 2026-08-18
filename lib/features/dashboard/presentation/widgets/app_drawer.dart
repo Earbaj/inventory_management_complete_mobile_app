@@ -169,93 +169,89 @@ class AppDrawer extends StatelessWidget {
             // =========================
 
             Expanded(
-              child: ListView(
-                padding:
-                const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 12,
-                ),
+              child: FutureBuilder(
+                future: InjectionContainer.authRepository.getSavedUser(),
+                builder: (context, snapshot) {
+                  final user = snapshot.data;
+                  final isSuperAdmin = user?.role.toLowerCase() == 'superadmin';
 
-                children: [
-                  _DrawerItem(
-                    title: 'Dashboard',
-                    icon: Icons.dashboard_outlined,
-                    activeIcon:
-                    Icons.dashboard_rounded,
-                    route: '/dashboard',
-                    currentRoute: currentRoute,
-                  ),
+                  if (isSuperAdmin) {
+                    return ListView(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      children: [
+                        _DrawerItem(
+                          title: 'Super Admin Portal 👑',
+                          icon: Icons.admin_panel_settings_outlined,
+                          activeIcon: Icons.admin_panel_settings_rounded,
+                          route: '/super-admin',
+                          currentRoute: currentRoute,
+                        ),
+                      ],
+                    );
+                  }
 
-                  _DrawerItem(
-                    title: 'POS Billing',
-                    icon: Icons.point_of_sale_outlined,
-                    activeIcon:
-                    Icons.point_of_sale_rounded,
-                    route: '/pos-billing',
-                    currentRoute: currentRoute,
-                  ),
-
-                  _DrawerItem(
-                    title: 'Inventory',
-                    icon: Icons.inventory_2_outlined,
-                    activeIcon:
-                    Icons.inventory_2_rounded,
-                    route: '/inventory',
-                    currentRoute: currentRoute,
-                  ),
-
-                  _DrawerItem(
-                    title: 'Customers',
-                    icon: Icons.people_outline,
-                    activeIcon:
-                    Icons.people_rounded,
-                    route: '/customers',
-                    currentRoute: currentRoute,
-                  ),
-
-                  _DrawerItem(
-                    title: 'Returns',
-                    icon: Icons.assignment_return_outlined,
-                    activeIcon:
-                    Icons.assignment_return_rounded,
-                    route: '/returns',
-                    currentRoute: currentRoute,
-                  ),
-
-                  _DrawerItem(
-                    title: 'Reports',
-                    icon: Icons.bar_chart_outlined,
-                    activeIcon:
-                    Icons.bar_chart_rounded,
-                    route: '/reports',
-                    currentRoute: currentRoute,
-                  ),
-
-                  _DrawerItem(
-                    title: 'Staff / Managers',
-                    icon: Icons.manage_accounts_outlined,
-                    activeIcon:
-                    Icons.manage_accounts_rounded,
-                    route: '/staff-managers',
-                    currentRoute: currentRoute,
-                  ),
-
-                  _DrawerItem(
-                    title: 'Settings',
-                    icon: Icons.settings_outlined,
-                    activeIcon: Icons.settings_rounded,
-                    route: '/settings',
-                    currentRoute: currentRoute,
-                  ),
-
-                  _DrawerItem(
-                    title: 'Super Admin Portal 👑',
-                    icon: Icons.admin_panel_settings_outlined,
-                    activeIcon: Icons.admin_panel_settings_rounded,
-                    route: '/super-admin',
-                    currentRoute: currentRoute,
-                  ),
-                ],
+                  return ListView(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    children: [
+                      _DrawerItem(
+                        title: 'Dashboard',
+                        icon: Icons.dashboard_outlined,
+                        activeIcon: Icons.dashboard_rounded,
+                        route: '/dashboard',
+                        currentRoute: currentRoute,
+                      ),
+                      _DrawerItem(
+                        title: 'POS Billing',
+                        icon: Icons.point_of_sale_outlined,
+                        activeIcon: Icons.point_of_sale_rounded,
+                        route: '/pos-billing',
+                        currentRoute: currentRoute,
+                      ),
+                      _DrawerItem(
+                        title: 'Inventory',
+                        icon: Icons.inventory_2_outlined,
+                        activeIcon: Icons.inventory_2_rounded,
+                        route: '/inventory',
+                        currentRoute: currentRoute,
+                      ),
+                      _DrawerItem(
+                        title: 'Customers',
+                        icon: Icons.people_outline,
+                        activeIcon: Icons.people_rounded,
+                        route: '/customers',
+                        currentRoute: currentRoute,
+                      ),
+                      _DrawerItem(
+                        title: 'Returns',
+                        icon: Icons.assignment_return_outlined,
+                        activeIcon: Icons.assignment_return_rounded,
+                        route: '/returns',
+                        currentRoute: currentRoute,
+                      ),
+                      _DrawerItem(
+                        title: 'Reports',
+                        icon: Icons.bar_chart_outlined,
+                        activeIcon: Icons.bar_chart_rounded,
+                        route: '/reports',
+                        currentRoute: currentRoute,
+                      ),
+                      _DrawerItem(
+                        title: 'Staff / Managers',
+                        icon: Icons.manage_accounts_outlined,
+                        activeIcon: Icons.manage_accounts_rounded,
+                        route: '/staff-managers',
+                        currentRoute: currentRoute,
+                      ),
+                      _DrawerItem(
+                        title: 'Settings',
+                        icon: Icons.settings_outlined,
+                        activeIcon: Icons.settings_rounded,
+                        route: '/settings',
+                        currentRoute: currentRoute,
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
 

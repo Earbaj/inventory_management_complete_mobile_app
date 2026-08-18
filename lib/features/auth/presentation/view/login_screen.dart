@@ -30,7 +30,11 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         setState(() => _isLoading = false);
         if (state is AuthenticatedState) {
-          context.go('/dashboard');
+          if (state.user?.role.toLowerCase() == 'superadmin') {
+            context.go('/super-admin');
+          } else {
+            context.go('/dashboard');
+          }
         } else if (state is AuthFailureState) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

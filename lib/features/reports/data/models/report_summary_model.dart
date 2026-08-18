@@ -19,14 +19,37 @@ class ReportSummaryModel {
   });
 
   factory ReportSummaryModel.fromJson(Map<String, dynamic> json) {
+    double parseDouble(dynamic val) {
+      if (val == null) return 0.0;
+      if (val is num) return val.toDouble();
+      if (val is String) return double.tryParse(val) ?? 0.0;
+      return 0.0;
+    }
+
+    int parseInt(dynamic val) {
+      if (val == null) return 0;
+      if (val is int) return val;
+      if (val is num) return val.toInt();
+      if (val is String) return int.tryParse(val) ?? 0;
+      return 0;
+    }
+
+    final rev = parseDouble(json['totalRevenue'] ?? json['totalSalesRevenue'] ?? json['total_revenue'] ?? json['revenue']);
+    final salesCnt = parseInt(json['totalSalesCount'] ?? json['totalInvoices'] ?? json['totalInvoicesCount'] ?? json['total_sales_count'] ?? json['salesCount']);
+    final disc = parseDouble(json['totalDiscount'] ?? json['total_discount']);
+    final due = parseDouble(json['totalDue'] ?? json['totalDueAmount'] ?? json['total_due']);
+    final cash = parseDouble(json['cashRevenue'] ?? json['totalPaidCollected'] ?? json['cash_revenue']);
+    final digital = parseDouble(json['digitalRevenue'] ?? json['digital_revenue']);
+    final dueRev = parseDouble(json['dueRevenue'] ?? json['totalCustomerDue'] ?? json['due_revenue']);
+
     return ReportSummaryModel(
-      totalRevenue: (json['totalRevenue'] ?? json['total_revenue'] ?? json['revenue'] ?? 0.0).toDouble(),
-      totalSalesCount: (json['totalSalesCount'] ?? json['total_sales_count'] ?? json['salesCount'] ?? 0) as int,
-      totalDiscount: (json['totalDiscount'] ?? json['total_discount'] ?? 0.0).toDouble(),
-      totalDue: (json['totalDue'] ?? json['total_due'] ?? 0.0).toDouble(),
-      cashRevenue: (json['cashRevenue'] ?? json['cash_revenue'] ?? 0.0).toDouble(),
-      digitalRevenue: (json['digitalRevenue'] ?? json['digital_revenue'] ?? 0.0).toDouble(),
-      dueRevenue: (json['dueRevenue'] ?? json['due_revenue'] ?? 0.0).toDouble(),
+      totalRevenue: rev,
+      totalSalesCount: salesCnt,
+      totalDiscount: disc,
+      totalDue: due,
+      cashRevenue: cash,
+      digitalRevenue: digital,
+      dueRevenue: dueRev,
     );
   }
 

@@ -66,7 +66,12 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     if (isAuthenticated) {
-      context.go('/dashboard');
+      final user = await InjectionContainer.authRepository.getSavedUser();
+      if (user?.role.toLowerCase() == 'superadmin') {
+        context.go('/super-admin');
+      } else {
+        context.go('/dashboard');
+      }
     } else {
       context.go('/login');
     }
