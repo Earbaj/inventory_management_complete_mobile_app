@@ -30,16 +30,16 @@ class CustomerStatementScreen extends StatefulWidget {
 
 class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
   bool _isLoading = true;
+  double _openingBalance = 0.0;
   double _totalSales = 0.0;
   double _totalPaid = 0.0;
   double _currentDue = 0.0;
   List<CustomerTransaction> _ledgerTransactions = [];
-  List<SaleEntity> _ledgerSales = [];
 
   @override
   void initState() {
     super.initState();
-    _fetchLedger();
+    _fetchLedgerFromApi();
   }
 
   static double _parseDouble(dynamic val) {
@@ -49,25 +49,41 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
     return 0.0;
   }
 
-  double _calcFallbackSales() {
-    if (widget.customerSales.isNotEmpty) {
-      return widget.customerSales.fold(0.0, (sum, s) => sum + s.netTotal);
+  static double _parseTotalFromDescription(String desc, double fallbackAmount) {
+    final regExp = RegExp(r'Total:\s*([\d\.]+)');
+    final match = regExp.firstMatch(desc);
+    if (match != null && match.group(1) != null) {
+      return double.tryParse(match.group(1)!) ?? fallbackAmount;
     }
-    return widget.transactions
-        .where((t) => t.type == TransactionType.sale)
-        .fold(0.0, (sum, t) => sum + t.amount);
+    return fallbackAmount;
   }
 
-  double _calcFallbackPaid() {
-    if (widget.customerSales.isNotEmpty) {
-      return widget.customerSales.fold(0.0, (sum, s) => sum + s.paidAmount);
+  static double _parsePaidFromDescription(String desc) {
+    final regExp = RegExp(r'Paid:\s*([\d\.]+)');
+    final match = regExp.firstMatch(desc);
+    if (match != null && match.group(1) != null) {
+      return double.tryParse(match.group(1)!) ?? 0.0;
     }
-    return widget.transactions
-        .where((t) => t.type == TransactionType.payment)
-        .fold(0.0, (sum, t) => sum + t.amount);
+    return 0.0;
   }
 
-  Future<void> _fetchLedger() async {
+  static String _extractRef(String typeStr, String desc, String fallbackId) {
+    final regExp = RegExp(r'#?(INV-[\w\-]+)');
+    final match = regExp.firstMatch(desc);
+    if (match != null && match.group(1) != null) {
+      return match.group(1)!;
+    }
+    if (typeStr == 'payment') {
+      final shortId = fallbackId.length > 6 ? fallbackId.substring(0, 6).toUpperCase() : fallbackId;
+      return 'PAY-$shortId';
+    }
+    if (typeStr == 'opening') {
+      return 'OPENING';
+    }
+    return fallbackId.length > 8 ? fallbackId.substring(0, 8).toUpperCase() : fallbackId;
+  }
+
+  Future<void> _fetchLedgerFromApi() async {
     setState(() => _isLoading = true);
     try {
       final data = await InjectionContainer.customerRemoteDataSource.getCustomerLedger(
@@ -75,55 +91,79 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
       );
 
       final Map<String, dynamic> payload = data is Map<String, dynamic> ? data : {};
-      final double sales = _parseDouble(payload['totalSales'] ?? payload['total_sales'] ?? payload['sales']);
-      final double paid = _parseDouble(payload['totalPaid'] ?? payload['total_paid'] ?? payload['paid'] ?? payload['totalPayments']);
-      final double due = _parseDouble(payload['totalDue'] ?? payload['total_due'] ?? payload['due'] ?? payload['closingBalance']).abs();
+      final List rawList = payload['data'] is List
+          ? payload['data']
+          : (payload['ledger'] is List ? payload['ledger'] : (payload['transactions'] is List ? payload['transactions'] : []));
 
-      final List rawLedger = payload['ledger'] ?? payload['transactions'] ?? payload['data'] ?? [];
+      double computedSales = 0.0;
+      double computedPaid = 0.0;
+      double computedOpening = widget.customer.openingBalance;
+      double computedDue = widget.customer.totalDue;
+
       final List<CustomerTransaction> parsedTransactions = [];
 
-      for (final item in rawLedger) {
+      for (int i = 0; i < rawList.length; i++) {
+        final item = rawList[i];
         if (item is Map<String, dynamic>) {
-          final typeStr = item['type']?.toString().toLowerCase() ?? 'sale';
-          final TransactionType type = (typeStr == 'payment' || typeStr == 'due_payment' || typeStr == 'pay')
+          final String typeStr = item['type']?.toString().toLowerCase() ?? 'sale';
+          final String desc = item['description']?.toString() ?? '';
+          final double rawAmount = _parseDouble(item['amount']);
+          final double amountAbs = rawAmount.abs();
+          final double newBal = _parseDouble(item['newBalance'] ?? item['new_balance']);
+          final String idStr = item['id']?.toString() ?? item['referenceId']?.toString() ?? UniqueKey().toString();
+          final DateTime date = DateTime.tryParse(item['date']?.toString() ?? item['createdAt']?.toString() ?? '') ?? DateTime.now();
+
+          // Latest item (index 0) determines active current due balance
+          if (i == 0) {
+            computedDue = newBal.abs();
+          }
+
+          if (typeStr == 'opening') {
+            computedOpening = amountAbs;
+          } else if (typeStr == 'sale') {
+            final double saleTotal = _parseTotalFromDescription(desc, amountAbs);
+            final double salePaid = _parsePaidFromDescription(desc);
+            computedSales += saleTotal;
+            computedPaid += salePaid;
+          } else if (typeStr == 'payment' || typeStr == 'due_payment') {
+            computedPaid += amountAbs;
+          }
+
+          final TransactionType type = (typeStr == 'payment' || typeStr == 'due_payment')
               ? TransactionType.payment
               : (typeStr == 'return' ? TransactionType.returnInvoice : TransactionType.sale);
 
-          final double amount = _parseDouble(item['amount'] ?? item['debit'] ?? item['credit'] ?? item['netTotal']);
-          final String ref = item['reference']?.toString() ?? item['invoiceNo']?.toString() ?? item['id']?.toString() ?? 'TRX';
-          final DateTime date = DateTime.tryParse(item['date']?.toString() ?? item['createdAt']?.toString() ?? '') ?? DateTime.now();
-
           parsedTransactions.add(CustomerTransaction(
-            id: item['id']?.toString() ?? UniqueKey().toString(),
+            id: idStr,
             date: date,
-            reference: ref,
+            reference: _extractRef(typeStr, desc, idStr),
             type: type,
-            amount: amount.abs(),
-            note: item['description']?.toString() ?? item['note']?.toString() ?? '',
+            amount: typeStr == 'sale' ? _parseTotalFromDescription(desc, amountAbs) : amountAbs,
+            note: desc,
           ));
         }
       }
 
       setState(() {
-        _totalSales = sales > 0 ? sales : _calcFallbackSales();
-        _totalPaid = paid > 0 ? paid : _calcFallbackPaid();
-        _currentDue = due;
-        if (parsedTransactions.isNotEmpty) {
-          _ledgerTransactions = parsedTransactions;
-        } else {
-          _ledgerTransactions = widget.transactions;
-        }
-        _ledgerSales = widget.customerSales;
+        _openingBalance = computedOpening;
+        _totalSales = computedSales;
+        _totalPaid = computedPaid;
+        _currentDue = computedDue;
+        _ledgerTransactions = parsedTransactions;
         _isLoading = false;
       });
     } catch (_) {
-      // Fallback if API fails or offline
+      // Emergency fallback if API offline
       setState(() {
-        _totalSales = _calcFallbackSales();
-        _totalPaid = _calcFallbackPaid();
+        _openingBalance = widget.customer.openingBalance;
+        _totalSales = widget.transactions
+            .where((t) => t.type == TransactionType.sale)
+            .fold(0.0, (sum, t) => sum + t.amount);
+        _totalPaid = widget.transactions
+            .where((t) => t.type == TransactionType.payment)
+            .fold(0.0, (sum, t) => sum + t.amount);
         _currentDue = widget.customer.totalDue;
         _ledgerTransactions = widget.transactions;
-        _ledgerSales = widget.customerSales;
         _isLoading = false;
       });
     }
@@ -135,13 +175,13 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
       name: widget.customer.name,
       phone: widget.customer.phone,
       address: widget.customer.address,
-      openingBalance: widget.customer.openingBalance,
+      openingBalance: _openingBalance,
       totalDue: _currentDue,
     );
 
     final htmlContent = PdfExportService.generateCustomerLedgerHtml(
       customer: customerEntity,
-      customerSales: _ledgerSales,
+      customerSales: widget.customerSales,
       shopName: 'Smart Inventory Store',
       currencySymbol: '৳',
     );
@@ -197,13 +237,13 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
       name: widget.customer.name,
       phone: widget.customer.phone,
       address: widget.customer.address,
-      openingBalance: widget.customer.openingBalance,
+      openingBalance: _openingBalance,
       totalDue: _currentDue,
     );
 
     final csvContent = ExcelExportService.generateCustomerLedgerCsv(
       customer: customerEntity,
-      customerSales: _ledgerSales,
+      customerSales: widget.customerSales,
     );
 
     showDialog(
@@ -261,7 +301,7 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
         title: const Text('Customer Statement'),
         actions: [
           IconButton(
-            onPressed: _fetchLedger,
+            onPressed: _fetchLedgerFromApi,
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Refresh Ledger',
           ),
@@ -313,7 +353,7 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
                               isScrollControlled: true,
                               backgroundColor: Colors.transparent,
                               builder: (ctx) => CollectPaymentSheet(preSelectedCustomer: widget.customer),
-                            ).then((_) => _fetchLedger());
+                            ).then((_) => _fetchLedgerFromApi());
                           },
                           icon: const Icon(Icons.payments_rounded, size: 18),
                           label: const Text('Receive Payment Collection'),
@@ -329,7 +369,7 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
                 const SizedBox(height: 14),
                 Row(
                   children: [
-                    Expanded(child: StatementSummaryCard(title: 'Opening', value: widget.customer.openingBalance)),
+                    Expanded(child: StatementSummaryCard(title: 'Opening', value: _openingBalance)),
                     const SizedBox(width: 8),
                     Expanded(child: StatementSummaryCard(title: 'Sales', value: _totalSales)),
                     const SizedBox(width: 8),

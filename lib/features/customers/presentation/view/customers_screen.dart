@@ -314,39 +314,12 @@ class _CustomersScreenState extends State<CustomersScreen> {
       return matchId || matchName || matchPhone;
     }).toList();
 
-    final List<CustomerTransaction> customerTransactions = [];
-    for (final sale in customerSales) {
-      // 1. Add Sale invoice entry
-      customerTransactions.add(CustomerTransaction(
-        id: '${sale.id}_sale',
-        date: sale.createdAt ?? DateTime.now(),
-        reference: sale.invoiceNo,
-        type: TransactionType.sale,
-        amount: sale.netTotal,
-        note: 'Sales Invoice (${sale.items.length} items)',
-      ));
-
-      // 2. Add Paid amount entry if paidAmount > 0
-      if (sale.paidAmount > 0) {
-        customerTransactions.add(CustomerTransaction(
-          id: '${sale.id}_pay',
-          date: sale.createdAt ?? DateTime.now(),
-          reference: 'PAY-${sale.invoiceNo}',
-          type: TransactionType.payment,
-          amount: sale.paidAmount,
-          note: 'Payment via ${sale.paymentMethod}',
-        ));
-      }
-    }
-
-    customerTransactions.sort((a, b) => b.date.compareTo(a.date));
-
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => CustomerStatementScreen(
           customer: customer,
-          transactions: customerTransactions,
+          transactions: const [],
           customerSales: customerSales,
         ),
       ),
