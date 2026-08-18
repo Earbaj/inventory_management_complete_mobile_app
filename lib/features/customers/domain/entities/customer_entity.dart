@@ -11,7 +11,6 @@ class CustomerEntity {
   final DateTime? updatedAt;
   final double openingBalance;
 
-
   const CustomerEntity({
     required this.id,
     required this.name,
@@ -28,6 +27,14 @@ class CustomerEntity {
   /// Computed property: true if customer has an outstanding due balance.
   bool get hasDue => totalDue > 0;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CustomerEntity && runtimeType == other.runtimeType && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
+
   CustomerEntity copyWith({
     String? id,
     String? name,
@@ -43,13 +50,14 @@ class CustomerEntity {
     return CustomerEntity(
       id: id ?? this.id,
       name: name ?? this.name,
-      phone: phone ?? this.phone,
       email: email ?? this.email,
+      phone: phone ?? this.phone,
       address: address ?? this.address,
       totalDue: totalDue ?? this.totalDue,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt, openingBalance: openingBalance ?? this.openingBalance,
+      updatedAt: updatedAt ?? this.updatedAt,
+      openingBalance: openingBalance ?? this.openingBalance,
     );
   }
 }

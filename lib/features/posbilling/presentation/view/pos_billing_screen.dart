@@ -73,6 +73,7 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
         ],
       ),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // SEARCH
           Padding(
@@ -221,7 +222,8 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
                                           itemId: product.id,
                                           quantity: quantity - 1,
                                         ));
-                                      }, onRemove: () {  },
+                                      },
+                                      onRemove: () {},
                                     );
                                   },
                                 );
@@ -233,126 +235,142 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
               },
             ),
           ),
+        ],
+      ),
 
-          // CART & CHECKOUT BOTTOM PANEL
-          StreamBuilder<PosState>(
-            stream: InjectionContainer.posBloc.stream,
-            initialData: InjectionContainer.posBloc.state,
-            builder: (context, snapshot) {
-              final posState = snapshot.data is PosCartState ? snapshot.data as PosCartState : const PosCartState(cartItems: []);
+      // CART & CHECKOUT BOTTOM PANEL (Refactored to Scaffold bottomNavigationBar)
+      bottomNavigationBar: StreamBuilder<PosState>(
+        stream: InjectionContainer.posBloc.stream,
+        initialData: InjectionContainer.posBloc.state,
+        builder: (context, snapshot) {
+          final posState = snapshot.data is PosCartState ? snapshot.data as PosCartState : const PosCartState(cartItems: []);
 
-              return Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.06),
-                      blurRadius: 16,
-                      offset: const Offset(0, -4),
-                    ),
-                  ],
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 16,
+                  offset: const Offset(0, -4),
                 ),
-                child: SafeArea(
-                  top: false,
-                  child: Column(
-                    children: [
-                      // CUSTOMER SELECTION STREAM
-                      StreamBuilder<CustomerState>(
-                        stream: InjectionContainer.customerBloc.stream,
-                        initialData: InjectionContainer.customerBloc.state,
-                        builder: (context, custSnapshot) {
-                          final custState = custSnapshot.data is CustomerLoadedState ? custSnapshot.data as CustomerLoadedState : null;
-                          final customerList = custState?.customers ?? [];
+              ],
+            ),
+            child: SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // CUSTOMER SELECTION STREAM (Explicit height 48 to prevent Dropdown layout assertions)
+                  StreamBuilder<CustomerState>(
+                    stream: InjectionContainer.customerBloc.stream,
+                    initialData: InjectionContainer.customerBloc.state,
+                    builder: (context, custSnapshot) {
+                      final custState = custSnapshot.data is CustomerLoadedState ? custSnapshot.data as CustomerLoadedState : null;
+                      final customerList = custState?.customers ?? [];
 
-                          return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                      CustomerEntity? selectedVal;
+                      if (posState.selectedCustomer != null) {
+                        final matchIndex = customerList.indexWhere((c) => c.id == posState.selectedCustomer!.id);
+                        if (matchIndex != -1) {
+                          selectedVal = customerList[matchIndex];
+                        }
+                      }
+
+                      return Container(
+                        height: 48,
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<CustomerEntity?>(
+                            isExpanded: true,
+                            value: selectedVal,
+                            hint: const Text('Select Customer (Optional)'),
+                            items: [
+                              const DropdownMenuItem<CustomerEntity?>(
+                                value: null,
+                                child: Text('Walk-in Customer (Guest)'),
+                              ),
+                              ...customerList.map((cust) {
+                                return DropdownMenuItem<CustomerEntity?>(
+                                  value: cust,
+                                  child: Text('${cust.name} (${cust.phone})'),
+                                );
+                              }),
+                            ],
+                            onChanged: (cust) {
+                              InjectionContainer.posBloc.add(SelectPosCustomerEvent(cust));
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // TOTALS DISPLAY & CHECKOUT BUTTON
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${posState.totalItemCount} Items',
+                              style: TextStyle(
+                                color: colorScheme.onSurfaceVariant,
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '৳${posState.netTotal.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(
+                        width: 140,
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: posState.cartItems.isEmpty
+                              ? null
+                              : () {
+                                  _openCheckoutSheet(context, posState);
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: colorScheme.primary,
+                            foregroundColor: colorScheme.onPrimary,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
                             ),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<CustomerEntity?>(
-                                isExpanded: true,
-                                value: posState.selectedCustomer,
-                                hint: const Text('Select Customer (Optional)'),
-                                items: [
-                                  const DropdownMenuItem<CustomerEntity?>(
-                                    value: null,
-                                    child: Text('Walk-in Customer (Guest)'),
-                                  ),
-                                  ...customerList.map((cust) {
-                                    return DropdownMenuItem<CustomerEntity?>(
-                                      value: cust,
-                                      child: Text('${cust.name} (${cust.phone})'),
-                                    );
-                                  }),
-                                ],
-                                onChanged: (cust) {
-                                  InjectionContainer.posBloc.add(SelectPosCustomerEvent(cust));
-                                },
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // TOTALS DISPLAY & CHECKOUT BUTTON
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '${posState.totalItemCount} Items',
-                                  style: TextStyle(
-                                    color: colorScheme.onSurfaceVariant,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '৳${posState.netTotal.toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
                           ),
-                          ElevatedButton(
-                            onPressed: posState.cartItems.isEmpty
-                                ? null
-                                : () {
-                                    _openCheckoutSheet(context, posState);
-                                  },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: colorScheme.primary,
-                              foregroundColor: colorScheme.onPrimary,
-                              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                            ),
-                            child: const Text(
-                              'Checkout',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
+                          child: const Text(
+                            'Checkout',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                           ),
-                        ],
+                        ),
                       ),
                     ],
                   ),
-                ),
-              );
-            },
-          ),
-        ],
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
