@@ -1,6 +1,7 @@
 /// Domain Entity representing a Return Transaction in the Business Logic Layer.
 class ReturnItemEntity {
   final String id;
+  final String saleId;
   final String invoiceNo;
   final String itemId;
   final String itemName;
@@ -15,6 +16,7 @@ class ReturnItemEntity {
 
   const ReturnItemEntity({
     required this.id,
+    this.saleId = '',
     required this.invoiceNo,
     required this.itemId,
     required this.itemName,

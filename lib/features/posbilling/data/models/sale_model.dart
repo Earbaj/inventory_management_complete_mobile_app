@@ -56,19 +56,32 @@ class SaleModel {
       );
     }
 
+    final String invNo = json['invoiceNumber']?.toString() ??
+        json['invoiceNo']?.toString() ??
+        json['invoice_no']?.toString() ??
+        json['invoiceId']?.toString() ??
+        '';
+
+    final double calcNet = _parseDouble(json['grandTotal'] ?? json['netTotal'] ?? json['total']);
+    final double calcPaid = _parseDouble(json['paidAmount'] ?? json['paid']);
+    final double rawDue = _parseDouble(json['dueAmount'] ?? json['due']);
+    final double calcDue = (rawDue > 0 || json['dueAmount'] != null)
+        ? rawDue
+        : (calcNet - calcPaid).clamp(0.0, double.infinity);
+
     return SaleModel(
       id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
-      invoiceNo: json['invoiceNo']?.toString() ?? json['invoice_no']?.toString() ?? json['invoiceId']?.toString() ?? '',
+      invoiceNo: invNo.isNotEmpty ? invNo : (json['id']?.toString().length ?? 0) > 6 ? 'INV-${json['id'].toString().substring(0, 6).toUpperCase()}' : 'INV-SALE',
       customer: parsedCustomer,
       items: parsedItems,
-      subtotal: _parseDouble(json['subtotal']),
+      subtotal: _parseDouble(json['subtotal'] ?? json['grandTotal'] ?? json['total']),
       discountAmount: _parseDouble(json['discountAmount'] ?? json['discount']),
       vatAmount: _parseDouble(json['vatAmount'] ?? json['vat']),
-      netTotal: _parseDouble(json['netTotal'] ?? json['total']),
-      paidAmount: _parseDouble(json['paidAmount'] ?? json['paid']),
-      dueAmount: _parseDouble(json['dueAmount'] ?? json['due']),
-      paymentMethod: json['paymentMethod']?.toString() ?? json['payment_method']?.toString() ?? 'cash',
-      createdAt: json['createdAt']?.toString() ?? json['created_at']?.toString(),
+      netTotal: calcNet,
+      paidAmount: calcPaid,
+      dueAmount: calcDue,
+      paymentMethod: json['paymentMethod']?.toString() ?? json['payment_method']?.toString() ?? (calcDue > 0 ? 'due' : 'cash'),
+      createdAt: json['date']?.toString() ?? json['createdAt']?.toString() ?? json['created_at']?.toString(),
     );
   }
 

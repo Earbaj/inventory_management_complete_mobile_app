@@ -108,6 +108,7 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
         if (qty > 0) {
           final returnItem = ReturnItemEntity(
             id: '',
+            saleId: _selectedInvoice!.id.isNotEmpty ? _selectedInvoice!.id : _selectedInvoice!.invoiceNo,
             invoiceNo: _selectedInvoice!.invoiceNo,
             itemId: item.item.id,
             itemName: item.item.name,
@@ -283,20 +284,28 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
           ),
           items: filteredInvoices.map((invoice) {
             final dateStr = '${invoice.createdAt.day}/${invoice.createdAt.month}/${invoice.createdAt.year}';
+            final hasDue = invoice.dueAmount > 0;
             return DropdownMenuItem<SaleEntity?>(
               value: invoice,
               child: Row(
                 children: [
-                  Text(
-                    invoice.invoiceNo,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  Expanded(
+                    child: Text(
+                      '${invoice.invoiceNo} ($dateStr)',
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
-                  const SizedBox(width: 8),
-                  Text('($dateStr)', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                  const Spacer(),
+                  const SizedBox(width: 6),
                   Text(
-                    '৳${invoice.netTotal.toStringAsFixed(0)}',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.primary),
+                    hasDue
+                        ? 'Due: ৳${invoice.dueAmount.toStringAsFixed(0)}'
+                        : 'Paid: ৳${invoice.netTotal.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: hasDue ? Colors.orange[800] : Colors.green[700],
+                    ),
                   ),
                 ],
               ),
@@ -328,15 +337,53 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                     Text(
-                      'Paid: ৳${_selectedInvoice!.paidAmount.toStringAsFixed(0)}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+                      'Total: ৳${_selectedInvoice!.netTotal.toStringAsFixed(0)}',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.primary),
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Customer: ${_selectedInvoice!.customer?.name ?? "Walk-in Customer"} | Items: ${_selectedInvoice!.items.length}',
-                  style: theme.textTheme.bodyMedium,
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Customer: ${_selectedInvoice!.customer?.name ?? "Walk-in Customer"} | Items: ${_selectedInvoice!.items.length}',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    Text(
+                      '${_selectedInvoice!.createdAt.day}/${_selectedInvoice!.createdAt.month}/${_selectedInvoice!.createdAt.year}',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Paid: ৳${_selectedInvoice!.paidAmount.toStringAsFixed(0)}',
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: _selectedInvoice!.dueAmount > 0
+                            ? Colors.orange.withValues(alpha: 0.15)
+                            : Colors.green.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        _selectedInvoice!.dueAmount > 0
+                            ? 'Due: ৳${_selectedInvoice!.dueAmount.toStringAsFixed(0)}'
+                            : 'Fully Paid',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          color: _selectedInvoice!.dueAmount > 0 ? Colors.orange[800] : Colors.green[800],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

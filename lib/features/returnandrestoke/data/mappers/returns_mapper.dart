@@ -6,6 +6,7 @@ class ReturnsMapper {
   static ReturnItemEntity modelToEntity(ReturnItemModel model) {
     return ReturnItemEntity(
       id: model.id,
+      saleId: model.saleId,
       invoiceNo: model.invoiceNo,
       itemId: model.itemId,
       itemName: model.itemName,
@@ -23,6 +24,7 @@ class ReturnsMapper {
   static ReturnItemModel entityToModel(ReturnItemEntity entity) {
     return ReturnItemModel(
       id: entity.id,
+      saleId: entity.saleId,
       invoiceNo: entity.invoiceNo,
       itemId: entity.itemId,
       itemName: entity.itemName,
