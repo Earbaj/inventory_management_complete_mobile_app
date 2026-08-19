@@ -9,6 +9,9 @@ abstract class CustomerRepository {
     String? searchQuery,
   });
 
+  /// Fetches single customer profile by ID.
+  Future<CustomerEntity> getCustomerDetails(String customerId);
+
   /// Adds a new customer.
   Future<CustomerEntity> addCustomer(CustomerEntity customer);
 
@@ -25,4 +28,16 @@ abstract class CustomerRepository {
     String paymentMethod = 'cash',
     String? note,
   });
+
+  /// Fetches customer transaction statement ledger.
+  Future<Map<String, dynamic>> getCustomerLedger({
+    required String customerId,
+    int page = 1,
+    int limit = 50,
+    DateTime? startDate,
+    DateTime? endDate,
+  });
+
+  /// Fetches WhatsApp due payment reminder chat link.
+  Future<Map<String, dynamic>> getDueReminderLink(String customerId);
 }

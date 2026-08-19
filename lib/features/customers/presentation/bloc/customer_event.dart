@@ -17,6 +17,13 @@ class FetchCustomersEvent extends CustomerEvent {
   });
 }
 
+/// Event: Fetches single customer details.
+class FetchCustomerDetailsEvent extends CustomerEvent {
+  final String customerId;
+
+  const FetchCustomerDetailsEvent(this.customerId);
+}
+
 /// Event: Adds a new customer.
 class AddCustomerEvent extends CustomerEvent {
   final CustomerEntity customer;
@@ -51,4 +58,11 @@ class CollectCustomerPaymentEvent extends CustomerEvent {
     this.paymentMethod = 'cash',
     this.note,
   });
+}
+
+/// Event: Fetches WhatsApp due payment reminder chat link (GET /api/customers/:id/due-reminder-link).
+class FetchDueReminderLinkEvent extends CustomerEvent {
+  final String customerId;
+
+  const FetchDueReminderLinkEvent(this.customerId);
 }

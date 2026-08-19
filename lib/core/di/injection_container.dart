@@ -24,7 +24,9 @@ import '../../features/customers/domain/repositories/customer_repository.dart';
 import '../../features/customers/domain/usecases/add_customer_usecase.dart';
 import '../../features/customers/domain/usecases/collect_customer_payment_usecase.dart';
 import '../../features/customers/domain/usecases/delete_customer_usecase.dart';
+import '../../features/customers/domain/usecases/get_customer_details_usecase.dart';
 import '../../features/customers/domain/usecases/get_customers_usecase.dart';
+import '../../features/customers/domain/usecases/get_due_reminder_link_usecase.dart';
 import '../../features/customers/domain/usecases/update_customer_usecase.dart';
 import '../../features/customers/presentation/bloc/customer_bloc.dart';
 import '../../features/inventory/presentation/bloc/inventory_bloc.dart';
@@ -140,10 +142,12 @@ class InjectionContainer {
   static late final DeleteInventoryItemUseCase deleteInventoryItemUseCase;
 
   static late final GetCustomersUseCase getCustomersUseCase;
+  static late final GetCustomerDetailsUseCase getCustomerDetailsUseCase;
   static late final AddCustomerUseCase addCustomerUseCase;
   static late final UpdateCustomerUseCase updateCustomerUseCase;
   static late final DeleteCustomerUseCase deleteCustomerUseCase;
   static late final CollectCustomerPaymentUseCase collectCustomerPaymentUseCase;
+  static late final GetDueReminderLinkUseCase getDueReminderLinkUseCase;
 
   static late final CreateSaleUseCase createSaleUseCase;
   static late final GetSalesLogsUseCase getSalesLogsUseCase;
@@ -281,10 +285,12 @@ class InjectionContainer {
     deleteInventoryItemUseCase = DeleteInventoryItemUseCase(inventoryRepository);
 
     getCustomersUseCase = GetCustomersUseCase(customerRepository);
+    getCustomerDetailsUseCase = GetCustomerDetailsUseCase(customerRepository);
     addCustomerUseCase = AddCustomerUseCase(customerRepository);
     updateCustomerUseCase = UpdateCustomerUseCase(customerRepository);
     deleteCustomerUseCase = DeleteCustomerUseCase(customerRepository);
     collectCustomerPaymentUseCase = CollectCustomerPaymentUseCase(customerRepository);
+    getDueReminderLinkUseCase = GetDueReminderLinkUseCase(customerRepository);
 
     createSaleUseCase = CreateSaleUseCase(posRepository);
     getSalesLogsUseCase = GetSalesLogsUseCase(posRepository);
@@ -331,10 +337,12 @@ class InjectionContainer {
 
     customerBloc = CustomerBloc(
       getCustomersUseCase: getCustomersUseCase,
+      getCustomerDetailsUseCase: getCustomerDetailsUseCase,
       addCustomerUseCase: addCustomerUseCase,
       updateCustomerUseCase: updateCustomerUseCase,
       deleteCustomerUseCase: deleteCustomerUseCase,
       collectCustomerPaymentUseCase: collectCustomerPaymentUseCase,
+      getDueReminderLinkUseCase: getDueReminderLinkUseCase,
     );
 
     posBloc = PosBloc(

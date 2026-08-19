@@ -32,6 +32,20 @@ class CustomerOperationSuccessState extends CustomerState {
   const CustomerOperationSuccessState(this.message);
 }
 
+class DueReminderLinkLoadedState extends CustomerState {
+  final String customerId;
+  final String customerName;
+  final String dueAmount;
+  final String whatsappUrl;
+
+  const DueReminderLinkLoadedState({
+    required this.customerId,
+    required this.customerName,
+    required this.dueAmount,
+    required this.whatsappUrl,
+  });
+}
+
 class CustomerErrorState extends CustomerState {
   final String message;
   const CustomerErrorState(this.message);

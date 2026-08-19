@@ -29,10 +29,7 @@ class CustomerRepositoryImpl implements CustomerRepository {
       await localDataSource.cacheCustomers(remoteModels);
       return remoteModels.map(CustomerMapper.modelToEntity).toList();
     } catch (_) {
-      // API hit failed -> Try fallback to local cache
       final cachedModels = await localDataSource.getCachedCustomers();
-
-      // If cache expired (> 5 mins) or empty -> Throw Failure to show UI Error Widget
       if (cachedModels.isEmpty) {
         throw const ServerFailure('Something went wrong. Could not load customers data.');
       }
@@ -46,6 +43,17 @@ class CustomerRepositoryImpl implements CustomerRepository {
       }
 
       return filtered.map(CustomerMapper.modelToEntity).toList();
+    }
+  }
+
+  @override
+  Future<CustomerEntity> getCustomerDetails(String customerId) async {
+    try {
+      final model = await remoteDataSource.getCustomerDetails(customerId);
+      return CustomerMapper.modelToEntity(model);
+    } catch (e) {
+      if (e is Failure) rethrow;
+      throw NetworkFailure('Failed to fetch customer details.');
     }
   }
 
@@ -111,6 +119,38 @@ class CustomerRepositoryImpl implements CustomerRepository {
     } catch (e) {
       if (e is Failure) rethrow;
       throw NetworkFailure('Failed to process customer payment. Please try again.');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> getCustomerLedger({
+    required String customerId,
+    int page = 1,
+    int limit = 50,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    try {
+      return await remoteDataSource.getCustomerLedger(
+        customerId: customerId,
+        page: page,
+        limit: limit,
+        startDate: startDate,
+        endDate: endDate,
+      );
+    } catch (e) {
+      if (e is Failure) rethrow;
+      throw NetworkFailure('Failed to fetch customer ledger statement.');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> getDueReminderLink(String customerId) async {
+    try {
+      return await remoteDataSource.getDueReminderLink(customerId);
+    } catch (e) {
+      if (e is Failure) rethrow;
+      throw NetworkFailure('Failed to generate due reminder link.');
     }
   }
 }

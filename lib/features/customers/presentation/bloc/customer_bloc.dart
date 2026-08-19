@@ -5,17 +5,21 @@ import '../../domain/entities/customer_entity.dart';
 import '../../domain/usecases/add_customer_usecase.dart';
 import '../../domain/usecases/collect_customer_payment_usecase.dart';
 import '../../domain/usecases/delete_customer_usecase.dart';
+import '../../domain/usecases/get_customer_details_usecase.dart';
 import '../../domain/usecases/get_customers_usecase.dart';
+import '../../domain/usecases/get_due_reminder_link_usecase.dart';
 import '../../domain/usecases/update_customer_usecase.dart';
 import 'customer_event.dart';
 import 'customer_state.dart';
 
 class CustomerBloc {
   final GetCustomersUseCase getCustomersUseCase;
+  final GetCustomerDetailsUseCase getCustomerDetailsUseCase;
   final AddCustomerUseCase addCustomerUseCase;
   final UpdateCustomerUseCase updateCustomerUseCase;
   final DeleteCustomerUseCase deleteCustomerUseCase;
   final CollectCustomerPaymentUseCase collectCustomerPaymentUseCase;
+  final GetDueReminderLinkUseCase getDueReminderLinkUseCase;
 
   CustomerState _state = const CustomerInitialState();
   final _stateController = StreamController<CustomerState>.broadcast();
@@ -28,10 +32,12 @@ class CustomerBloc {
 
   CustomerBloc({
     required this.getCustomersUseCase,
+    required this.getCustomerDetailsUseCase,
     required this.addCustomerUseCase,
     required this.updateCustomerUseCase,
     required this.deleteCustomerUseCase,
     required this.collectCustomerPaymentUseCase,
+    required this.getDueReminderLinkUseCase,
   });
 
   void add(CustomerEvent event) {
@@ -48,6 +54,8 @@ class CustomerBloc {
   Future<void> _handleEvent(CustomerEvent event) async {
     if (event is FetchCustomersEvent) {
       await _onFetchCustomers(event);
+    } else if (event is FetchCustomerDetailsEvent) {
+      await _onFetchCustomerDetails(event);
     } else if (event is AddCustomerEvent) {
       await _onAddCustomer(event);
     } else if (event is UpdateCustomerEvent) {
@@ -56,6 +64,8 @@ class CustomerBloc {
       await _onDeleteCustomer(event);
     } else if (event is CollectCustomerPaymentEvent) {
       await _onCollectPayment(event);
+    } else if (event is FetchDueReminderLinkEvent) {
+      await _onFetchDueReminderLink(event);
     }
   }
 
@@ -71,6 +81,21 @@ class CustomerBloc {
         page: event.page,
         limit: event.limit,
       );
+      _emitLoadedState();
+    } catch (e) {
+      _emit(CustomerErrorState(e.toString()));
+    }
+  }
+
+  Future<void> _onFetchCustomerDetails(FetchCustomerDetailsEvent event) async {
+    try {
+      final customer = await getCustomerDetailsUseCase(event.customerId);
+      final index = _allCustomers.indexWhere((c) => c.id == customer.id);
+      if (index != -1) {
+        _allCustomers[index] = customer;
+      } else {
+        _allCustomers.insert(0, customer);
+      }
       _emitLoadedState();
     } catch (e) {
       _emit(CustomerErrorState(e.toString()));
@@ -127,6 +152,27 @@ class CustomerBloc {
       try {
         InjectionContainer.reportsBloc.add(const FetchReportsEvent());
       } catch (_) {}
+    } catch (e) {
+      _emit(CustomerErrorState(e.toString()));
+    }
+  }
+
+  Future<void> _onFetchDueReminderLink(FetchDueReminderLinkEvent event) async {
+    try {
+      final res = await getDueReminderLinkUseCase(event.customerId);
+      final customerId = res['customerId']?.toString() ?? res['id']?.toString() ?? event.customerId;
+      final customerName = res['customerName']?.toString() ?? res['name']?.toString() ?? 'Customer';
+      final dueAmount = res['dueAmount']?.toString() ?? '0.00';
+      final whatsappUrl = res['whatsappUrl']?.toString() ?? res['url']?.toString() ?? '';
+
+      _emit(DueReminderLinkLoadedState(
+        customerId: customerId,
+        customerName: customerName,
+        dueAmount: dueAmount,
+        whatsappUrl: whatsappUrl,
+      ));
+
+      _emitLoadedState();
     } catch (e) {
       _emit(CustomerErrorState(e.toString()));
     }

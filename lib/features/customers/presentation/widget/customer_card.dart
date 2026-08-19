@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/di/injection_container.dart';
 import '../../customer.dart';
 import 'customer_info.dart';
 
@@ -17,6 +19,42 @@ class CustomerCard extends StatelessWidget {
     required this.onStatement,
     this.onCollectPayment,
   });
+
+  Future<void> _launchWhatsAppReminder(BuildContext context) async {
+    try {
+      final res = await InjectionContainer.customerRepository.getDueReminderLink(customer.id);
+      final rawUrl = res['whatsappUrl']?.toString() ?? res['url']?.toString() ?? '';
+
+      String targetUrl = rawUrl;
+      if (targetUrl.isEmpty) {
+        final cleanPhone = customer.phone.replaceAll(RegExp(r'[^0-9]'), '');
+        final formattedPhone = cleanPhone.startsWith('88') ? cleanPhone : '88$cleanPhone';
+        final text = Uri.encodeComponent('Dear ${customer.name}, your due payment of Tk ${customer.totalDue.toStringAsFixed(0)} is pending. Please clear your due payment.');
+        targetUrl = 'https://api.whatsapp.com/send?phone=$formattedPhone&text=$text';
+      }
+
+      final uri = Uri.parse(targetUrl);
+      bool launched = false;
+      try {
+        launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } catch (_) {
+        launched = false;
+      }
+
+      if (!launched) {
+        // Fallback: SMS
+        final cleanPhone = customer.phone.replaceAll(RegExp(r'[^0-9]'), '');
+        final smsUri = Uri.parse('sms:$cleanPhone?body=${Uri.encodeComponent("Dear ${customer.name}, your due payment of Tk ${customer.totalDue.toStringAsFixed(0)} is pending.")}');
+        await launchUrl(smsUri);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not open WhatsApp reminder: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -124,30 +162,45 @@ class CustomerCard extends StatelessWidget {
                     case 'pay':
                       if (onCollectPayment != null) onCollectPayment!();
                       break;
+                    case 'whatsapp':
+                      _launchWhatsAppReminder(context);
+                      break;
+                    case 'statement':
+                      onStatement();
+                      break;
                     case 'edit':
                       onEdit();
                       break;
                     case 'delete':
                       onDelete();
                       break;
-                    case 'statement':
-                      onStatement();
-                      break;
                   }
                 },
                 itemBuilder: (context) {
-                  return const [
-                    PopupMenuItem(
-                      value: 'pay',
-                      child: Row(
-                        children: [
-                          Icon(Icons.payments_outlined, color: Colors.green),
-                          SizedBox(width: 10),
-                          Text('Receive Payment', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                        ],
+                  return [
+                    if (customer.hasDue) ...[
+                      const PopupMenuItem(
+                        value: 'pay',
+                        child: Row(
+                          children: [
+                            Icon(Icons.payments_outlined, color: Colors.green),
+                            SizedBox(width: 10),
+                            Text('Receive Payment', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
                       ),
-                    ),
-                    PopupMenuItem(
+                      const PopupMenuItem(
+                        value: 'whatsapp',
+                        child: Row(
+                          children: [
+                            Icon(Icons.chat_outlined, color: Colors.teal),
+                            SizedBox(width: 10),
+                            Text('WhatsApp Due Reminder', style: TextStyle(color: Colors.teal, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const PopupMenuItem(
                       value: 'statement',
                       child: Row(
                         children: [
@@ -157,7 +210,7 @@ class CustomerCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    PopupMenuItem(
+                    const PopupMenuItem(
                       value: 'edit',
                       child: Row(
                         children: [
@@ -167,7 +220,7 @@ class CustomerCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    PopupMenuItem(
+                    const PopupMenuItem(
                       value: 'delete',
                       child: Row(
                         children: [
@@ -207,11 +260,18 @@ class CustomerCard extends StatelessWidget {
                       : (customer.hasDue ? Colors.orange[900] : Colors.grey),
                 ),
               ),
+              if (customer.hasDue) ...[
+                IconButton(
+                  onPressed: () => _launchWhatsAppReminder(context),
+                  icon: const Icon(Icons.chat_outlined, color: Colors.teal, size: 22),
+                  tooltip: 'WhatsApp Due Reminder',
+                ),
+              ],
               if (onCollectPayment != null && customer.hasDue) ...[
                 FilledButton.icon(
                   onPressed: onCollectPayment,
                   icon: const Icon(Icons.payments_outlined, size: 16),
-                  label: const Text('Pay Due'),
+                  label: const Text('Pay'),
                   style: FilledButton.styleFrom(
                     backgroundColor: Colors.green[700],
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),

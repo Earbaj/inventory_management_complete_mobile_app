@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/excel_export_service.dart';
 import '../../../../core/services/pdf_export_service.dart';
@@ -281,6 +282,41 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
     );
   }
 
+  Future<void> _launchWhatsAppReminder(BuildContext context) async {
+    try {
+      final res = await InjectionContainer.customerRepository.getDueReminderLink(widget.customer.id);
+      final rawUrl = res['whatsappUrl']?.toString() ?? res['url']?.toString() ?? '';
+
+      String targetUrl = rawUrl;
+      if (targetUrl.isEmpty) {
+        final cleanPhone = widget.customer.phone.replaceAll(RegExp(r'[^0-9]'), '');
+        final formattedPhone = cleanPhone.startsWith('88') ? cleanPhone : '88$cleanPhone';
+        final text = Uri.encodeComponent('Dear ${widget.customer.name}, your due payment of Tk ${_currentDue.toStringAsFixed(0)} is pending. Please clear your due payment.');
+        targetUrl = 'https://api.whatsapp.com/send?phone=$formattedPhone&text=$text';
+      }
+
+      final uri = Uri.parse(targetUrl);
+      bool launched = false;
+      try {
+        launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } catch (_) {
+        launched = false;
+      }
+
+      if (!launched) {
+        final cleanPhone = widget.customer.phone.replaceAll(RegExp(r'[^0-9]'), '');
+        final smsUri = Uri.parse('sms:$cleanPhone?body=${Uri.encodeComponent("Dear ${widget.customer.name}, your due payment of Tk ${_currentDue.toStringAsFixed(0)} is pending.")}');
+        await launchUrl(smsUri);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not open WhatsApp reminder: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -290,6 +326,11 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
       appBar: AppBar(
         title: const Text('Customer Statement'),
         actions: [
+          IconButton(
+            onPressed: () => _launchWhatsAppReminder(context),
+            icon: const Icon(Icons.chat_outlined, color: Colors.teal),
+            tooltip: 'WhatsApp Due Reminder',
+          ),
           IconButton(
             onPressed: _fetchLedgerFromApi,
             icon: const Icon(Icons.refresh_rounded),
