@@ -35,6 +35,7 @@ class PosMapper {
       paidAmount: model.paidAmount,
       dueAmount: model.dueAmount,
       paymentMethod: model.paymentMethod,
+      isReturned: model.isReturned,
       createdAt: model.createdAt != null ? DateTime.tryParse(model.createdAt!) ?? DateTime.now() : DateTime.now(),
     );
   }
@@ -52,6 +53,7 @@ class PosMapper {
       paidAmount: entity.paidAmount,
       dueAmount: entity.dueAmount,
       paymentMethod: entity.paymentMethod,
+      isReturned: entity.isReturned,
       createdAt: entity.createdAt.toIso8601String(),
     );
   }

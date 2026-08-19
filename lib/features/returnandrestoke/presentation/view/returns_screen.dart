@@ -9,6 +9,7 @@ import '../../../posbilling/domain/entities/sale_entity.dart';
 import '../../../reports/presentation/bloc/reports_event.dart';
 import '../../../reports/presentation/bloc/reports_state.dart';
 import '../../domain/entities/return_item_entity.dart';
+import '../../../customers/presentation/widget/transaction_details_sheet.dart';
 import '../bloc/returns_event.dart';
 import '../bloc/returns_state.dart';
 
@@ -272,46 +273,85 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
         ),
         const SizedBox(height: 8),
-        DropdownButtonFormField<SaleEntity?>(
-          value: _selectedInvoice,
-          isExpanded: true,
-          decoration: InputDecoration(
-            hintText: filteredInvoices.isEmpty ? 'No invoices found for this customer' : 'Choose an invoice',
-            prefixIcon: const Icon(Icons.receipt_rounded),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-            filled: true,
-            fillColor: colorScheme.surfaceContainerHighest,
-          ),
-          items: filteredInvoices.map((invoice) {
-            final dateStr = '${invoice.createdAt.day}/${invoice.createdAt.month}/${invoice.createdAt.year}';
-            final hasDue = invoice.dueAmount > 0;
-            return DropdownMenuItem<SaleEntity?>(
-              value: invoice,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      '${invoice.invoiceNo} ($dateStr)',
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    hasDue
-                        ? 'Due: ৳${invoice.dueAmount.toStringAsFixed(0)}'
-                        : 'Paid: ৳${invoice.netTotal.toStringAsFixed(0)}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                      color: hasDue ? Colors.orange[800] : Colors.green[700],
-                    ),
-                  ),
-                ],
+        Builder(
+          builder: (context) {
+            final SaleEntity? safeSelectedInvoice =
+                (filteredInvoices.contains(_selectedInvoice)) ? _selectedInvoice : null;
+
+            return DropdownButtonFormField<SaleEntity?>(
+              value: safeSelectedInvoice,
+              isExpanded: true,
+              decoration: InputDecoration(
+                hintText: filteredInvoices.isEmpty ? 'No invoices found for this customer' : 'Choose an invoice',
+                prefixIcon: const Icon(Icons.receipt_rounded),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                filled: true,
+                fillColor: colorScheme.surfaceContainerHighest,
               ),
+              items: filteredInvoices.map((invoice) {
+                final dateStr = '${invoice.createdAt.day}/${invoice.createdAt.month}/${invoice.createdAt.year}';
+                final hasDue = invoice.dueAmount > 0;
+                final isFullReturn = invoice.isReturned.toLowerCase() == 'full' ||
+                    invoice.isReturned.toLowerCase() == 'returned';
+                final isPartialReturn = invoice.isReturned.toLowerCase() == 'partially_returned' ||
+                    invoice.isReturned.toLowerCase() == 'partial';
+
+                final String badgeText;
+                final Color badgeColor;
+                final Color textColor;
+
+                if (isFullReturn) {
+                  badgeText = 'FULL RETURNED';
+                  badgeColor = Colors.red.withValues(alpha: 0.15);
+                  textColor = Colors.red[800]!;
+                } else if (isPartialReturn) {
+                  badgeText = 'PARTIAL RETURN';
+                  badgeColor = Colors.orange.withValues(alpha: 0.15);
+                  textColor = Colors.orange[900]!;
+                } else if (hasDue) {
+                  badgeText = 'Due: ৳${invoice.dueAmount.toStringAsFixed(0)}';
+                  badgeColor = Colors.orange.withValues(alpha: 0.15);
+                  textColor = Colors.orange[900]!;
+                } else {
+                  badgeText = 'Paid: ৳${invoice.netTotal.toStringAsFixed(0)}';
+                  badgeColor = Colors.green.withValues(alpha: 0.15);
+                  textColor = Colors.green[800]!;
+                }
+
+                return DropdownMenuItem<SaleEntity?>(
+                  value: invoice,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${invoice.invoiceNo} ($dateStr)',
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: badgeColor,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          badgeText,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11,
+                            color: textColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+              onChanged: _onInvoiceSelected,
             );
-          }).toList(),
-          onChanged: _onInvoiceSelected,
+          },
         ),
 
         const SizedBox(height: 20),
@@ -364,24 +404,57 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
                       'Paid: ৳${_selectedInvoice!.paidAmount.toStringAsFixed(0)}',
                       style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: _selectedInvoice!.dueAmount > 0
-                            ? Colors.orange.withValues(alpha: 0.15)
-                            : Colors.green.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        _selectedInvoice!.dueAmount > 0
-                            ? 'Due: ৳${_selectedInvoice!.dueAmount.toStringAsFixed(0)}'
-                            : 'Fully Paid',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                          color: _selectedInvoice!.dueAmount > 0 ? Colors.orange[800] : Colors.green[800],
+                    Row(
+                      children: [
+                        if (_selectedInvoice!.isReturned.toLowerCase() == 'full' ||
+                            _selectedInvoice!.isReturned.toLowerCase() == 'returned') ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'FULL RETURNED',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.red[800]),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                        ] else if (_selectedInvoice!.isReturned.toLowerCase() == 'partially_returned' ||
+                            _selectedInvoice!.isReturned.toLowerCase() == 'partial') ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'PARTIAL RETURN',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.orange[900]),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                        ],
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: _selectedInvoice!.dueAmount > 0
+                                ? Colors.orange.withValues(alpha: 0.15)
+                                : Colors.green.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            _selectedInvoice!.dueAmount > 0
+                                ? 'Due: ৳${_selectedInvoice!.dueAmount.toStringAsFixed(0)}'
+                                : 'Fully Paid',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                              color: _selectedInvoice!.dueAmount > 0 ? Colors.orange[800] : Colors.green[800],
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ],
                 ),
@@ -699,64 +772,74 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
                   final item = returnLogs[index];
                   final dateStr = '${item.createdAt.day}/${item.createdAt.month}/${item.createdAt.year}';
 
-                  return Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
+                  return Card(
+                    margin: EdgeInsets.zero,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5)),
+                      side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.5)),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    color: colorScheme.surface,
+                    child: InkWell(
+                      onTap: () {
+                        TransactionDetailsSheet.showForReturn(context, item);
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              item.invoiceNo,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: colorScheme.primaryContainer,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                'Refund: ৳${item.totalRefundAmount.toStringAsFixed(0)}',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                  color: colorScheme.onPrimaryContainer,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  item.invoiceNo,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                 ),
-                              ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.primaryContainer,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    'Refund: ৳${item.totalRefundAmount.toStringAsFixed(0)}',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                      color: colorScheme.onPrimaryContainer,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Item: ${item.itemName} (Qty: ${item.returnQuantity})',
-                          style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(height: 2),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
+                            const SizedBox(height: 6),
                             Text(
-                              'Customer: ${item.customerName ?? "Walk-in"}',
-                              style: theme.textTheme.bodySmall,
+                              'Item: ${item.itemName} (Qty: ${item.returnQuantity})',
+                              style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                             ),
-                            Text(dateStr, style: theme.textTheme.bodySmall),
+                            const SizedBox(height: 2),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Customer: ${item.customerName ?? "Walk-in"}',
+                                  style: theme.textTheme.bodySmall,
+                                ),
+                                Text(dateStr, style: theme.textTheme.bodySmall),
+                              ],
+                            ),
+                            if (item.reason != null && item.reason!.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                'Reason: ${item.reason}',
+                                style: TextStyle(fontSize: 12, color: Colors.grey[700], fontStyle: FontStyle.italic),
+                              ),
+                            ],
                           ],
                         ),
-                        if (item.reason != null && item.reason!.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            'Reason: ${item.reason}',
-                            style: TextStyle(fontSize: 12, color: Colors.grey[700], fontStyle: FontStyle.italic),
-                          ),
-                        ],
-                      ],
+                      ),
                     ),
                   );
                 },

@@ -3,6 +3,7 @@ import '../../../../core/di/injection_container.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../bloc/customer_event.dart';
 import '../bloc/customer_state.dart';
+import '../../../reports/presentation/bloc/reports_event.dart';
 
 class CollectPaymentSheet extends StatefulWidget {
   final CustomerEntity? preSelectedCustomer;
@@ -39,6 +40,51 @@ class _CollectPaymentSheetState extends State<CollectPaymentSheet> {
     _amountCtrl.dispose();
     _noteCtrl.dispose();
     super.dispose();
+  }
+
+  bool _isSubmitting = false;
+
+  Future<void> _submitPayment(double amount) async {
+    if (_selectedCustomer == null || amount <= 0 || _isSubmitting) return;
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      await InjectionContainer.customerRemoteDataSource.collectCustomerPayment(
+        customerId: _selectedCustomer!.id,
+        amount: amount,
+        paymentMethod: _paymentMethod,
+        note: _noteCtrl.text.trim(),
+      );
+
+      InjectionContainer.customerBloc.add(const FetchCustomersEvent());
+      try {
+        InjectionContainer.reportsBloc.add(const FetchReportsEvent());
+      } catch (_) {}
+
+      if (mounted) {
+        Navigator.pop(context, true);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Payment of ৳${amount.toStringAsFixed(0)} received for ${_selectedCustomer!.name}',
+            ),
+            backgroundColor: Colors.green[700],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to process payment: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -328,44 +374,32 @@ class _CollectPaymentSheetState extends State<CollectPaymentSheet> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
               child: FilledButton(
-                onPressed: _selectedCustomer == null || enteredAmount <= 0
+                onPressed: _selectedCustomer == null || enteredAmount <= 0 || _isSubmitting
                     ? null
-                    : () {
-                        InjectionContainer.customerBloc.add(CollectCustomerPaymentEvent(
-                          customerId: _selectedCustomer!.id,
-                          amount: enteredAmount,
-                          paymentMethod: _paymentMethod,
-                          note: _noteCtrl.text.trim(),
-                        ));
-
-                        Navigator.pop(context);
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Payment of ৳${enteredAmount.toStringAsFixed(0)} received for ${_selectedCustomer!.name}',
-                            ),
-                            backgroundColor: Colors.green[700],
-                          ),
-                        );
-                      },
+                    : () => _submitPayment(enteredAmount),
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(52),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.check_circle_rounded),
-                    const SizedBox(width: 8),
-                    Text(
-                      _selectedCustomer != null
-                          ? 'Collect ৳${enteredAmount.toStringAsFixed(0)} from ${_selectedCustomer!.name}'
-                          : 'Process Payment',
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
+                child: _isSubmitting
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.check_circle_rounded),
+                          const SizedBox(width: 8),
+                          Text(
+                            _selectedCustomer != null
+                                ? 'Collect ৳${enteredAmount.toStringAsFixed(0)} from ${_selectedCustomer!.name}'
+                                : 'Process Payment',
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
               ),
             ),
           ],

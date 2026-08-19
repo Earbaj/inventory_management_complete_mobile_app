@@ -187,7 +187,7 @@ class CustomerCard extends StatelessWidget {
           const Divider(height: 1),
           const SizedBox(height: 11),
 
-          // OPENING BALANCE & ACTIONS
+          // BALANCE & ACTIONS
           Row(
             children: [
               Expanded(
@@ -196,7 +196,18 @@ class CustomerCard extends StatelessWidget {
                   value: '৳ ${customer.openingBalance.toStringAsFixed(0)}',
                 ),
               ),
-              if (onCollectPayment != null) ...[
+              Expanded(
+                child: CustomerInfo(
+                  title: customer.isAdvanceCredit
+                      ? 'Advance Credit'
+                      : (customer.hasDue ? 'Current Due' : 'Balance'),
+                  value: '৳ ${(customer.isAdvanceCredit ? customer.advanceCredit : customer.totalDue).toStringAsFixed(0)}',
+                  valueColor: customer.isAdvanceCredit
+                      ? Colors.green[700]
+                      : (customer.hasDue ? Colors.orange[900] : Colors.grey),
+                ),
+              ),
+              if (onCollectPayment != null && customer.hasDue) ...[
                 FilledButton.icon(
                   onPressed: onCollectPayment,
                   icon: const Icon(Icons.payments_outlined, size: 16),

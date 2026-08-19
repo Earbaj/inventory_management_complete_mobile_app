@@ -14,6 +14,7 @@ class SaleModel {
   final double paidAmount;
   final double dueAmount;
   final String paymentMethod;
+  final String isReturned;
   final String? createdAt;
 
   const SaleModel({
@@ -28,6 +29,7 @@ class SaleModel {
     required this.paidAmount,
     required this.dueAmount,
     required this.paymentMethod,
+    this.isReturned = 'none',
     this.createdAt,
   });
 
@@ -71,7 +73,11 @@ class SaleModel {
 
     return SaleModel(
       id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
-      invoiceNo: invNo.isNotEmpty ? invNo : (json['id']?.toString().length ?? 0) > 6 ? 'INV-${json['id'].toString().substring(0, 6).toUpperCase()}' : 'INV-SALE',
+      invoiceNo: invNo.isNotEmpty
+          ? invNo
+          : ((json['id']?.toString().length ?? 0) > 6
+              ? 'INV-${json['id'].toString().substring(0, 6).toUpperCase()}'
+              : 'INV-SALE'),
       customer: parsedCustomer,
       items: parsedItems,
       subtotal: _parseDouble(json['subtotal'] ?? json['grandTotal'] ?? json['total']),
@@ -81,6 +87,7 @@ class SaleModel {
       paidAmount: calcPaid,
       dueAmount: calcDue,
       paymentMethod: json['paymentMethod']?.toString() ?? json['payment_method']?.toString() ?? (calcDue > 0 ? 'due' : 'cash'),
+      isReturned: json['isReturned']?.toString() ?? json['is_returned']?.toString() ?? 'none',
       createdAt: json['date']?.toString() ?? json['createdAt']?.toString() ?? json['created_at']?.toString(),
     );
   }
@@ -91,6 +98,7 @@ class SaleModel {
       'discount': discountAmount,
       'paidAmount': paidAmount,
       'paymentMethod': paymentMethod,
+      'isReturned': isReturned,
     };
 
     if (customer != null && customer!.id.isNotEmpty) {

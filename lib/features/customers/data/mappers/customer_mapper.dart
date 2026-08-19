@@ -4,17 +4,14 @@ import '../models/customer_model.dart';
 /// Translator mapping between [CustomerModel] DTO and [CustomerEntity].
 class CustomerMapper {
   static CustomerEntity modelToEntity(CustomerModel model) {
-    final double due = model.totalDue.abs() > 0
-        ? model.totalDue.abs()
-        : model.openingBalance.abs();
-
     return CustomerEntity(
       id: model.id,
       name: model.name,
       phone: model.phone,
       email: model.email,
       address: model.address,
-      totalDue: due,
+      rawBalance: model.rawBalance,
+      totalDue: model.rawBalance < 0 ? model.rawBalance.abs() : 0.0,
       notes: model.notes,
       createdAt: model.createdAt != null
           ? DateTime.tryParse(model.createdAt!)
@@ -22,7 +19,7 @@ class CustomerMapper {
       updatedAt: model.updatedAt != null
           ? DateTime.tryParse(model.updatedAt!)
           : null,
-      openingBalance: model.openingBalance.abs(),
+      openingBalance: model.openingBalance,
     );
   }
 
@@ -33,6 +30,7 @@ class CustomerMapper {
       phone: entity.phone,
       email: entity.email,
       address: entity.address,
+      rawBalance: entity.rawBalance,
       totalDue: entity.totalDue,
       openingBalance: entity.openingBalance,
       notes: entity.notes,

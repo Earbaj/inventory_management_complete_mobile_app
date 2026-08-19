@@ -14,6 +14,7 @@ class SaleEntity {
   final double paidAmount;
   final double dueAmount;
   final String paymentMethod; // 'cash', 'bkash', 'card', 'due'
+  final String isReturned; // 'none', 'partially_returned', 'full' / 'returned'
   final DateTime createdAt;
 
   const SaleEntity({
@@ -28,9 +29,22 @@ class SaleEntity {
     required this.paidAmount,
     required this.dueAmount,
     required this.paymentMethod,
+    this.isReturned = 'none',
     required this.createdAt,
   });
 
   /// Computed property: true if sale has an associated customer.
   bool get hasCustomer => customer != null;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is SaleEntity &&
+        (id.isNotEmpty && other.id.isNotEmpty
+            ? id == other.id
+            : invoiceNo == other.invoiceNo);
+  }
+
+  @override
+  int get hashCode => id.isNotEmpty ? id.hashCode : invoiceNo.hashCode;
 }

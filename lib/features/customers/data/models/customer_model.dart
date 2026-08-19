@@ -5,6 +5,7 @@ class CustomerModel {
   final String phone;
   final String? email;
   final String? address;
+  final double rawBalance; // signed balance from API: negative = Due, positive = Credit
   final double totalDue;
   final double openingBalance;
   final String? notes;
@@ -17,6 +18,7 @@ class CustomerModel {
     required this.phone,
     this.email,
     this.address,
+    this.rawBalance = 0.0,
     this.totalDue = 0.0,
     this.openingBalance = 0.0,
     this.notes,
@@ -35,8 +37,10 @@ class CustomerModel {
     final rawDue = json['closingBalance'] ?? json['closing_balance'] ?? json['totalDue'] ?? json['total_due'] ?? json['due'];
     final rawOpening = json['openingBalance'] ?? json['opening_balance'];
 
-    final parsedDue = _parseDouble(rawDue);
+    final parsedBalance = _parseDouble(rawDue);
     final parsedOpening = _parseDouble(rawOpening);
+
+    final double dueAmount = parsedBalance < 0 ? parsedBalance.abs() : 0.0;
 
     return CustomerModel(
       id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
@@ -44,8 +48,9 @@ class CustomerModel {
       phone: json['phone']?.toString() ?? '',
       email: json['email']?.toString(),
       address: json['address']?.toString(),
-      totalDue: parsedDue.abs(),
-      openingBalance: parsedOpening.abs(),
+      rawBalance: parsedBalance,
+      totalDue: dueAmount,
+      openingBalance: parsedOpening,
       notes: json['notes']?.toString(),
       createdAt: json['createdAt']?.toString() ?? json['created_at']?.toString(),
       updatedAt: json['updatedAt']?.toString() ?? json['updated_at']?.toString(),
@@ -59,6 +64,7 @@ class CustomerModel {
       'phone': phone,
       if (email != null) 'email': email,
       if (address != null) 'address': address,
+      'closingBalance': rawBalance,
       'totalDue': totalDue,
       'openingBalance': openingBalance,
       if (notes != null) 'notes': notes,

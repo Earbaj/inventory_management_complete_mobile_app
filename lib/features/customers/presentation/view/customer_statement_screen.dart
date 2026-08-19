@@ -11,6 +11,7 @@ import '../widget/customer_statement_customer_header.dart';
 import '../widget/customer_statement_summary_card.dart';
 import '../widget/no_transaction_card.dart';
 import '../widget/transaction_card.dart';
+import '../widget/transaction_details_sheet.dart';
 
 class CustomerStatementScreen extends StatefulWidget {
   final Customer customer;
@@ -34,6 +35,7 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
   double _totalSales = 0.0;
   double _totalPaid = 0.0;
   double _currentDue = 0.0;
+  double _rawBalance = 0.0;
   List<CustomerTransaction> _ledgerTransactions = [];
 
   @override
@@ -99,6 +101,7 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
       double computedPaid = 0.0;
       double computedOpening = widget.customer.openingBalance;
       double computedDue = widget.customer.totalDue;
+      double computedRawBal = widget.customer.rawBalance;
 
       final List<CustomerTransaction> parsedTransactions = [];
 
@@ -113,9 +116,10 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
           final String idStr = item['id']?.toString() ?? item['referenceId']?.toString() ?? UniqueKey().toString();
           final DateTime date = DateTime.tryParse(item['date']?.toString() ?? item['createdAt']?.toString() ?? '') ?? DateTime.now();
 
-          // Latest item (index 0) determines active current due balance
+          // Latest item (index 0) determines active current balance
           if (i == 0) {
-            computedDue = newBal.abs();
+            computedRawBal = newBal;
+            computedDue = newBal < 0 ? newBal.abs() : 0.0;
           }
 
           if (typeStr == 'opening') {
@@ -148,6 +152,7 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
         _openingBalance = computedOpening;
         _totalSales = computedSales;
         _totalPaid = computedPaid;
+        _rawBalance = computedRawBal;
         _currentDue = computedDue;
         _ledgerTransactions = parsedTransactions;
         _isLoading = false;
@@ -162,6 +167,7 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
         _totalPaid = widget.transactions
             .where((t) => t.type == TransactionType.payment)
             .fold(0.0, (sum, t) => sum + t.amount);
+        _rawBalance = widget.customer.rawBalance;
         _currentDue = widget.customer.totalDue;
         _ledgerTransactions = widget.transactions;
         _isLoading = false;
@@ -319,52 +325,83 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 30),
-              children: [
+          : RefreshIndicator(
+              onRefresh: _fetchLedgerFromApi,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 30),
+                children: [
                 CustomerHeader(customer: widget.customer),
                 const SizedBox(height: 14),
-                Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: colorScheme.primary.withValues(alpha: 0.15)),
-                  ),
-                  child: Column(
-                    children: [
-                      Text('Current Balance', style: theme.textTheme.bodyMedium),
-                      const SizedBox(height: 5),
-                      Text(
-                        '৳ ${_currentDue.toStringAsFixed(2)}',
-                        style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: colorScheme.primary),
+                Builder(
+                  builder: (context) {
+                    final bool isDue = _rawBalance < 0;
+                    final bool isCredit = _rawBalance > 0;
+                    final double displayBalance = isDue ? _rawBalance.abs() : (isCredit ? _rawBalance : 0.0);
+                    final Color cardColor = isDue
+                        ? Colors.orange[900]!
+                        : (isCredit ? Colors.green[700]! : colorScheme.primary);
+
+                    return Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: cardColor.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: cardColor.withValues(alpha: 0.2)),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _currentDue > 0 ? 'Due from customer' : 'No outstanding due',
-                        style: theme.textTheme.bodySmall,
-                      ),
-                      if (_currentDue > 0) ...[
-                        const SizedBox(height: 12),
-                        FilledButton.icon(
-                          onPressed: () {
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              builder: (ctx) => CollectPaymentSheet(preSelectedCustomer: widget.customer),
-                            ).then((_) => _fetchLedgerFromApi());
-                          },
-                          icon: const Icon(Icons.payments_rounded, size: 18),
-                          label: const Text('Receive Payment Collection'),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: Colors.green[700],
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: Column(
+                        children: [
+                          Text(
+                            isCredit ? 'Advance Store Credit' : 'Current Balance',
+                            style: theme.textTheme.bodyMedium,
                           ),
-                        ),
-                      ],
-                    ],
-                  ),
+                          const SizedBox(height: 5),
+                          Text(
+                            '৳ ${displayBalance.toStringAsFixed(2)}',
+                            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: cardColor),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                isDue
+                                    ? 'Due from customer'
+                                    : (isCredit
+                                        ? 'Customer advance balance (Credit in account)'
+                                        : 'No outstanding due'),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDue
+                                      ? Colors.orange[900]
+                                      : (isCredit ? Colors.green[700] : Colors.grey),
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (isDue) ...[
+                            const SizedBox(height: 12),
+                            FilledButton.icon(
+                              onPressed: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (ctx) => CollectPaymentSheet(preSelectedCustomer: widget.customer),
+                                ).then((_) => _fetchLedgerFromApi());
+                              },
+                              icon: const Icon(Icons.payments_rounded, size: 18),
+                              label: const Text('Receive Payment Collection'),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.green[700],
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 14),
                 Row(
@@ -392,9 +429,21 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
                 if (_ledgerTransactions.isEmpty)
                   NoTransactions()
                 else
-                  ..._ledgerTransactions.map((transaction) => TransactionCard(transaction: transaction)),
+                  ..._ledgerTransactions.map(
+                    (transaction) => TransactionCard(
+                      transaction: transaction,
+                      onTap: () {
+                        TransactionDetailsSheet.showForStatement(
+                          context,
+                          transaction: transaction,
+                          customerSales: widget.customerSales,
+                        );
+                      },
+                    ),
+                  ),
               ],
             ),
+          ),
     );
   }
 }
