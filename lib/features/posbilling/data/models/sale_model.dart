@@ -49,13 +49,23 @@ class SaleModel {
     CustomerModel? parsedCustomer;
     if (json['customer'] is Map<String, dynamic>) {
       parsedCustomer = CustomerModel.fromJson(json['customer']);
-    } else if (json['customerName'] != null) {
-      parsedCustomer = CustomerModel(
-        id: json['customerId']?.toString() ?? '',
-        name: json['customerName']?.toString() ?? '',
-        phone: json['customerPhone']?.toString() ?? '',
-        openingBalance: 0.0,
-      );
+    } else if (json['customerId'] is Map<String, dynamic>) {
+      parsedCustomer = CustomerModel.fromJson(json['customerId']);
+    } else if (json['customer_id'] is Map<String, dynamic>) {
+      parsedCustomer = CustomerModel.fromJson(json['customer_id']);
+    } else {
+      final String custName = (json['customerName'] ?? json['customer_name'] ?? (json['customer'] is String ? json['customer'] : null))?.toString() ?? '';
+      final String custId = (json['customerId'] ?? json['customer_id'] ?? (json['customer'] is String ? json['customer'] : ''))?.toString() ?? '';
+      final String custPhone = (json['customerPhone'] ?? json['customer_phone'] ?? json['phone'])?.toString() ?? '';
+
+      if (custName.isNotEmpty || custId.isNotEmpty) {
+        parsedCustomer = CustomerModel(
+          id: custId,
+          name: custName.isNotEmpty ? custName : 'Customer',
+          phone: custPhone,
+          openingBalance: 0.0,
+        );
+      }
     }
 
     final String invNo = json['invoiceNumber']?.toString() ??

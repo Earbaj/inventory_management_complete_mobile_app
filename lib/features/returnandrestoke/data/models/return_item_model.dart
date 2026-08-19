@@ -5,6 +5,7 @@ class ReturnItemModel {
   final String invoiceNo;
   final String itemId;
   final String itemName;
+  final String? customerId;
   final String? customerName;
   final int returnQuantity;
   final double unitPrice;
@@ -20,6 +21,7 @@ class ReturnItemModel {
     required this.invoiceNo,
     required this.itemId,
     required this.itemName,
+    this.customerId,
     this.customerName,
     required this.returnQuantity,
     required this.unitPrice,
@@ -53,18 +55,22 @@ class ReturnItemModel {
       }
     }
 
+    final dynamic restockedVal = itemMap['isRestocked'] ?? itemMap['is_restocked'] ?? itemMap['restocked'];
+    final bool restocked = restockedVal == null ? true : (restockedVal == true || restockedVal.toString() == 'true');
+
     return ReturnItemModel(
       id: itemMap['id']?.toString() ?? itemMap['_id']?.toString() ?? '',
       saleId: itemMap['saleId']?.toString() ?? itemMap['sale_id']?.toString() ?? '',
       invoiceNo: itemMap['invoiceNo']?.toString() ?? itemMap['invoice_no']?.toString() ?? itemMap['invoiceNumber']?.toString() ?? '',
       itemId: itemMap['itemId']?.toString() ?? itemMap['item_id']?.toString() ?? '',
       itemName: itemMap['itemName']?.toString() ?? itemMap['item_name']?.toString() ?? itemMap['name']?.toString() ?? '',
+      customerId: itemMap['customerId']?.toString() ?? itemMap['customer_id']?.toString() ?? itemMap['customer']?.toString(),
       customerName: itemMap['customerName']?.toString() ?? itemMap['customer_name']?.toString(),
       returnQuantity: _parseInt(itemMap['returnQuantity'] ?? itemMap['quantity'] ?? itemMap['qty'] ?? 1),
       unitPrice: _parseDouble(itemMap['unitPrice'] ?? itemMap['unit_price'] ?? itemMap['price']),
-      totalRefundAmount: _parseDouble(itemMap['totalRefundAmount'] ?? itemMap['refundAmount'] ?? itemMap['refund_amount'] ?? itemMap['totalPrice']),
-      refundMethod: itemMap['refundMethod']?.toString() ?? itemMap['refund_method']?.toString() ?? 'cash',
-      isRestocked: itemMap['isRestocked'] == true || itemMap['is_restocked'] == true,
+      totalRefundAmount: _parseDouble(itemMap['totalRefundAmount'] ?? itemMap['refundAmount'] ?? itemMap['refund_amount'] ?? itemMap['totalPrice'] ?? itemMap['totalRefund']),
+      refundMethod: itemMap['refundMethod']?.toString() ?? itemMap['refund_method']?.toString() ?? itemMap['paymentMethod']?.toString() ?? 'cash',
+      isRestocked: restocked,
       reason: itemMap['reason']?.toString(),
       createdAt: itemMap['createdAt']?.toString() ?? itemMap['created_at']?.toString() ?? itemMap['date']?.toString(),
     );
@@ -72,6 +78,9 @@ class ReturnItemModel {
 
   Map<String, dynamic> toJson() {
     final String targetSaleId = saleId.isNotEmpty ? saleId : (id.isNotEmpty ? id : invoiceNo);
+
+    final String custId = customerId ?? '';
+    final String custName = customerName ?? '';
 
     return {
       'saleId': targetSaleId,
@@ -88,11 +97,17 @@ class ReturnItemModel {
       ],
       'itemId': itemId,
       'itemName': itemName,
-      if (customerName != null && customerName!.isNotEmpty) 'customerName': customerName,
+      if (custId.isNotEmpty) 'customerId': custId,
+      if (custId.isNotEmpty) 'customer_id': custId,
+      if (custId.isNotEmpty) 'customer': custId,
+      if (custName.isNotEmpty) 'customerName': custName,
+      if (custName.isNotEmpty) 'customer_name': custName,
       'returnQuantity': returnQuantity,
       'unitPrice': unitPrice,
       'totalRefundAmount': totalRefundAmount,
       'refundMethod': refundMethod,
+      'refund_method': refundMethod,
+      'paymentMethod': refundMethod,
       'isRestocked': isRestocked,
       if (reason != null && reason!.isNotEmpty) 'reason': reason,
       if (createdAt != null) 'createdAt': createdAt,
