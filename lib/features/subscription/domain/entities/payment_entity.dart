@@ -7,6 +7,7 @@ class PaymentEntity {
   final double amount;
   final String targetTier; // 'premium'
   final String status; // 'pending', 'approved', 'rejected'
+  final String? rejectionReason;
   final DateTime createdAt;
 
   const PaymentEntity({
@@ -17,6 +18,7 @@ class PaymentEntity {
     required this.amount,
     required this.targetTier,
     required this.status,
+    this.rejectionReason,
     required this.createdAt,
   });
 }

@@ -39,7 +39,7 @@ class SuperAdminBloc {
       }
     } else if (event is RejectPaymentEvent) {
       try {
-        await remoteDataSource.rejectPayment(event.paymentId);
+        await remoteDataSource.rejectPayment(event.paymentId, reason: event.reason);
         await _loadDashboardData(actionMessage: 'Payment #${event.paymentId} rejected.');
       } catch (e) {
         _emit(SuperAdminErrorState(e.toString()));

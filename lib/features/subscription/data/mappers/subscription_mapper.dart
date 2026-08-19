@@ -11,6 +11,7 @@ class SubscriptionMapper {
       amount: model.amount,
       targetTier: model.targetTier,
       status: model.status,
+      rejectionReason: model.rejectionReason,
       createdAt: model.createdAt != null ? DateTime.tryParse(model.createdAt!) ?? DateTime.now() : DateTime.now(),
     );
   }
@@ -24,6 +25,7 @@ class SubscriptionMapper {
       amount: entity.amount,
       targetTier: entity.targetTier,
       status: entity.status,
+      rejectionReason: entity.rejectionReason,
       createdAt: entity.createdAt.toIso8601String(),
     );
   }

@@ -10,7 +10,7 @@ abstract class SuperAdminRemoteDataSource {
   Future<SuperAdminMetricsModel> getSuperAdminMetrics();
   Future<List<PaymentModel>> getPendingPayments({int page = 1, int limit = 20});
   Future<void> approvePayment(String paymentId);
-  Future<void> rejectPayment(String paymentId);
+  Future<void> rejectPayment(String paymentId, {String? reason});
   Future<List<ShopItemModel>> getShopsList({int page = 1, int limit = 20, String? search});
   Future<ShopDetailModel> getShopDetails(String id);
   Future<void> deleteShop(String shopId);
@@ -78,11 +78,16 @@ class SuperAdminRemoteDataSourceImpl implements SuperAdminRemoteDataSource {
   }
 
   @override
-  Future<void> rejectPayment(String paymentId) async {
+  Future<void> rejectPayment(String paymentId, {String? reason}) async {
     final url = ApiEndpoints.rejectPayment(paymentId);
-    developer.log('👑 [SuperAdminRemoteDataSource] Calling PATCH $url...', name: 'SuperAdminRemoteDataSource');
+    developer.log('👑 [SuperAdminRemoteDataSource] Calling PATCH $url with reason="$reason"...', name: 'SuperAdminRemoteDataSource');
     try {
-      final response = await apiClient.patch(url);
+      final response = await apiClient.patch(
+        url,
+        body: {
+          if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
+        },
+      );
       developer.log('✅ [SuperAdminRemoteDataSource] Payment $paymentId rejected! Response: $response', name: 'SuperAdminRemoteDataSource');
     } catch (e, stackTrace) {
       developer.log('❌ [SuperAdminRemoteDataSource] rejectPayment() Error: $e', name: 'SuperAdminRemoteDataSource', error: e, stackTrace: stackTrace);

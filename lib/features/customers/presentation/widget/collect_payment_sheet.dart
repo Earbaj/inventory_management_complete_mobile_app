@@ -98,8 +98,13 @@ class _CollectPaymentSheetState extends State<CollectPaymentSheet> {
         : (_selectedCustomer != null ? [_selectedCustomer!] : []);
 
     final double enteredAmount = double.tryParse(_amountCtrl.text) ?? 0.0;
+    final double rawBal = _selectedCustomer?.rawBalance ?? 0.0;
+    final bool isCredit = _selectedCustomer?.isAdvanceCredit ?? false;
+    final bool isDue = _selectedCustomer?.hasDue ?? false;
+
     final double currentDue = _selectedCustomer?.totalDue ?? 0.0;
-    final double closingBalance = (currentDue - enteredAmount).clamp(0.0, double.infinity);
+    final double advanceCredit = _selectedCustomer?.advanceCredit ?? 0.0;
+    final double estimatedNetBal = rawBal + enteredAmount;
 
     return Container(
       height: MediaQuery.sizeOf(context).height * 0.88,
@@ -182,11 +187,17 @@ class _CollectPaymentSheetState extends State<CollectPaymentSheet> {
                               ),
                             ),
                             Text(
-                              'Due: ৳${customer.totalDue.toStringAsFixed(0)}',
+                              customer.isAdvanceCredit
+                                  ? 'Credit: ৳${customer.advanceCredit.toStringAsFixed(0)}'
+                                  : (customer.hasDue
+                                      ? 'Due: ৳${customer.totalDue.toStringAsFixed(0)}'
+                                      : 'Clear'),
                               style: TextStyle(
                                 fontSize: 12,
-                                color: customer.totalDue > 0 ? Colors.orange[800] : Colors.grey,
-                                fontWeight: customer.totalDue > 0 ? FontWeight.bold : FontWeight.normal,
+                                color: customer.isAdvanceCredit
+                                    ? Colors.green[700]
+                                    : (customer.hasDue ? Colors.orange[800] : Colors.grey),
+                                fontWeight: customer.rawBalance != 0 ? FontWeight.bold : FontWeight.normal,
                               ),
                             ),
                           ],
@@ -242,31 +253,69 @@ class _CollectPaymentSheetState extends State<CollectPaymentSheet> {
                             ],
                           ),
                           const SizedBox(height: 6),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text('Current Total Due:', style: TextStyle(fontSize: 13, color: Colors.orange)),
-                              Text(
-                                '৳${currentDue.toStringAsFixed(2)}',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                  color: currentDue > 0 ? Colors.orange[900] : Colors.grey,
+                          if (isCredit) ...[
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Advance Store Credit:', style: TextStyle(fontSize: 13, color: Colors.green, fontWeight: FontWeight.bold)),
+                                Text(
+                                  '৳${advanceCredit.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                    color: Colors.green[700],
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
+                          ] else if (isDue) ...[
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Current Total Due:', style: TextStyle(fontSize: 13, color: Colors.orange, fontWeight: FontWeight.bold)),
+                                Text(
+                                  '৳${currentDue.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                    color: Colors.orange[900],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ] else ...[
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Current Balance:', style: TextStyle(fontSize: 13)),
+                                Text(
+                                  '৳0.00 (No Due)',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                           const SizedBox(height: 6),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('Estimated New Balance:', style: TextStyle(fontSize: 13, color: Colors.green)),
+                              const Text('Estimated New Balance:', style: TextStyle(fontSize: 13)),
                               Text(
-                                '৳${closingBalance.toStringAsFixed(2)}',
+                                estimatedNetBal > 0
+                                    ? 'Credit: ৳${estimatedNetBal.toStringAsFixed(2)}'
+                                    : (estimatedNetBal < 0
+                                        ? 'Due: ৳${estimatedNetBal.abs().toStringAsFixed(2)}'
+                                        : '৳0.00 (Clear)'),
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                  color: closingBalance > 0 ? Colors.orange[900] : Colors.green[700],
+                                  fontSize: 14,
+                                  color: estimatedNetBal > 0
+                                      ? Colors.green[700]
+                                      : (estimatedNetBal < 0 ? Colors.orange[900] : Colors.green[700]),
                                 ),
                               ),
                             ],

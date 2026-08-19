@@ -6,6 +6,7 @@ class PaymentModel {
   final double amount;
   final String targetTier;
   final String status;
+  final String? rejectionReason;
   final String? createdAt;
 
   const PaymentModel({
@@ -16,19 +17,21 @@ class PaymentModel {
     required this.amount,
     required this.targetTier,
     required this.status,
+    this.rejectionReason,
     this.createdAt,
   });
 
   factory PaymentModel.fromJson(Map<String, dynamic> json) {
     return PaymentModel(
       id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
-      shopId: json['shopId'] ?? json['shop_id'] ?? '',
-      method: json['method'] ?? json['payment_method'] ?? 'bkash',
-      transactionId: json['transactionId'] ?? json['trxId'] ?? json['trx_id'] ?? '',
+      shopId: json['shopId']?.toString() ?? json['shop_id']?.toString() ?? '',
+      method: json['method']?.toString() ?? json['payment_method']?.toString() ?? json['paymentMethod']?.toString() ?? 'bkash',
+      transactionId: json['transactionId']?.toString() ?? json['trxId']?.toString() ?? json['trx_id']?.toString() ?? '',
       amount: (json['amount'] ?? 0.0).toDouble(),
-      targetTier: json['targetTier'] ?? json['tier'] ?? 'premium',
-      status: json['status'] ?? 'pending',
-      createdAt: json['createdAt'] ?? json['created_at'],
+      targetTier: json['targetTier']?.toString() ?? json['tier']?.toString() ?? 'premium',
+      status: json['status']?.toString() ?? 'pending',
+      rejectionReason: json['rejectionReason']?.toString() ?? json['reason']?.toString(),
+      createdAt: json['createdAt']?.toString() ?? json['created_at']?.toString(),
     );
   }
 
@@ -41,6 +44,7 @@ class PaymentModel {
       'amount': amount,
       'targetTier': targetTier,
       'status': status,
+      if (rejectionReason != null) 'rejectionReason': rejectionReason,
       if (createdAt != null) 'createdAt': createdAt,
     };
   }

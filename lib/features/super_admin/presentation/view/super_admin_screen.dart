@@ -103,6 +103,53 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> with SingleTickerPr
     );
   }
 
+  void _showRejectDialog(BuildContext context, String paymentId) {
+    final reasonController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.cancel_rounded, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Reject Payment Request'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Enter a reason for rejecting this payment submission (Optional):'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: reasonController,
+              decoration: InputDecoration(
+                hintText: 'e.g. Invalid TrxID or Amount mismatch',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () {
+              Navigator.pop(dialogCtx);
+              InjectionContainer.superAdminBloc.add(
+                RejectPaymentEvent(paymentId, reason: reasonController.text.trim()),
+              );
+            },
+            child: const Text('Reject Payment'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showShopDetailsModal(BuildContext context, String shopId) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -505,9 +552,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> with SingleTickerPr
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     OutlinedButton.icon(
-                      onPressed: () {
-                        InjectionContainer.superAdminBloc.add(RejectPaymentEvent(payment.id));
-                      },
+                      onPressed: () => _showRejectDialog(context, payment.id),
                       icon: const Icon(Icons.close_rounded, color: Colors.red),
                       label: const Text('Reject', style: TextStyle(color: Colors.red)),
                     ),

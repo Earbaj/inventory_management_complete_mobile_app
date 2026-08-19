@@ -17,7 +17,8 @@ class ApprovePaymentEvent extends SuperAdminEvent {
 
 class RejectPaymentEvent extends SuperAdminEvent {
   final String paymentId;
-  const RejectPaymentEvent(this.paymentId);
+  final String? reason;
+  const RejectPaymentEvent(this.paymentId, {this.reason});
 }
 
 class DeleteShopEvent extends SuperAdminEvent {
