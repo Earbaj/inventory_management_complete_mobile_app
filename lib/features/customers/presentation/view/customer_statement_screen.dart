@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/excel_export_service.dart';
 import '../../../../core/services/pdf_export_service.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../../posbilling/domain/entities/sale_entity.dart';
+import '../../../settings/domain/entities/shop_profile_entity.dart';
+import '../../../settings/presentation/bloc/settings_state.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../../customer.dart';
 import '../../customer_transaction.dart';
@@ -185,55 +188,36 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
       totalDue: _currentDue,
     );
 
-    final htmlContent = PdfExportService.generateCustomerLedgerHtml(
-      customer: customerEntity,
-      customerSales: widget.customerSales,
-      shopName: 'Smart Inventory Store',
-      currencySymbol: '৳',
+    final authState = InjectionContainer.authBloc.state;
+    final user = authState is AuthenticatedState ? authState.user : null;
+
+    final settingsState = InjectionContainer.settingsBloc.state;
+    final profile = settingsState is SettingsLoadedState ? settingsState.profile : null;
+
+    final shopName = (user?.shopName?.isNotEmpty == true ? user!.shopName : null) ??
+        (profile?.shopName.isNotEmpty == true ? profile!.shopName : null) ??
+        'INVENTORY POS STORE';
+
+    final shopPhone = (user?.phone?.isNotEmpty == true ? user!.phone : null) ??
+        (profile?.phone.isNotEmpty == true ? profile!.phone : null) ??
+        'N/A';
+
+    final shopAddress = profile?.address?.isNotEmpty == true ? profile!.address! : '';
+
+    final dynamicShopProfile = ShopProfileEntity(
+      id: profile?.id ?? user?.id ?? '',
+      shopName: shopName,
+      phone: shopPhone,
+      address: shopAddress,
+      email: user?.email ?? profile?.email,
+      currencySymbol: 'Tk ',
     );
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.picture_as_pdf_rounded, color: Colors.red),
-            SizedBox(width: 8),
-            Text('PDF Customer Statement'),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('PDF Printable Statement generated successfully!'),
-              const SizedBox(height: 12),
-              Container(
-                constraints: const BoxConstraints(maxHeight: 200),
-                padding: const EdgeInsets.all(8),
-                color: Colors.grey.shade100,
-                child: Text(
-                  htmlContent,
-                  style: const TextStyle(fontSize: 10, fontFamily: 'monospace'),
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Customer Statement PDF ready for printing!')),
-              );
-            },
-            icon: const Icon(Icons.print_rounded),
-            label: const Text('Print / Save PDF'),
-          ),
-        ],
-      ),
+    PdfExportService.printOrSaveCustomerLedgerPdf(
+      context,
+      customer: customerEntity,
+      customerSales: widget.customerSales,
+      shopProfile: dynamicShopProfile,
     );
   }
 

@@ -1,4 +1,13 @@
 import 'package:flutter/material.dart';
+import '../../../../core/di/injection_container.dart';
+import '../../../../core/services/pdf_export_service.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../customers/domain/entities/customer_entity.dart';
+import '../../../inventory/domain/entities/inventory_item_entity.dart';
+import '../../../posbilling/domain/entities/cart_item_entity.dart';
+import '../../../posbilling/domain/entities/sale_entity.dart';
+import '../../../settings/domain/entities/shop_profile_entity.dart';
+import '../../../settings/presentation/bloc/settings_state.dart';
 import '../../reports_models.dart';
 
 class ReceiptDialog extends StatelessWidget {
@@ -22,10 +31,73 @@ class ReceiptDialog extends StatelessWidget {
     return '$day $month ${dt.year}, $hour:$minute $period';
   }
 
+  SaleEntity _toSaleEntity(InvoiceLog log) {
+    return SaleEntity(
+      id: log.id,
+      invoiceNo: log.invoiceNumber,
+      customer: CustomerEntity(
+        id: '',
+        name: log.customerName,
+        phone: log.customerPhone,
+        openingBalance: 0.0,
+      ),
+      items: log.items.map((i) {
+        return CartItemEntity(
+          item: InventoryItemEntity(
+            id: i.itemId,
+            name: i.name,
+            sku: '',
+            category: 'General',
+            unit: 'pcs',
+            stockQuantity: 100,
+            lowStockQuantity: 5,
+            retailSellPrice: i.unitPrice,
+            purchasePrice: i.unitPrice,
+          ),
+          quantity: i.quantity,
+        );
+      }).toList(),
+      subtotal: log.totalAmount,
+      discountAmount: 0.0,
+      vatAmount: 0.0,
+      netTotal: log.totalAmount,
+      paidAmount: log.paidAmount,
+      dueAmount: log.dueAmount,
+      paymentMethod: 'cash',
+      createdAt: log.date,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+
+    // Dynamically resolve Shop Profile from AuthBloc (Admin registration profile) & SettingsBloc
+    final authState = InjectionContainer.authBloc.state;
+    final user = authState is AuthenticatedState ? authState.user : null;
+
+    final settingsState = InjectionContainer.settingsBloc.state;
+    final profile = settingsState is SettingsLoadedState ? settingsState.profile : null;
+
+    final shopName = (user?.shopName?.isNotEmpty == true ? user!.shopName : null) ??
+        (profile?.shopName.isNotEmpty == true ? profile!.shopName : null) ??
+        'INVENTORY POS STORE';
+
+    final shopPhone = (user?.phone?.isNotEmpty == true ? user!.phone : null) ??
+        (profile?.phone.isNotEmpty == true ? profile!.phone : null) ??
+        'N/A';
+
+    final shopAddress = profile?.address?.isNotEmpty == true ? profile!.address! : '';
+
+    final dynamicShopProfile = ShopProfileEntity(
+      id: profile?.id ?? user?.id ?? '',
+      shopName: shopName,
+      phone: shopPhone,
+      address: shopAddress,
+      email: user?.email ?? profile?.email,
+      currencySymbol: 'Tk ',
+    );
 
     return Dialog(
       shape: RoundedRectangleBorder(
@@ -93,24 +165,28 @@ class ReceiptDialog extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Store Name
+                      // Dynamic Store Profile Header from Auth & Settings API
                       Center(
                         child: Column(
                           children: [
                             Text(
-                              'INVENTORY POS STORE',
+                              shopName.toUpperCase(),
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: 1.2,
                               ),
                             ),
+                            if (shopAddress.isNotEmpty) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                shopAddress,
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+                              ),
+                            ],
                             const SizedBox(height: 2),
                             Text(
-                              '123 Business Avenue, City',
-                              style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
-                            ),
-                            Text(
-                              'Phone: +880 1700-000000',
+                              'Phone: $shopPhone',
                               style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
                             ),
                             const SizedBox(height: 12),
@@ -129,7 +205,7 @@ class ReceiptDialog extends StatelessWidget {
                       const SizedBox(height: 8),
 
                       // Items list table header
-                      Row(
+                      const Row(
                         children: [
                           Expanded(
                             flex: 3,
@@ -237,18 +313,6 @@ class ReceiptDialog extends StatelessWidget {
                           ),
                         ],
                       ),
-
-                      const SizedBox(height: 16),
-                      Center(
-                        child: Text(
-                          'Thank you for your business!',
-                          style: TextStyle(
-                            fontStyle: FontStyle.italic,
-                            color: Colors.grey[600],
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -263,12 +327,11 @@ class ReceiptDialog extends StatelessWidget {
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Downloading Receipt PDF (${invoice.invoiceNumber}.pdf)...'),
-                            behavior: SnackBarBehavior.floating,
-                          ),
+                        final saleEntity = _toSaleEntity(invoice);
+                        PdfExportService.printOrSaveInvoicePdf(
+                          context,
+                          sale: saleEntity,
+                          shopProfile: dynamicShopProfile,
                         );
                       },
                       icon: const Icon(Icons.picture_as_pdf_rounded),
@@ -279,12 +342,11 @@ class ReceiptDialog extends StatelessWidget {
                   Expanded(
                     child: FilledButton.icon(
                       onPressed: () {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Sending receipt to printer for ${invoice.invoiceNumber}...'),
-                            behavior: SnackBarBehavior.floating,
-                          ),
+                        final saleEntity = _toSaleEntity(invoice);
+                        PdfExportService.printOrSaveInvoicePdf(
+                          context,
+                          sale: saleEntity,
+                          shopProfile: dynamicShopProfile,
                         );
                       },
                       icon: const Icon(Icons.print_rounded),
