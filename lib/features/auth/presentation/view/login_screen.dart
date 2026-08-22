@@ -147,7 +147,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 28),
-              Row(
+              /*Row(
                 children: [
                   Expanded(child: Divider(color: theme.dividerColor)),
                   Padding(
@@ -177,7 +177,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 30),*/
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
