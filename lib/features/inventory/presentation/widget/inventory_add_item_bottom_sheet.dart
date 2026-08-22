@@ -29,16 +29,9 @@ class _AddItemSheetState extends State<AddItemSheet> {
   late final TextEditingController purchasePriceController;
   late final TextEditingController stockController;
 
-  String category = 'Accessories';
+  String category = 'General';
   String unit = 'Piece';
-  List<String> categoriesList = [
-    'Accessories',
-    'Electronics',
-    'General',
-    'Monitor',
-    'Storage',
-    'Furniture',
-  ];
+  List<String> categoriesList = ['General'];
   bool isLoadingCategories = true;
   bool isSaving = false;
 
@@ -81,11 +74,6 @@ class _AddItemSheetState extends State<AddItemSheet> {
           final set = <String>{
             if (widget.existingItem != null) widget.existingItem!.category,
             'General',
-            'Accessories',
-            'Electronics',
-            'Monitor',
-            'Storage',
-            'Furniture',
             ...apiCategories,
           };
           categoriesList = set.toList();
@@ -192,7 +180,7 @@ class _AddItemSheetState extends State<AddItemSheet> {
                       controller: skuController,
                       textInputAction: TextInputAction.next,
                       decoration: InputDecoration(
-                        labelText: 'SKU / Barcode *',
+                        labelText: 'SKU / Barcode ',
                         hintText: 'e.g. WM-001',
                         prefixIcon: const Icon(Icons.qr_code_2_rounded),
                         suffixIcon: IconButton(
@@ -206,12 +194,12 @@ class _AddItemSheetState extends State<AddItemSheet> {
                           icon: const Icon(Icons.qr_code_scanner_rounded, color: Colors.cyan),
                         ),
                       ),
-                      validator: (value) {
+                      /*validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return 'SKU / Barcode is required';
                         }
                         return null;
-                      },
+                      },*/
                     ),
 
                     const SizedBox(height: 12),
@@ -239,7 +227,14 @@ class _AddItemSheetState extends State<AddItemSheet> {
                             items: categoriesList.map((value) {
                               return DropdownMenuItem(
                                 value: value,
-                                child: Text(value, overflow: TextOverflow.ellipsis),
+                                child: SizedBox(
+                                  width: 60,
+                                    child: Text(
+                                      value,
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                    )
+                                ),
                               );
                             }).toList(),
                             onChanged: (value) {

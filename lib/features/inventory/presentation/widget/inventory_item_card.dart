@@ -37,7 +37,7 @@ class InventoryItemCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // PRODUCT ICON
+              /*// PRODUCT ICON
               Container(
                 width: 52,
                 height: 52,
@@ -51,7 +51,7 @@ class InventoryItemCard extends StatelessWidget {
                   size: 26,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 12),*/
 
               // NAME / SKU & ACTIONS
               Expanded(
@@ -92,17 +92,18 @@ class InventoryItemCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 2),
+                    /*const SizedBox(height: 2),
                     Text(
                       'SKU: ${item.sku}',
                       style: theme.textTheme.bodySmall,
-                    ),
+                    ),*/
                     const SizedBox(height: 4),
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        StatusBadge(text: item.category),
+                        StatusBadge(text: "Category: ${item.category}"),
                         const SizedBox(width: 6),
-                        StatusBadge(text: item.unit),
+                        StatusBadge(text: "Unit: ${item.unit}"),
                       ],
                     ),
                   ],
@@ -119,6 +120,7 @@ class InventoryItemCard extends StatelessWidget {
           // DETAILS
           // ============================
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
                 child: ItemDetail(
@@ -145,9 +147,7 @@ class InventoryItemCard extends StatelessWidget {
               ),
             ],
           ),
-
           const SizedBox(height: 10),
-
           // ============================
           // STOCK ALERT
           // ============================
