@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:inventory_management_complete/features/inventory/presentation/bloc/inventory_bloc.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
 import '../../domain/entities/inventory_item_entity.dart';
@@ -109,72 +111,329 @@ class _InventoryScreenState extends State<InventoryScreen> {
   void _showAddCategoryDialog(BuildContext context) {
     final nameController = TextEditingController();
     final descController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (dialogContext) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(
-            children: [
-              Icon(Icons.category_rounded, color: Colors.teal),
-              SizedBox(width: 10),
-              Text('Create Category'),
-            ],
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: 'Category Name *',
-                  hintText: 'e.g. Electronics, Grocery',
-                  prefixIcon: Icon(Icons.label_outlined),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: descController,
-                decoration: const InputDecoration(
-                  labelText: 'Description (Optional)',
-                  hintText: 'Category summary',
-                  prefixIcon: Icon(Icons.description_outlined),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.9,
+            constraints: BoxConstraints(
+              maxWidth: 500,
+              maxHeight: MediaQuery.of(context).size.height * 0.85, // Increased from 0.8
             ),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Colors.white,
-              ),
-              icon: const Icon(Icons.check_rounded),
-              label: const Text('Create Category'),
-              onPressed: () {
-                final categoryName = nameController.text.trim();
-                if (categoryName.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please enter category name')),
-                  );
-                  return;
-                }
-                Navigator.pop(dialogContext);
-                InjectionContainer.inventoryBloc.add(
-                  CreateCategoryEvent(
-                    name: categoryName,
-                    description: descController.text.trim().isNotEmpty ? descController.text.trim() : null,
+            padding: const EdgeInsets.all(20), // Reduced padding
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 30,
+                  offset: const Offset(0, 10),
+                  spreadRadius: 5,
+                ),
+              ],
+            ),
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header with Icon
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Create Category',
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                fontSize: MediaQuery.of(context).size.width > 600 ? 20 : 17, // Reduced
+                              ),
+                            ),
+                            Text(
+                              'Add a new category to organize your products',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Colors.grey.shade600,
+                                fontSize: 12, // Reduced
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                );
-              },
+
+                  const SizedBox(height: 16), // Reduced
+
+                  // Category Name Field
+                  TextFormField(
+                    controller: nameController,
+                    autofocus: true,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter category name';
+                      }
+                      if (value.trim().length < 2) {
+                        return 'Category name must be at least 2 characters';
+                      }
+                      return null;
+                    },
+                    decoration: InputDecoration(
+                      labelText: 'Category Name',
+                      hintText: 'e.g. Electronics, Grocery, Fashion',
+                      prefixIcon: Icon(
+                        Icons.label_rounded,
+                        color: Theme.of(context).primaryColor,
+                        size: 20, // Reduced
+                      ),
+                      filled: true,
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                          color: Colors.grey,
+                          width: 2,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).primaryColor,
+                          width: 2,
+                        ),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: Colors.red, width: 2),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: Colors.red, width: 2),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14, // Reduced from 16
+                      ),
+                    ),
+                    style: const TextStyle(fontSize: 15), // Reduced
+                  ),
+
+                  const SizedBox(height: 12), // Reduced
+
+                  // Description Field
+                  TextFormField(
+                    controller: descController,
+                    maxLines: 2, // Reduced from 3
+                    decoration: InputDecoration(
+                      labelText: 'Description (Optional)',
+                      hintText: 'Brief description of this category...',
+                      prefixIcon: Icon(
+                        Icons.description_rounded,
+                        color: Theme.of(context).primaryColor,
+                        size: 20, // Reduced
+                      ),
+                      filled: true,
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                          color: Colors.grey,
+                          width: 2,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).primaryColor,
+                          width: 2,
+                        ),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: Colors.red, width: 2),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: Colors.red, width: 2),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14, // Reduced from 16
+                      ),
+                    ),
+                    style: const TextStyle(fontSize: 15), // Reduced
+                  ),
+
+                  const SizedBox(height: 12), // Reduced
+
+                  // Character Counter
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline_rounded,
+                            size: 14, // Reduced
+                            color: Colors.grey.shade500,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'All fields are optional except name',
+                            style: TextStyle(
+                              fontSize: 11, // Reduced
+                              color: Colors.grey.shade500,
+                            ),
+                          ),
+                        ],
+                      ),
+                      ValueListenableBuilder(
+                        valueListenable: nameController,
+                        builder: (context, value, child) {
+                          return Text(
+                            '${value.text.trim().length}/50',
+                            style: TextStyle(
+                              fontSize: 11, // Reduced
+                              color: value.text.trim().length > 45
+                                  ? Colors.orange
+                                  : Colors.grey.shade500,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16), // Reduced
+
+                  // Action Buttons - Fixed Overflow Issue
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      // Cancel Button - Flexible
+                      OutlinedButton(
+                        onPressed: () => Navigator.pop(dialogContext),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 12, // Reduced
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          side: BorderSide(
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
+                          minimumSize: const Size(0, 0), // Allow smaller size
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(
+                            fontSize: 14, // Reduced
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                          overflow: TextOverflow.ellipsis, // Prevent overflow
+                        ),
+                      ),
+                      const SizedBox(width: 10), // Reduced
+                      // Create Button - Flexible
+                      FilledButton(
+                        onPressed: () {
+                          if (formKey.currentState!.validate()) {
+                            final categoryName = nameController.text.trim();
+                            final description = descController.text.trim();
+
+                            Navigator.pop(dialogContext);
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Row(
+                                  children: [
+                                    const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    const Text('Creating category...'),
+                                  ],
+                                ),
+                                backgroundColor: Theme.of(context).primaryColor,
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+
+                            InjectionContainer.inventoryBloc.add(
+                              CreateCategoryEvent(
+                                name: categoryName,
+                                description: description.isNotEmpty ? description : null,
+                              ),
+                            );
+                          }
+                        },
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12, // Reduced
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          backgroundColor: Theme.of(context).primaryColor,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(0, 0), // Allow smaller size
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min, // Important for preventing overflow
+                          children: [
+                            const Icon(
+                              Icons.add_rounded,
+                              size: 18, // Reduced
+                            ),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                'Create Category',
+                                style: TextStyle(
+                                  fontSize: 14, // Reduced
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                overflow: TextOverflow.ellipsis, // Prevent overflow
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ],
+          ),
         );
       },
     );
@@ -217,11 +476,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
         icon: const Icon(Icons.add_rounded),
         label: const Text('Add Item'),
       ),
-      body: StreamBuilder<InventoryState>(
-        stream: InjectionContainer.inventoryBloc.stream,
-        initialData: InjectionContainer.inventoryBloc.state,
+      body: BlocBuilder<InventoryBloc,InventoryState>(
         builder: (context, snapshot) {
-          final state = snapshot.data;
+          final state = snapshot;
 
           if (state is InventoryLoadingState && state is! InventoryLoadedState) {
             return const Center(child: CircularProgressIndicator());
