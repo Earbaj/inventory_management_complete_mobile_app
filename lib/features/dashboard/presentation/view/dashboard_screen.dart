@@ -37,6 +37,18 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
     InjectionContainer.customerBloc.add(const FetchCustomersEvent());
   }
 
+  String getGreeting() {
+    final hour = DateTime.now().hour;
+
+    if (hour < 12) {
+      return 'Good Morning';
+    } else if (hour < 17) {
+      return 'Good Afternoon';
+    } else {
+      return 'Good Night';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -76,12 +88,12 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Good Day, $userName 👋',
+                                getGreeting(),
                                 style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 3),
                               Text(
-                                shopName,
+                                userName,
                                 style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.w600),
                               ),
                             ],
