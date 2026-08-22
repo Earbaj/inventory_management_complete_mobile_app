@@ -27,10 +27,12 @@ class InventoryItemCard extends StatelessWidget {
     final bool outOfStock = item.isOutOfStock;
     final bool lowStock = item.isLowStock;
 
-    return BlocBuilder<AuthBloc, AuthState>(
-      builder: (context, state) {
-        final UserEntity? userEntity =
-        state is AuthenticatedState ? state.user : null;
+    return BlocSelector<AuthBloc, AuthState,bool>(
+        selector: (state) {
+          return state is AuthenticatedState &&
+              state.user?.role.toLowerCase() == 'admin';
+        },
+      builder: (context, isAdmin) {
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.only(left: 15,right: 15),
@@ -181,7 +183,7 @@ class InventoryItemCard extends StatelessWidget {
                       value: '৳ ${item.retailSellPrice.toStringAsFixed(0)}',
                     ),
                   ),
-                  userEntity?.role.toLowerCase() == "admin" ?Expanded(
+                  isAdmin ? Expanded(
                     child: ItemDetail(
                       title: 'Purchase',
                       value: '৳ ${item.purchasePrice.toStringAsFixed(0)}',
