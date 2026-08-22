@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../../../core/di/injection_container.dart';
 import '../../../reports/presentation/bloc/reports_event.dart';
 import '../../domain/entities/customer_entity.dart';
@@ -12,7 +14,7 @@ import '../../domain/usecases/update_customer_usecase.dart';
 import 'customer_event.dart';
 import 'customer_state.dart';
 
-class CustomerBloc {
+class CustomerBloc extends Bloc<CustomerEvent, CustomerState> {
   final GetCustomersUseCase getCustomersUseCase;
   final GetCustomerDetailsUseCase getCustomerDetailsUseCase;
   final AddCustomerUseCase addCustomerUseCase;
@@ -21,14 +23,8 @@ class CustomerBloc {
   final CollectCustomerPaymentUseCase collectCustomerPaymentUseCase;
   final GetDueReminderLinkUseCase getDueReminderLinkUseCase;
 
-  CustomerState _state = const CustomerInitialState();
-  final _stateController = StreamController<CustomerState>.broadcast();
-
   List<CustomerEntity> _allCustomers = [];
   String _currentSearchQuery = '';
-
-  CustomerState get state => _state;
-  Stream<CustomerState> get stream => _stateController.stream;
 
   CustomerBloc({
     required this.getCustomersUseCase,
@@ -38,42 +34,25 @@ class CustomerBloc {
     required this.deleteCustomerUseCase,
     required this.collectCustomerPaymentUseCase,
     required this.getDueReminderLinkUseCase,
-  });
-
-  void add(CustomerEvent event) {
-    _handleEvent(event);
+  }) : super(const CustomerInitialState()) {
+    // Event Handlers
+    on<FetchCustomersEvent>(_onFetchCustomers);
+    on<FetchCustomerDetailsEvent>(_onFetchCustomerDetails);
+    on<AddCustomerEvent>(_onAddCustomer);
+    on<UpdateCustomerEvent>(_onUpdateCustomer);
+    on<DeleteCustomerEvent>(_onDeleteCustomer);
+    on<CollectCustomerPaymentEvent>(_onCollectPayment);
+    on<FetchDueReminderLinkEvent>(_onFetchDueReminderLink);
   }
 
-  void _emit(CustomerState newState) {
-    _state = newState;
-    if (!_stateController.isClosed) {
-      _stateController.add(_state);
-    }
-  }
-
-  Future<void> _handleEvent(CustomerEvent event) async {
-    if (event is FetchCustomersEvent) {
-      await _onFetchCustomers(event);
-    } else if (event is FetchCustomerDetailsEvent) {
-      await _onFetchCustomerDetails(event);
-    } else if (event is AddCustomerEvent) {
-      await _onAddCustomer(event);
-    } else if (event is UpdateCustomerEvent) {
-      await _onUpdateCustomer(event);
-    } else if (event is DeleteCustomerEvent) {
-      await _onDeleteCustomer(event);
-    } else if (event is CollectCustomerPaymentEvent) {
-      await _onCollectPayment(event);
-    } else if (event is FetchDueReminderLinkEvent) {
-      await _onFetchDueReminderLink(event);
-    }
-  }
-
-  Future<void> _onFetchCustomers(FetchCustomersEvent event) async {
+  Future<void> _onFetchCustomers(
+      FetchCustomersEvent event,
+      Emitter<CustomerState> emit,
+      ) async {
     _currentSearchQuery = event.searchQuery ?? _currentSearchQuery;
 
     if (_allCustomers.isEmpty) {
-      _emit(const CustomerLoadingState());
+      emit(const CustomerLoadingState());
     }
 
     try {
@@ -81,13 +60,16 @@ class CustomerBloc {
         page: event.page,
         limit: event.limit,
       );
-      _emitLoadedState();
+      _emitLoadedState(emit);
     } catch (e) {
-      _emit(CustomerErrorState(e.toString()));
+      emit(CustomerErrorState(e.toString()));
     }
   }
 
-  Future<void> _onFetchCustomerDetails(FetchCustomerDetailsEvent event) async {
+  Future<void> _onFetchCustomerDetails(
+      FetchCustomerDetailsEvent event,
+      Emitter<CustomerState> emit,
+      ) async {
     try {
       final customer = await getCustomerDetailsUseCase(event.customerId);
       final index = _allCustomers.indexWhere((c) => c.id == customer.id);
@@ -96,49 +78,61 @@ class CustomerBloc {
       } else {
         _allCustomers.insert(0, customer);
       }
-      _emitLoadedState();
+      _emitLoadedState(emit);
     } catch (e) {
-      _emit(CustomerErrorState(e.toString()));
+      emit(CustomerErrorState(e.toString()));
     }
   }
 
-  Future<void> _onAddCustomer(AddCustomerEvent event) async {
+  Future<void> _onAddCustomer(
+      AddCustomerEvent event,
+      Emitter<CustomerState> emit,
+      ) async {
     try {
       final savedCustomer = await addCustomerUseCase(event.customer);
       _allCustomers.insert(0, savedCustomer);
-      _emit(const CustomerOperationSuccessState('Customer added successfully!'));
-      _emitLoadedState();
+      emit(const CustomerOperationSuccessState('Customer added successfully!'));
+      _emitLoadedState(emit);
     } catch (e) {
-      _emit(CustomerErrorState(e.toString()));
+      emit(CustomerErrorState(e.toString()));
     }
   }
 
-  Future<void> _onUpdateCustomer(UpdateCustomerEvent event) async {
+  Future<void> _onUpdateCustomer(
+      UpdateCustomerEvent event,
+      Emitter<CustomerState> emit,
+      ) async {
     try {
       final updatedCustomer = await updateCustomerUseCase(event.customer);
       final index = _allCustomers.indexWhere((c) => c.id == updatedCustomer.id);
       if (index != -1) {
         _allCustomers[index] = updatedCustomer;
       }
-      _emit(const CustomerOperationSuccessState('Customer updated successfully!'));
-      _emitLoadedState();
+      emit(const CustomerOperationSuccessState('Customer updated successfully!'));
+      _emitLoadedState(emit);
     } catch (e) {
-      _emit(CustomerErrorState(e.toString()));
+      emit(CustomerErrorState(e.toString()));
     }
   }
 
-  Future<void> _onDeleteCustomer(DeleteCustomerEvent event) async {
+  Future<void> _onDeleteCustomer(
+      DeleteCustomerEvent event,
+      Emitter<CustomerState> emit,
+      ) async {
     try {
       await deleteCustomerUseCase(event.customerId);
       _allCustomers.removeWhere((c) => c.id == event.customerId);
-      _emit(const CustomerOperationSuccessState('Customer deleted successfully!'));
-      _emitLoadedState();
+      emit(const CustomerOperationSuccessState('Customer deleted successfully!'));
+      _emitLoadedState(emit);
     } catch (e) {
-      _emit(CustomerErrorState(e.toString()));
+      emit(CustomerErrorState(e.toString()));
     }
   }
 
-  Future<void> _onCollectPayment(CollectCustomerPaymentEvent event) async {
+  Future<void> _onCollectPayment(
+      CollectCustomerPaymentEvent event,
+      Emitter<CustomerState> emit,
+      ) async {
     try {
       await collectCustomerPaymentUseCase(
         customerId: event.customerId,
@@ -146,18 +140,25 @@ class CustomerBloc {
         paymentMethod: event.paymentMethod,
         note: event.note,
       );
-      _emit(const CustomerOperationSuccessState('Payment collected successfully!'));
+      emit(const CustomerOperationSuccessState('Payment collected successfully!'));
 
-      await _onFetchCustomers(FetchCustomersEvent(searchQuery: _currentSearchQuery));
+      await _onFetchCustomers(
+        FetchCustomersEvent(searchQuery: _currentSearchQuery),
+        emit,
+      );
+
       try {
         InjectionContainer.reportsBloc.add(const FetchReportsEvent());
       } catch (_) {}
     } catch (e) {
-      _emit(CustomerErrorState(e.toString()));
+      emit(CustomerErrorState(e.toString()));
     }
   }
 
-  Future<void> _onFetchDueReminderLink(FetchDueReminderLinkEvent event) async {
+  Future<void> _onFetchDueReminderLink(
+      FetchDueReminderLinkEvent event,
+      Emitter<CustomerState> emit,
+      ) async {
     try {
       final res = await getDueReminderLinkUseCase(event.customerId);
       final customerId = res['customerId']?.toString() ?? res['id']?.toString() ?? event.customerId;
@@ -165,20 +166,20 @@ class CustomerBloc {
       final dueAmount = res['dueAmount']?.toString() ?? '0.00';
       final whatsappUrl = res['whatsappUrl']?.toString() ?? res['url']?.toString() ?? '';
 
-      _emit(DueReminderLinkLoadedState(
+      emit(DueReminderLinkLoadedState(
         customerId: customerId,
         customerName: customerName,
         dueAmount: dueAmount,
         whatsappUrl: whatsappUrl,
       ));
 
-      _emitLoadedState();
+      _emitLoadedState(emit);
     } catch (e) {
-      _emit(CustomerErrorState(e.toString()));
+      emit(CustomerErrorState(e.toString()));
     }
   }
 
-  void _emitLoadedState() {
+  void _emitLoadedState(Emitter<CustomerState> emit) {
     final query = _currentSearchQuery.trim().toLowerCase();
     final filtered = _allCustomers.where((customer) {
       final matchesSearch = query.isEmpty ||
@@ -188,14 +189,10 @@ class CustomerBloc {
       return matchesSearch;
     }).toList();
 
-    _emit(CustomerLoadedState(
+    emit(CustomerLoadedState(
       customers: _allCustomers,
       filteredCustomers: filtered,
       searchQuery: _currentSearchQuery,
     ));
-  }
-
-  void dispose() {
-    _stateController.close();
   }
 }

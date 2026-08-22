@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:inventory_management_complete/features/reports/presentation/bloc/reports_bloc.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../customers/presentation/bloc/customer_bloc.dart';
 import '../../../customers/presentation/bloc/customer_event.dart';
 import '../../../customers/presentation/bloc/customer_state.dart';
+import '../../../inventory/presentation/bloc/inventory_bloc.dart';
 import '../../../inventory/presentation/bloc/inventory_event.dart';
 import '../../../inventory/presentation/bloc/inventory_state.dart';
 import '../../../reports/presentation/bloc/reports_event.dart';
@@ -31,10 +36,9 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
   @override
   void initState() {
     super.initState();
-    // Dispatch initial fetch events to all BLoC instances
-    InjectionContainer.reportsBloc.add(const FetchReportsEvent());
-    InjectionContainer.inventoryBloc.add(const FetchInventoryItemsEvent());
-    InjectionContainer.customerBloc.add(const FetchCustomersEvent());
+    context.read<ReportsBloc>().add(const FetchReportsEvent());
+    context.read<InventoryBloc>().add(const FetchInventoryItemsEvent());
+    context.read<CustomerBloc>().add(const FetchCustomersEvent());
   }
 
   String getGreeting() {
@@ -76,14 +80,10 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: StreamBuilder<AuthState>(
-                        stream: InjectionContainer.authBloc.stream,
-                        initialData: InjectionContainer.authBloc.state,
-                        builder: (context, snapshot) {
-                          final authState = snapshot.data;
+                      child: BlocBuilder<AuthBloc, AuthState>(
+                        builder: (context, authState) {
                           final userName = authState is AuthenticatedState ? (authState.user?.name ?? 'Owner') : 'Owner';
                           final shopName = authState is AuthenticatedState ? (authState.user?.shopName ?? 'Smart Inventory Store') : 'Smart Inventory Store';
-
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -103,9 +103,10 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                     ),
                     IconButton(
                       onPressed: () {
-                        InjectionContainer.reportsBloc.add(const FetchReportsEvent());
-                        InjectionContainer.inventoryBloc.add(const FetchInventoryItemsEvent());
-                        InjectionContainer.customerBloc.add(const FetchCustomersEvent());
+                        // Event Dispatching via context
+                        context.read<ReportsBloc>().add(const FetchReportsEvent());
+                        context.read<InventoryBloc>().add(const FetchInventoryItemsEvent());
+                        context.read<CustomerBloc>().add(const FetchCustomersEvent());
                       },
                       icon: const Icon(Icons.refresh_rounded),
                     ),

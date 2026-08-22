@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/network/api_client.dart';
 import '../../domain/usecases/forgot_password_usecase.dart';
 import '../../domain/usecases/get_me_usecase.dart';
@@ -10,10 +11,7 @@ import 'auth_event.dart';
 import 'auth_state.dart';
 
 /// Authentication Business Logic Component (BLoC)
-///
-/// Encapsulates all authentication UseCases, handles BLoC state transitions,
-/// and hooks into ApiClient for loop-safe 401 unauth session expiration.
-class AuthBloc {
+class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final LoginUseCase loginUseCase;
   final RegisterUseCase registerUseCase;
   final ForgotPasswordUseCase forgotPasswordUseCase;
@@ -21,15 +19,6 @@ class AuthBloc {
   final GetMeUseCase getMeUseCase;
   final LogoutUseCase logoutUseCase;
   final ApiClient apiClient;
-
-  AuthState _state = const AuthInitialState();
-  final _stateController = StreamController<AuthState>.broadcast();
-
-  /// Returns current active state.
-  AuthState get state => _state;
-
-  /// Stream of state changes emitted by AuthBloc.
-  Stream<AuthState> get stream => _stateController.stream;
 
   AuthBloc({
     required this.loginUseCase,
@@ -39,64 +28,47 @@ class AuthBloc {
     required this.getMeUseCase,
     required this.logoutUseCase,
     required this.apiClient,
-  }) {
+  }) : super(const AuthInitialState()) {
+    // Event Handler Registration (Bloc v8.0+)
+    on<LoginRequestedEvent>(_onLoginRequested);
+    on<RegisterRequestedEvent>(_onRegisterRequested);
+    on<ForgotPasswordRequestedEvent>(_onForgotPasswordRequested);
+    on<ResetPasswordRequestedEvent>(_onResetPasswordRequested);
+    on<CheckAuthStatusEvent>(_onCheckAuthStatus);
+    on<GetMeRequestedEvent>(_onGetMeRequested);
+    on<LogoutRequestedEvent>(_onLogoutRequested);
+    on<SessionExpiredEvent>(_onSessionExpired);
+
     // Setup Global 401 Unauthorized Interceptor Callback
-    // Automatically dispatches SessionExpiredEvent when an API call gets 401
     apiClient.onUnauthorized = () {
       add(const SessionExpiredEvent());
     };
   }
 
-  /// Dispatches an event to the BLoC processor.
-  void add(AuthEvent event) {
-    _handleEvent(event);
-  }
-
-  /// Emits a new state to all listeners.
-  void _emit(AuthState newState) {
-    _state = newState;
-    if (!_stateController.isClosed) {
-      _stateController.add(_state);
-    }
-  }
-
-  /// Routes incoming events to their respective handler methods.
-  Future<void> _handleEvent(AuthEvent event) async {
-    if (event is LoginRequestedEvent) {
-      await _onLoginRequested(event);
-    } else if (event is RegisterRequestedEvent) {
-      await _onRegisterRequested(event);
-    } else if (event is ForgotPasswordRequestedEvent) {
-      await _onForgotPasswordRequested(event);
-    } else if (event is ResetPasswordRequestedEvent) {
-      await _onResetPasswordRequested(event);
-    } else if (event is CheckAuthStatusEvent || event is GetMeRequestedEvent) {
-      await _onCheckAuthStatus();
-    } else if (event is LogoutRequestedEvent) {
-      await _onLogoutRequested();
-    } else if (event is SessionExpiredEvent) {
-      await _onSessionExpired();
-    }
-  }
-
   /// Handles Login process.
-  Future<void> _onLoginRequested(LoginRequestedEvent event) async {
-    _emit(const AuthLoadingState());
+  Future<void> _onLoginRequested(
+      LoginRequestedEvent event,
+      Emitter<AuthState> emit,
+      ) async {
+    emit(const AuthLoadingState());
     try {
       final tokens = await loginUseCase(LoginParams(
         email: event.email,
         password: event.password,
       ));
       final user = await getMeUseCase();
-      _emit(AuthenticatedState(user: user, token: tokens.accessToken));
+      emit(AuthenticatedState(user: user, token: tokens.accessToken));
     } catch (e) {
-      _emit(AuthFailureState(e.toString()));
+      emit(AuthFailureState(e.toString()));
     }
   }
 
   /// Handles Shop Owner Registration process.
-  Future<void> _onRegisterRequested(RegisterRequestedEvent event) async {
-    _emit(const AuthLoadingState());
+  Future<void> _onRegisterRequested(
+      RegisterRequestedEvent event,
+      Emitter<AuthState> emit,
+      ) async {
+    emit(const AuthLoadingState());
     try {
       final tokens = await registerUseCase(RegisterParams(
         name: event.name,
@@ -106,67 +78,91 @@ class AuthBloc {
         phone: event.phone,
       ));
       final user = await getMeUseCase();
-      _emit(AuthenticatedState(user: user, token: tokens.accessToken));
+      emit(AuthenticatedState(user: user, token: tokens.accessToken));
     } catch (e) {
-      _emit(AuthFailureState(e.toString()));
+      emit(AuthFailureState(e.toString()));
     }
   }
 
   /// Handles 6-digit OTP request for forgot password.
-  Future<void> _onForgotPasswordRequested(ForgotPasswordRequestedEvent event) async {
-    _emit(const AuthLoadingState());
+  Future<void> _onForgotPasswordRequested(
+      ForgotPasswordRequestedEvent event,
+      Emitter<AuthState> emit,
+      ) async {
+    emit(const AuthLoadingState());
     try {
       await forgotPasswordUseCase(event.email);
-      _emit(OtpSentSuccessState(
+      emit(OtpSentSuccessState(
         email: event.email,
         message: '6-digit OTP code sent to ${event.email}',
       ));
     } catch (e) {
-      _emit(AuthFailureState(e.toString()));
+      emit(AuthFailureState(e.toString()));
     }
   }
 
   /// Handles resetting password using OTP code.
-  Future<void> _onResetPasswordRequested(ResetPasswordRequestedEvent event) async {
-    _emit(const AuthLoadingState());
+  Future<void> _onResetPasswordRequested(
+      ResetPasswordRequestedEvent event,
+      Emitter<AuthState> emit,
+      ) async {
+    emit(const AuthLoadingState());
     try {
       await resetPasswordUseCase(ResetPasswordParams(
         email: event.email,
         otpCode: event.otpCode,
         newPassword: event.newPassword,
       ));
-      _emit(const PasswordResetSuccessState('Password reset successfully! Please log in with your new password.'));
+      emit(const PasswordResetSuccessState('Password reset successfully! Please log in with your new password.'));
     } catch (e) {
-      _emit(AuthFailureState(e.toString()));
+      emit(AuthFailureState(e.toString()));
     }
   }
 
   /// Verifies active token and fetches user profile.
-  Future<void> _onCheckAuthStatus() async {
-    _emit(const AuthLoadingState());
+  Future<void> _onCheckAuthStatus(
+      CheckAuthStatusEvent event,
+      Emitter<AuthState> emit,
+      ) async {
+    emit(const AuthLoadingState());
     try {
       final user = await getMeUseCase();
-      _emit(AuthenticatedState(user: user));
+      emit(AuthenticatedState(user: user));
     } catch (_) {
-      _emit(const UnauthenticatedState());
+      emit(const UnauthenticatedState());
+    }
+  }
+
+  /// Handles GetMe event (reuses same logic as check status).
+  Future<void> _onGetMeRequested(
+      GetMeRequestedEvent event,
+      Emitter<AuthState> emit,
+      ) async {
+    emit(const AuthLoadingState());
+    try {
+      final user = await getMeUseCase();
+      emit(AuthenticatedState(user: user));
+    } catch (_) {
+      emit(const UnauthenticatedState());
     }
   }
 
   /// User initiated Sign Out.
-  Future<void> _onLogoutRequested() async {
-    _emit(const AuthLoadingState());
+  Future<void> _onLogoutRequested(
+      LogoutRequestedEvent event,
+      Emitter<AuthState> emit,
+      ) async {
+    emit(const AuthLoadingState());
     await logoutUseCase();
-    _emit(const UnauthenticatedState('Logged out successfully'));
+    emit(const UnauthenticatedState('Logged out successfully'));
   }
 
   /// Triggered automatically by ApiClient 401 Interceptor.
-  Future<void> _onSessionExpired() async {
+  Future<void> _onSessionExpired(
+      SessionExpiredEvent event,
+      Emitter<AuthState> emit,
+      ) async {
     await logoutUseCase();
-    _emit(const UnauthenticatedState('Session expired. Please log in again.'));
-  }
-
-  /// Closes the state stream.
-  void dispose() {
-    _stateController.close();
+    emit(const UnauthenticatedState('Session expired. Please log in again.'));
   }
 }
