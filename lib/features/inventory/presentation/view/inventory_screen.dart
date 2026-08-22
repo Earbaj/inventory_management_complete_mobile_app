@@ -30,36 +30,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
   final TextEditingController searchController = TextEditingController();
   InventoryFilter selectedFilter = InventoryFilter.all;
   String selectedCategory = 'All';
-  StreamSubscription<InventoryState>? _blocSubscription;
   bool isFilterVisible = false;
   
 
   @override
   void initState() {
     super.initState();
-    _blocSubscription = InjectionContainer.inventoryBloc.stream.listen((state) {
-      if (!mounted) return;
-      if (state is InventoryOperationSuccessState) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(state.message),
-            backgroundColor: Colors.green.shade700,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      } else if (state is InventoryErrorState) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(state.message),
-            backgroundColor: Colors.red.shade700,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    });
-
     // Dispatch initial fetch event to InventoryBloc
-    InjectionContainer.inventoryBloc.add(
+    context.read<InventoryBloc>().add(
       FetchInventoryItemsEvent(
         searchQuery: '',
         category: selectedCategory,
@@ -70,7 +48,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   @override
   void dispose() {
-    _blocSubscription?.cancel();
     searchController.dispose();
     super.dispose();
   }
@@ -487,7 +464,27 @@ class _InventoryScreenState extends State<InventoryScreen> {
         icon: const Icon(Icons.add_rounded),
         label: const Text('Add Item'),
       ),
-      body: BlocBuilder<InventoryBloc,InventoryState>(
+      body: BlocConsumer<InventoryBloc,InventoryState>(
+        listener: (context, state) {
+          // SnackBar side-effects
+          if (state is InventoryOperationSuccessState) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.green.shade700,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          } else if (state is InventoryErrorState) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red.shade700,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        },
         builder: (context, snapshot) {
           final state = snapshot;
 
