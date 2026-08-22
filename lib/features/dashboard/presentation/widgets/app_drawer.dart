@@ -180,7 +180,7 @@ class AppDrawer extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                       children: [
                         _DrawerItem(
-                          title: 'Super Admin Portal 👑',
+                          title: 'Super Admin Portal',
                           icon: Icons.admin_panel_settings_outlined,
                           activeIcon: Icons.admin_panel_settings_rounded,
                           route: '/super-admin',

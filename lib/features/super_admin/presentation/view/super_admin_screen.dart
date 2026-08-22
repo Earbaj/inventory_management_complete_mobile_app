@@ -34,30 +34,131 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> with SingleTickerPr
   void _confirmLogout(BuildContext context) {
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.logout_rounded, color: Colors.red),
-            SizedBox(width: 8),
-            Text('Sign Out SuperAdmin'),
-          ],
+      barrierDismissible: false,
+      builder: (dialogContext) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
         ),
-        content: const Text('Are you sure you want to sign out from the Super Admin portal?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              InjectionContainer.authBloc.add(const LogoutRequestedEvent());
-              context.go('/login');
-            },
-            child: const Text('Sign Out'),
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.85,
+            maxHeight: MediaQuery.of(context).size.height * 0.6,
           ),
-        ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Animated Icon Container
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.red.withOpacity(0.1),
+                ),
+                child: const Icon(
+                  Icons.logout_rounded,
+                  color: Colors.red,
+                  size: 48,
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Title
+              Text(
+                'Sign Out',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Subtitle
+              Text(
+                'Are you sure you want to sign out from the Super Admin portal?',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Action Buttons
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // Cancel Button
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(dialogContext),
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: BorderSide(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                      ),
+                      child: Text(
+                        'Cancel',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+
+                  // Sign Out Button
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () {
+                        Navigator.pop(dialogContext);
+                        // Add a small delay for smooth animation
+                        Future.delayed(const Duration(milliseconds: 300), () {
+                          InjectionContainer.authBloc.add(const LogoutRequestedEvent());
+                          context.go('/login');
+                        });
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: const Text(
+                        'Sign Out',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -350,7 +451,8 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> with SingleTickerPr
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Super Admin Portal 👑', style: TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: false,
+        title: const Text('Super Admin Portal', style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
             tooltip: 'Refresh Overview',
@@ -417,7 +519,6 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> with SingleTickerPr
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                    border: Border(bottom: BorderSide(color: theme.dividerColor)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -500,18 +601,123 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> with SingleTickerPr
     );
   }
 
+  // Helper Widget for Decorative Dots
+  Widget _buildDot(BuildContext context, Color color) {
+    return AnimatedContainer(
+      duration: const Duration(seconds: 1),
+      curve: Curves.easeInOut,
+      width: 12,
+      height: 12,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.3),
+            blurRadius: 8,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+    );
+  }
   Widget _buildPaymentsTab(List<PaymentEntity> payments, ColorScheme colorScheme, ThemeData theme) {
     if (payments.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.verified_rounded, size: 64, color: colorScheme.primary),
-            const SizedBox(height: 12),
-            const Text('No Pending Payment Submissions!', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            const Text('All shop subscriptions are up-to-date.', style: TextStyle(color: Colors.grey)),
-          ],
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Animated Container with Gradient
+              Container(
+                width: MediaQuery.of(context).size.width * 0.35,
+                height: MediaQuery.of(context).size.width * 0.35,
+                constraints: const BoxConstraints(
+                  minWidth: 100,
+                  minHeight: 100,
+                  maxWidth: 200,
+                  maxHeight: 200,
+                ),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Theme.of(context).primaryColor.withOpacity(0.2),
+                      Theme.of(context).primaryColor.withOpacity(0.05),
+                    ],
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      blurRadius: 30,
+                      spreadRadius: 10,
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.verified_rounded,
+                  size: MediaQuery.of(context).size.width * 0.12,
+                  color: Theme.of(context).primaryColor,
+                ),
+              ),
+
+              const SizedBox(height: 28),
+
+              // Main Title
+              Text(
+                'All Caught Up! 🎉',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: MediaQuery.of(context).size.width > 600 ? 28 : 22,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 12),
+
+              // Subtitle
+              Text(
+                'No Pending Payment Submissions',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                  fontSize: MediaQuery.of(context).size.width > 600 ? 18 : 15,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 8),
+
+              // Description
+              Text(
+                'All shop subscriptions are currently up-to-date\nand fully verified.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey.shade600,
+                  height: 1.6,
+                  fontSize: MediaQuery.of(context).size.width > 600 ? 16 : 14,
+                ),
+              ),
+
+              const SizedBox(height: 30),
+
+              // Animated Decorative Dots
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildDot(context, Colors.green),
+                  const SizedBox(width: 8),
+                  _buildDot(context, Colors.green.shade300),
+                  const SizedBox(width: 8),
+                  _buildDot(context, Colors.green.shade100),
+                ],
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -580,7 +786,103 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> with SingleTickerPr
 
   Widget _buildShopsTab(List<ShopItemModel> shops, ColorScheme colorScheme, ThemeData theme) {
     if (shops.isEmpty) {
-      return const Center(child: Text('No Shops Registered Yet.'));
+      return Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Animated Container with Gradient
+              Container(
+                width: MediaQuery.of(context).size.width * 0.35,
+                height: MediaQuery.of(context).size.width * 0.35,
+                constraints: const BoxConstraints(
+                  minWidth: 100,
+                  minHeight: 100,
+                  maxWidth: 200,
+                  maxHeight: 200,
+                ),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Theme.of(context).primaryColor.withOpacity(0.2),
+                      Theme.of(context).primaryColor.withOpacity(0.05),
+                    ],
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      blurRadius: 30,
+                      spreadRadius: 10,
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.store_rounded,
+                  size: MediaQuery.of(context).size.width * 0.12,
+                  color: Theme.of(context).primaryColor,
+                ),
+              ),
+
+              const SizedBox(height: 28),
+
+              // Main Title
+              Text(
+                'No Shops Yet! 🏪',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: MediaQuery.of(context).size.width > 600 ? 28 : 22,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 12),
+
+              // Subtitle
+              Text(
+                'No Shops Registered Yet',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                  fontSize: MediaQuery.of(context).size.width > 600 ? 18 : 15,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 8),
+
+              // Description
+              Text(
+                'When People register and create shop than those list will be shown here',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey.shade600,
+                  height: 1.6,
+                  fontSize: MediaQuery.of(context).size.width > 600 ? 16 : 14,
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Animated Decorative Dots
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildDot(context, Theme.of(context).primaryColor),
+                  const SizedBox(width: 8),
+                  _buildDot(context, Theme.of(context).primaryColor.withOpacity(0.5)),
+                  const SizedBox(width: 8),
+                  _buildDot(context, Theme.of(context).primaryColor.withOpacity(0.2)),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     return ListView.builder(
