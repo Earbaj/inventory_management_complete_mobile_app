@@ -31,6 +31,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
   InventoryFilter selectedFilter = InventoryFilter.all;
   String selectedCategory = 'All';
   StreamSubscription<InventoryState>? _blocSubscription;
+  bool isFilterVisible = false;
+  
 
   @override
   void initState() {
@@ -467,6 +469,15 @@ class _InventoryScreenState extends State<InventoryScreen> {
             },
             icon: const Icon(Icons.refresh_rounded),
           ),
+          IconButton(
+            tooltip: 'Refresh',
+            onPressed: () {
+              setState(() {
+                isFilterVisible =!isFilterVisible;
+              });
+            },
+            icon: Icon(isFilterVisible ? Icons.filter_alt_off:Icons.filter_alt),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -556,6 +567,64 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
           return Column(
             children: [
+
+              if(isFilterVisible)...[
+                // SEARCH
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
+                  child: TextField(
+                    controller: searchController,
+                    onChanged: _onSearchChanged,
+                    decoration: InputDecoration(
+                      hintText: 'Search item name, SKU or barcode',
+                      prefixIcon: const Icon(Icons.search_rounded),
+                      suffixIcon: searchController.text.isNotEmpty
+                          ? IconButton(
+                        onPressed: () {
+                          searchController.clear();
+                          _onSearchChanged('');
+                        },
+                        icon: const Icon(Icons.close_rounded),
+                      )
+                          : null,
+                      filled: true,
+                      fillColor: colorScheme.surfaceContainerHighest,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                ),
+                // CATEGORY CHIPS
+                SizedBox(
+                  height: 40,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    scrollDirection: Axis.horizontal,
+                    itemCount: categories.length + 1,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (context, index) {
+                      if (index == 0) {
+                        return ActionChip(
+                          avatar: const Icon(Icons.add_rounded, size: 18),
+                          label: const Text('Add Category'),
+                          onPressed: () => _showAddCategoryDialog(context),
+                        );
+                      }
+
+                      final category = categories[index - 1];
+                      final selected = selectedCategory == category;
+
+                      return ChoiceChip(
+                        label: Text(category),
+                        selected: selected,
+                        onSelected: (_) => _onCategorySelected(category),
+                      );
+                    },
+                  ),
+                ),
+              ],
               // SUMMARY
               InventorySummary(
                 totalItems: totalItems,
@@ -564,64 +633,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 selectedFilter: selectedFilter,
                 onFilterChanged: _onFilterChanged,
               ),
-
-              // SEARCH
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
-                child: TextField(
-                  controller: searchController,
-                  onChanged: _onSearchChanged,
-                  decoration: InputDecoration(
-                    hintText: 'Search item name, SKU or barcode',
-                    prefixIcon: const Icon(Icons.search_rounded),
-                    suffixIcon: searchController.text.isNotEmpty
-                        ? IconButton(
-                            onPressed: () {
-                              searchController.clear();
-                              _onSearchChanged('');
-                            },
-                            icon: const Icon(Icons.close_rounded),
-                          )
-                        : null,
-                    filled: true,
-                    fillColor: colorScheme.surfaceContainerHighest,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-              ),
-
-              // CATEGORY CHIPS
-              SizedBox(
-                height: 40,
-                child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: categories.length + 1,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
-                  itemBuilder: (context, index) {
-                    if (index == 0) {
-                      return ActionChip(
-                        avatar: const Icon(Icons.add_rounded, size: 18),
-                        label: const Text('Add Category'),
-                        onPressed: () => _showAddCategoryDialog(context),
-                      );
-                    }
-
-                    final category = categories[index - 1];
-                    final selected = selectedCategory == category;
-
-                    return ChoiceChip(
-                      label: Text(category),
-                      selected: selected,
-                      onSelected: (_) => _onCategorySelected(category),
-                    );
-                  },
-                ),
-              ),
-
               const SizedBox(height: 8),
 
               // ITEM LIST
