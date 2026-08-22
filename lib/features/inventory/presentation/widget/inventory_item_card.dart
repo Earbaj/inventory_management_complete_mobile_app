@@ -24,7 +24,7 @@ class InventoryItemCard extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(13),
+      padding: const EdgeInsets.only(left: 15,right: 15),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
@@ -35,7 +35,6 @@ class InventoryItemCard extends StatelessWidget {
       child: Column(
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               /*// PRODUCT ICON
               Container(
@@ -71,25 +70,59 @@ class InventoryItemCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        IconButton(
-                          tooltip: 'Edit Item',
-                          onPressed: onEdit,
-                          visualDensity: VisualDensity.compact,
+                        PopupMenuButton<String>(
+                          tooltip: 'More Actions',
                           icon: const Icon(
-                            Icons.edit_outlined,
-                            size: 20,
+                            Icons.more_vert,
+                            size: 22,
                           ),
-                        ),
-                        IconButton(
-                          tooltip: 'Delete Item',
-                          onPressed: onDelete,
-                          visualDensity: VisualDensity.compact,
-                          icon: const Icon(
-                            Icons.delete_outline_rounded,
-                            color: Colors.redAccent,
-                            size: 20,
-                          ),
-                        ),
+                          onSelected: (value) {
+                            switch (value) {
+                              case 'edit':
+                                onEdit();
+                                break;
+
+                              case 'delete':
+                                onDelete();
+                                break;
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            const PopupMenuItem<String>(
+                              value: 'edit',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.edit_outlined,
+                                    size: 20,
+                                  ),
+                                  SizedBox(width: 12),
+                                  Text('Edit Item'),
+                                ],
+                              ),
+                            ),
+
+                            const PopupMenuItem<String>(
+                              value: 'delete',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.delete_outline_rounded,
+                                    color: Colors.redAccent,
+                                    size: 20,
+                                  ),
+                                  SizedBox(width: 12),
+                                  Text(
+                                    'Delete Item',
+                                    style: TextStyle(
+                                      color: Colors.redAccent,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        )
                       ],
                     ),
                     /*const SizedBox(height: 2),
