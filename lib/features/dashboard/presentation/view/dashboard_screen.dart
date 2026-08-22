@@ -60,284 +60,297 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            // HEADER WITH SHOP & USER PROFILE
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        AppRoute.shellScaffoldKey.currentState?.openDrawer();
-                      },
-                      style: IconButton.styleFrom(
-                        backgroundColor: colorScheme.surface,
-                      ),
-                      icon: const Icon(Icons.menu_rounded),
+      body: BlocSelector<AuthBloc, AuthState, bool>(
+          selector: (state) {
+            return state is AuthenticatedState &&
+                state.user?.role.toLowerCase() == 'admin';
+          },
+        builder: (context, isAdmin) {
+          return SafeArea(
+            child: CustomScrollView(
+              slivers: [
+                // HEADER WITH SHOP & USER PROFILE
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          onPressed: () {
+                            AppRoute.shellScaffoldKey.currentState?.openDrawer();
+                          },
+                          style: IconButton.styleFrom(
+                            backgroundColor: colorScheme.surface,
+                          ),
+                          icon: const Icon(Icons.menu_rounded),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: BlocBuilder<AuthBloc, AuthState>(
+                            builder: (context, authState) {
+                              final userName = authState is AuthenticatedState ? (authState.user?.name ?? 'Owner') : 'Owner';
+                              final shopName = authState is AuthenticatedState ? (authState.user?.shopName ?? 'Smart Inventory Store') : 'Smart Inventory Store';
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    getGreeting(),
+                                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    userName,
+                                    style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            // Event Dispatching via context
+                            context.read<ReportsBloc>().add(const FetchReportsEvent());
+                            context.read<InventoryBloc>().add(const FetchInventoryItemsEvent());
+                            context.read<CustomerBloc>().add(const FetchCustomersEvent());
+                          },
+                          icon: const Icon(Icons.refresh_rounded),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: BlocBuilder<AuthBloc, AuthState>(
-                        builder: (context, authState) {
-                          final userName = authState is AuthenticatedState ? (authState.user?.name ?? 'Owner') : 'Owner';
-                          final shopName = authState is AuthenticatedState ? (authState.user?.shopName ?? 'Smart Inventory Store') : 'Smart Inventory Store';
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                getGreeting(),
-                                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                userName,
-                                style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.w600),
-                              ),
-                            ],
+                  ),
+                ),
+
+                // QUICK NAVIGATION ACTIONS
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          if(isAdmin)...[
+                            _buildQuickActionButton(
+                              context,
+                              icon: Icons.point_of_sale_rounded,
+                              label: 'POS Billing',
+                              color: colorScheme.primary,
+                              onTap: () {
+                                AppRoute.shellScaffoldKey.currentState?.openDrawer();
+                              },
+                            ),
+                            const SizedBox(width: 10),
+                            _buildQuickActionButton(
+                              context,
+                              icon: Icons.add_shopping_cart_rounded,
+                              label: 'Add Item',
+                              color: Colors.teal,
+                              onTap: () {
+                                AppRoute.shellScaffoldKey.currentState?.openDrawer();
+                              },
+                            ),
+                            const SizedBox(width: 10),
+                            _buildQuickActionButton(
+                              context,
+                              icon: Icons.person_add_alt_1_rounded,
+                              label: 'Customers',
+                              color: Colors.orange,
+                              onTap: () {
+                                AppRoute.shellScaffoldKey.currentState?.openDrawer();
+                              },
+                            ),
+                            const SizedBox(width: 10),
+                            _buildQuickActionButton(
+                              context,
+                              icon: Icons.bar_chart_rounded,
+                              label: 'Reports',
+                              color: Colors.purple,
+                              onTap: () {
+                                AppRoute.shellScaffoldKey.currentState?.openDrawer();
+                              },
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                // STAT CARDS LIST GRID
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  sliver: SliverGrid(
+                    delegate: SliverChildListDelegate([
+                      // 1. Total Sell Revenue (ReportsBloc)
+                      BlocBuilder<ReportsBloc,ReportsState>(
+                        builder: (context, snapshot) {
+                          final summary = snapshot is ReportsLoadedState ? snapshot.summary : null;
+                          final revenue = summary != null ? summary.totalRevenue : 0.0;
+
+                          return StatCard(
+                            title: 'Total Sell',
+                            value: '৳ ${revenue.toStringAsFixed(0)}',
+                            icon: Icons.shopping_bag_outlined,
+                            iconBackground: const Color(0xFFE8F0FF),
+                            iconColor: const Color(0xFF2563EB),
+                            percentage: 'Active',
+                            isPositive: true,
                           );
                         },
                       ),
+
+                      // 2. Total Invoices Count (ReportsBloc)
+                      BlocBuilder<ReportsBloc,ReportsState>(
+                        builder: (context, snapshot) {
+                          final state = snapshot is ReportsLoadedState ? snapshot : InjectionContainer.reportsBloc.state;
+                          final summary = state is ReportsLoadedState ? state.summary : null;
+                          final salesCount = summary != null ? summary.totalSalesCount : 0;
+
+                          return StatCard(
+                            title: 'Total Invoices',
+                            value: '$salesCount',
+                            icon: Icons.receipt_rounded,
+                            iconBackground: const Color(0xFFE7F9EF),
+                            iconColor: const Color(0xFF10B981),
+                            percentage: 'Count',
+                            isPositive: true,
+                          );
+                        },
+                      ),
+
+                      // 3. Outstanding Dues (CustomerBloc / ReportsBloc)
+                      BlocBuilder<CustomerBloc,CustomerState>(
+                        builder: (context, snapshot) {
+                          final custState = snapshot is CustomerLoadedState
+                              ? snapshot
+                              : InjectionContainer.customerBloc.state;
+
+                          double due = 0.0;
+                          if (custState is CustomerLoadedState && custState.customers.isNotEmpty) {
+                            due = custState.customers.fold<double>(0.0, (sum, c) => sum + c.totalDue);
+                          }
+
+                          if (due == 0.0) {
+                            final reportsState = InjectionContainer.reportsBloc.state;
+                            if (reportsState is ReportsLoadedState && reportsState.summary != null) {
+                              due = reportsState.summary!.totalDue > 0
+                                  ? reportsState.summary!.totalDue
+                                  : reportsState.summary!.dueRevenue;
+                            }
+                          }
+
+                          return StatCard(
+                            title: 'Outstanding Due',
+                            value: '৳ ${due.toStringAsFixed(0)}',
+                            icon: Icons.account_balance_wallet_outlined,
+                            iconBackground: const Color(0xFFFFF2E5),
+                            iconColor: const Color(0xFFF97316),
+                            percentage: 'Due',
+                            isPositive: false,
+                          );
+                        },
+                      ),
+
+                      // 4. Low Stock Alert Count (InventoryBloc)
+                      BlocBuilder<InventoryBloc,InventoryState>(
+                        builder: (context, snapshot) {
+                          final state = snapshot is InventoryLoadedState ? snapshot : InjectionContainer.inventoryBloc.state;
+                          final lowStockCount = state is InventoryLoadedState
+                              ? state.items.where((i) => i.isLowStock || i.isOutOfStock).length
+                              : 0;
+
+                          return StatCard(
+                            title: 'Low Stock Alert',
+                            value: '$lowStockCount',
+                            icon: Icons.warning_amber_rounded,
+                            iconBackground: const Color(0xFFFFE9EC),
+                            iconColor: const Color(0xFFEF4444),
+                            subtitle: 'Items need restock',
+                          );
+                        },
+                      ),
+
+                      // 5. Total Active Customers (CustomerBloc)
+                      BlocBuilder<CustomerBloc,CustomerState>(
+                        builder: (context, snapshot) {
+                          final state = snapshot is CustomerLoadedState ? snapshot : InjectionContainer.customerBloc.state;
+                          final customerCount = state is CustomerLoadedState ? state.customers.length : 0;
+
+                          return StatCard(
+                            title: 'Total Customers',
+                            value: '$customerCount',
+                            icon: Icons.group_outlined,
+                            iconBackground: const Color(0xFFF0E9FF),
+                            iconColor: const Color(0xFF8B5CF6),
+                            percentage: 'Active',
+                            isPositive: true,
+                          );
+                        },
+                      ),
+
+                      // 6. Total Items Count (InventoryBloc)
+                      BlocBuilder<InventoryBloc,InventoryState>(
+                        builder: (context, snapshot) {
+                          final state = snapshot is InventoryLoadedState ? snapshot : InjectionContainer.inventoryBloc.state;
+                          final totalItems = state is InventoryLoadedState ? state.items.length : 0;
+
+                          return StatCard(
+                            title: 'Inventory Items',
+                            value: '$totalItems',
+                            icon: Icons.inventory_2_outlined,
+                            iconBackground: const Color(0xFFE7F8F5),
+                            iconColor: const Color(0xFF14B8A6),
+                            percentage: 'Items',
+                            isPositive: true,
+                          );
+                        },
+                      ),
+                    ]),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 1.28,
                     ),
-                    IconButton(
-                      onPressed: () {
-                        // Event Dispatching via context
-                        context.read<ReportsBloc>().add(const FetchReportsEvent());
-                        context.read<InventoryBloc>().add(const FetchInventoryItemsEvent());
-                        context.read<CustomerBloc>().add(const FetchCustomersEvent());
-                      },
-                      icon: const Icon(Icons.refresh_rounded),
+                  ),
+                ),
+
+                // CHARTS
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                    child: Column(
+                      children: [
+                        SalesChart(),
+                        if(isAdmin)...[
+                          SizedBox(height: 16),
+                          ProfitChart(),
+                        ],
+
+                      ],
                     ),
-                  ],
-                ),
-              ),
-            ),
-
-            // QUICK NAVIGATION ACTIONS
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildQuickActionButton(
-                        context,
-                        icon: Icons.point_of_sale_rounded,
-                        label: 'POS Billing',
-                        color: colorScheme.primary,
-                        onTap: () {
-                          AppRoute.shellScaffoldKey.currentState?.openDrawer();
-                        },
-                      ),
-                      const SizedBox(width: 10),
-                      _buildQuickActionButton(
-                        context,
-                        icon: Icons.add_shopping_cart_rounded,
-                        label: 'Add Item',
-                        color: Colors.teal,
-                        onTap: () {
-                          AppRoute.shellScaffoldKey.currentState?.openDrawer();
-                        },
-                      ),
-                      const SizedBox(width: 10),
-                      _buildQuickActionButton(
-                        context,
-                        icon: Icons.person_add_alt_1_rounded,
-                        label: 'Customers',
-                        color: Colors.orange,
-                        onTap: () {
-                          AppRoute.shellScaffoldKey.currentState?.openDrawer();
-                        },
-                      ),
-                      const SizedBox(width: 10),
-                      _buildQuickActionButton(
-                        context,
-                        icon: Icons.bar_chart_rounded,
-                        label: 'Reports',
-                        color: Colors.purple,
-                        onTap: () {
-                          AppRoute.shellScaffoldKey.currentState?.openDrawer();
-                        },
-                      ),
-                    ],
                   ),
                 ),
-              ),
-            ),
 
-            // STAT CARDS LIST GRID
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              sliver: SliverGrid(
-                delegate: SliverChildListDelegate([
-                  // 1. Total Sell Revenue (ReportsBloc)
-                  BlocBuilder<ReportsBloc,ReportsState>(
-                    builder: (context, snapshot) {
-                      final summary = snapshot is ReportsLoadedState ? snapshot.summary : null;
-                      final revenue = summary != null ? summary.totalRevenue : 0.0;
-
-                      return StatCard(
-                        title: 'Total Sell',
-                        value: '৳ ${revenue.toStringAsFixed(0)}',
-                        icon: Icons.shopping_bag_outlined,
-                        iconBackground: const Color(0xFFE8F0FF),
-                        iconColor: const Color(0xFF2563EB),
-                        percentage: 'Active',
-                        isPositive: true,
-                      );
-                    },
+                // TOP SELLING ITEMS
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(20, 24, 20, 0),
+                    child: TopSellingItems(),
                   ),
-
-                  // 2. Total Invoices Count (ReportsBloc)
-                  BlocBuilder<ReportsBloc,ReportsState>(
-                    builder: (context, snapshot) {
-                      final state = snapshot is ReportsLoadedState ? snapshot : InjectionContainer.reportsBloc.state;
-                      final summary = state is ReportsLoadedState ? state.summary : null;
-                      final salesCount = summary != null ? summary.totalSalesCount : 0;
-
-                      return StatCard(
-                        title: 'Total Invoices',
-                        value: '$salesCount',
-                        icon: Icons.receipt_rounded,
-                        iconBackground: const Color(0xFFE7F9EF),
-                        iconColor: const Color(0xFF10B981),
-                        percentage: 'Count',
-                        isPositive: true,
-                      );
-                    },
-                  ),
-
-                  // 3. Outstanding Dues (CustomerBloc / ReportsBloc)
-                  BlocBuilder<CustomerBloc,CustomerState>(
-                    builder: (context, snapshot) {
-                      final custState = snapshot is CustomerLoadedState
-                          ? snapshot
-                          : InjectionContainer.customerBloc.state;
-
-                      double due = 0.0;
-                      if (custState is CustomerLoadedState && custState.customers.isNotEmpty) {
-                        due = custState.customers.fold<double>(0.0, (sum, c) => sum + c.totalDue);
-                      }
-
-                      if (due == 0.0) {
-                        final reportsState = InjectionContainer.reportsBloc.state;
-                        if (reportsState is ReportsLoadedState && reportsState.summary != null) {
-                          due = reportsState.summary!.totalDue > 0
-                              ? reportsState.summary!.totalDue
-                              : reportsState.summary!.dueRevenue;
-                        }
-                      }
-
-                      return StatCard(
-                        title: 'Outstanding Due',
-                        value: '৳ ${due.toStringAsFixed(0)}',
-                        icon: Icons.account_balance_wallet_outlined,
-                        iconBackground: const Color(0xFFFFF2E5),
-                        iconColor: const Color(0xFFF97316),
-                        percentage: 'Due',
-                        isPositive: false,
-                      );
-                    },
-                  ),
-
-                  // 4. Low Stock Alert Count (InventoryBloc)
-                  BlocBuilder<InventoryBloc,InventoryState>(
-                    builder: (context, snapshot) {
-                      final state = snapshot is InventoryLoadedState ? snapshot : InjectionContainer.inventoryBloc.state;
-                      final lowStockCount = state is InventoryLoadedState
-                          ? state.items.where((i) => i.isLowStock || i.isOutOfStock).length
-                          : 0;
-
-                      return StatCard(
-                        title: 'Low Stock Alert',
-                        value: '$lowStockCount',
-                        icon: Icons.warning_amber_rounded,
-                        iconBackground: const Color(0xFFFFE9EC),
-                        iconColor: const Color(0xFFEF4444),
-                        subtitle: 'Items need restock',
-                      );
-                    },
-                  ),
-
-                  // 5. Total Active Customers (CustomerBloc)
-                  BlocBuilder<CustomerBloc,CustomerState>(
-                    builder: (context, snapshot) {
-                      final state = snapshot is CustomerLoadedState ? snapshot : InjectionContainer.customerBloc.state;
-                      final customerCount = state is CustomerLoadedState ? state.customers.length : 0;
-
-                      return StatCard(
-                        title: 'Total Customers',
-                        value: '$customerCount',
-                        icon: Icons.group_outlined,
-                        iconBackground: const Color(0xFFF0E9FF),
-                        iconColor: const Color(0xFF8B5CF6),
-                        percentage: 'Active',
-                        isPositive: true,
-                      );
-                    },
-                  ),
-
-                  // 6. Total Items Count (InventoryBloc)
-                  BlocBuilder<InventoryBloc,InventoryState>(
-                    builder: (context, snapshot) {
-                      final state = snapshot is InventoryLoadedState ? snapshot : InjectionContainer.inventoryBloc.state;
-                      final totalItems = state is InventoryLoadedState ? state.items.length : 0;
-
-                      return StatCard(
-                        title: 'Inventory Items',
-                        value: '$totalItems',
-                        icon: Icons.inventory_2_outlined,
-                        iconBackground: const Color(0xFFE7F8F5),
-                        iconColor: const Color(0xFF14B8A6),
-                        percentage: 'Items',
-                        isPositive: true,
-                      );
-                    },
-                  ),
-                ]),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 1.28,
                 ),
-              ),
-            ),
 
-            // CHARTS
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-                child: Column(
-                  children: const [
-                    SalesChart(),
-                    SizedBox(height: 16),
-                    ProfitChart(),
-                  ],
+                // RECENT TRANSACTIONS
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(20, 16, 20, 30),
+                    child: RecentTransactions(),
+                  ),
                 ),
-              ),
+              ],
             ),
-
-            // TOP SELLING ITEMS
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(20, 24, 20, 0),
-                child: TopSellingItems(),
-              ),
-            ),
-
-            // RECENT TRANSACTIONS
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(20, 16, 20, 30),
-                child: RecentTransactions(),
-              ),
-            ),
-          ],
-        ),
+          );
+        }
       ),
     );
   }
