@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:inventory_management_complete/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:inventory_management_complete/features/inventory/presentation/bloc/inventory_bloc.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
+import '../../../auth/domain/entities/user_entity.dart';
 import '../../domain/entities/inventory_item_entity.dart';
 import '../../inventory_item.dart';
 import '../bloc/inventory_event.dart';
@@ -31,6 +33,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   InventoryFilter selectedFilter = InventoryFilter.all;
   String selectedCategory = 'All';
   bool isFilterVisible = false;
+  UserEntity? user;
   
 
   @override
@@ -45,6 +48,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
       ),
     );
   }
+
 
   @override
   void dispose() {
