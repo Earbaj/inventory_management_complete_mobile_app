@@ -234,12 +234,9 @@ class _PaymentCheckoutModalState extends State<PaymentCheckoutModal> {
                     borderRadius: BorderRadius.circular(18),
                     side: BorderSide(
                       color: isPremium ? colorScheme.primary : theme.dividerColor.withValues(alpha: 0.5),
-                      width: isPremium ? 2 : 1,
+                      width: 1,
                     ),
                   ),
-                  color: isPremium
-                      ? colorScheme.primaryContainer.withValues(alpha: 0.25)
-                      : colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(18),
                     onTap: () => _selectPackage(pkg),
@@ -265,18 +262,6 @@ class _PaymentCheckoutModalState extends State<PaymentCheckoutModal> {
                                   ),
                                 ],
                               ),
-                              if (isPremium)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: Colors.amber[800],
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Text(
-                                    'POPULAR',
-                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10),
-                                  ),
-                                ),
                             ],
                           ),
                           const SizedBox(height: 10),
@@ -331,7 +316,7 @@ class _PaymentCheckoutModalState extends State<PaymentCheckoutModal> {
                               ),
                               child: Text(
                                 'Select ${pkg.name}',
-                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                style: const TextStyle(fontSize: 13),
                               ),
                             ),
                           ),

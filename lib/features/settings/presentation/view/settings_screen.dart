@@ -213,7 +213,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ),
                               ),
                               ConstrainedBox(
-                                constraints: const BoxConstraints(maxWidth: 120, minWidth: 80),
+                                constraints: const BoxConstraints(maxWidth: 130, minWidth: 80),
                                 child: ElevatedButton(
                                   onPressed: () => _openCheckoutModal(context),
                                   style: ElevatedButton.styleFrom(
