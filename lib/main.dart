@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inventory_management_complete/features/reports/presentation/bloc/reports_bloc.dart';
+import 'package:inventory_management_complete/features/staff_managers/presentation/bloc/staff_bloc.dart';
 
 import 'core/di/injection_container.dart';
 import 'core/route/app_route.dart';
@@ -13,6 +14,7 @@ import 'features/customers/presentation/bloc/customer_event.dart';
 import 'features/inventory/presentation/bloc/inventory_bloc.dart';
 import 'features/inventory/presentation/bloc/inventory_event.dart';
 import 'features/reports/presentation/bloc/reports_event.dart';
+import 'features/staff_managers/presentation/bloc/staff_event.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,6 +41,9 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider<CustomerBloc>(
           create: (context) => InjectionContainer.customerBloc..add(const FetchCustomersEvent()),
+        ),
+        BlocProvider<StaffBloc>(
+          create: (context) => InjectionContainer.staffBloc..add(const FetchStaffEvent()),
         ),
       ],
       child: MaterialApp.router(

@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:inventory_management_complete/features/staff_managers/presentation/bloc/staff_bloc.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
@@ -26,29 +28,11 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
   @override
   void initState() {
     super.initState();
-    _staffSubscription = InjectionContainer.staffBloc.stream.listen((state) {
-      if (!mounted) return;
-      if (state is StaffOperationSuccessState) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(state.message),
-            backgroundColor: Colors.green.shade700,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      } else if (state is StaffErrorState) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(state.message),
-            backgroundColor: Colors.red.shade700,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    });
 
     // Dispatch initial fetch to StaffBloc
-    InjectionContainer.staffBloc.add(const FetchStaffEvent());
+    context.read<StaffBloc>().add(
+        const FetchStaffEvent()
+    );
   }
 
   @override
@@ -145,11 +129,28 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
         icon: const Icon(Icons.person_add_rounded),
         label: const Text('Add Manager'),
       ),
-      body: StreamBuilder<StaffState>(
-        stream: InjectionContainer.staffBloc.stream,
-        initialData: InjectionContainer.staffBloc.state,
+      body: BlocConsumer<StaffBloc,StaffState>(
+        listener: (context, state) {
+          if (state is StaffOperationSuccessState) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.green.shade700,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          } else if (state is StaffErrorState) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red.shade700,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        },
         builder: (context, snapshot) {
-          final state = snapshot.data;
+          final state = snapshot;
 
           if (state is StaffLoadingState && state is! StaffLoadedState) {
             return const Center(child: CircularProgressIndicator());
