@@ -174,12 +174,9 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
               sliver: SliverGrid(
                 delegate: SliverChildListDelegate([
                   // 1. Total Sell Revenue (ReportsBloc)
-                  StreamBuilder<ReportsState>(
-                    stream: InjectionContainer.reportsBloc.stream,
-                    initialData: InjectionContainer.reportsBloc.state,
+                  BlocBuilder<ReportsBloc,ReportsState>(
                     builder: (context, snapshot) {
-                      final state = snapshot.data is ReportsLoadedState ? snapshot.data : InjectionContainer.reportsBloc.state;
-                      final summary = state is ReportsLoadedState ? state.summary : null;
+                      final summary = snapshot is ReportsLoadedState ? snapshot.summary : null;
                       final revenue = summary != null ? summary.totalRevenue : 0.0;
 
                       return StatCard(
@@ -195,11 +192,9 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                   ),
 
                   // 2. Total Invoices Count (ReportsBloc)
-                  StreamBuilder<ReportsState>(
-                    stream: InjectionContainer.reportsBloc.stream,
-                    initialData: InjectionContainer.reportsBloc.state,
+                  BlocBuilder<ReportsBloc,ReportsState>(
                     builder: (context, snapshot) {
-                      final state = snapshot.data is ReportsLoadedState ? snapshot.data : InjectionContainer.reportsBloc.state;
+                      final state = snapshot is ReportsLoadedState ? snapshot : InjectionContainer.reportsBloc.state;
                       final summary = state is ReportsLoadedState ? state.summary : null;
                       final salesCount = summary != null ? summary.totalSalesCount : 0;
 
@@ -216,12 +211,10 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                   ),
 
                   // 3. Outstanding Dues (CustomerBloc / ReportsBloc)
-                  StreamBuilder<CustomerState>(
-                    stream: InjectionContainer.customerBloc.stream,
-                    initialData: InjectionContainer.customerBloc.state,
+                  BlocBuilder<CustomerBloc,CustomerState>(
                     builder: (context, snapshot) {
-                      final custState = snapshot.data is CustomerLoadedState
-                          ? snapshot.data
+                      final custState = snapshot is CustomerLoadedState
+                          ? snapshot
                           : InjectionContainer.customerBloc.state;
 
                       double due = 0.0;
@@ -251,11 +244,9 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                   ),
 
                   // 4. Low Stock Alert Count (InventoryBloc)
-                  StreamBuilder<InventoryState>(
-                    stream: InjectionContainer.inventoryBloc.stream,
-                    initialData: InjectionContainer.inventoryBloc.state,
+                  BlocBuilder<InventoryBloc,InventoryState>(
                     builder: (context, snapshot) {
-                      final state = snapshot.data is InventoryLoadedState ? snapshot.data : InjectionContainer.inventoryBloc.state;
+                      final state = snapshot is InventoryLoadedState ? snapshot : InjectionContainer.inventoryBloc.state;
                       final lowStockCount = state is InventoryLoadedState
                           ? state.items.where((i) => i.isLowStock || i.isOutOfStock).length
                           : 0;
@@ -272,11 +263,9 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                   ),
 
                   // 5. Total Active Customers (CustomerBloc)
-                  StreamBuilder<CustomerState>(
-                    stream: InjectionContainer.customerBloc.stream,
-                    initialData: InjectionContainer.customerBloc.state,
+                  BlocBuilder<CustomerBloc,CustomerState>(
                     builder: (context, snapshot) {
-                      final state = snapshot.data is CustomerLoadedState ? snapshot.data : InjectionContainer.customerBloc.state;
+                      final state = snapshot is CustomerLoadedState ? snapshot : InjectionContainer.customerBloc.state;
                       final customerCount = state is CustomerLoadedState ? state.customers.length : 0;
 
                       return StatCard(
@@ -292,11 +281,9 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                   ),
 
                   // 6. Total Items Count (InventoryBloc)
-                  StreamBuilder<InventoryState>(
-                    stream: InjectionContainer.inventoryBloc.stream,
-                    initialData: InjectionContainer.inventoryBloc.state,
+                  BlocBuilder<InventoryBloc,InventoryState>(
                     builder: (context, snapshot) {
-                      final state = snapshot.data is InventoryLoadedState ? snapshot.data : InjectionContainer.inventoryBloc.state;
+                      final state = snapshot is InventoryLoadedState ? snapshot : InjectionContainer.inventoryBloc.state;
                       final totalItems = state is InventoryLoadedState ? state.items.length : 0;
 
                       return StatCard(
