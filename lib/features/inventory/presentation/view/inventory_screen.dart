@@ -6,6 +6,7 @@ import 'package:inventory_management_complete/features/inventory/presentation/bl
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../auth/domain/entities/user_entity.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../domain/entities/inventory_item_entity.dart';
 import '../../inventory_item.dart';
 import '../bloc/inventory_event.dart';
@@ -461,12 +462,24 @@ class _InventoryScreenState extends State<InventoryScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          _openAddItemSheet();
-        },
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Item'),
+      floatingActionButton: BlocSelector<AuthBloc, AuthState, bool>(
+          selector: (state) {
+            return state is AuthenticatedState &&
+                state.user?.role.toLowerCase() == 'admin';
+          },
+        builder: (context, isAdmin) {
+          if (!isAdmin) {
+            return const SizedBox.shrink();
+          }
+
+          return FloatingActionButton.extended(
+            onPressed: () {
+              _openAddItemSheet();
+            },
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('Add Item'),
+          );
+        }
       ),
       body: BlocConsumer<InventoryBloc,InventoryState>(
         listener: (context, state) {
