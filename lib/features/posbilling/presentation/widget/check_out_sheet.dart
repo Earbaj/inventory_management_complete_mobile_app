@@ -80,8 +80,8 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
     final double itemDisc = cartList.fold<double>(0.0, (sum, i) => sum + i.discountAmount);
     final double subAfterItemDisc = (rawSub - itemDisc).clamp(0.0, double.infinity);
 
-    final double overallDisc = double.tryParse(_overallDiscountCtrl.text) ?? widget.discount ?? 0.0;
-    final double calcNetTotal = (subAfterItemDisc - overallDisc).clamp(0.0, double.infinity);
+    final double overallDiscInTk = _calculateOverallDiscountTk(subAfterItemDisc);
+    final double calcNetTotal = (subAfterItemDisc - overallDiscInTk).clamp(0.0, double.infinity);
 
     if (!_isPaidEdited) {
       if (_paymentMethod.toLowerCase() == 'due') {
@@ -111,6 +111,28 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
     }
     final val = double.tryParse(text) ?? 0.0;
     return _ParsedDiscount(val, 'amount');
+  }
+
+  double _calculateOverallDiscountTk(double baseSubtotal) {
+    if (baseSubtotal <= 0) return 0.0;
+    final parsed = _parseDiscount(_overallDiscountCtrl.text);
+    if (parsed.value <= 0) return 0.0;
+    if (parsed.type == 'percent') {
+      return (baseSubtotal * (parsed.value / 100.0)).clamp(0.0, baseSubtotal);
+    }
+    return parsed.value.clamp(0.0, baseSubtotal);
+  }
+
+  String _getOverallDiscountHelperText(double baseSubtotal) {
+    final text = _overallDiscountCtrl.text.trim();
+    if (text.isEmpty) return 'Enter amount (৳) or percentage (%) e.g. 10%';
+    final parsed = _parseDiscount(text);
+    if (parsed.value <= 0) return 'Invalid discount format';
+    if (parsed.type == 'percent') {
+      final tkVal = _calculateOverallDiscountTk(baseSubtotal);
+      return '${parsed.value.toStringAsFixed(parsed.value % 1 == 0 ? 0 : 1)}% discount = ৳ ${tkVal.toStringAsFixed(2)} off';
+    }
+    return 'Fixed ৳ ${parsed.value.toStringAsFixed(2)} discount off';
   }
 
   void _showProductDiscountDialog(BuildContext context, CartItemEntity cartItem) {
@@ -193,12 +215,12 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
 
         final cartItemsList = posState.cartItems.isNotEmpty ? posState.cartItems : (widget.cartItems ?? []);
         final double rawSubtotal = cartItemsList.fold<double>(0.0, (sum, i) => sum + i.rawSubtotal);
-        final double productDiscounts = cartItemsList.fold<double>(0.0, (sum, i) => sum + i.discount);
+        final double productDiscounts = cartItemsList.fold<double>(0.0, (sum, i) => sum + i.discountAmount);
         final double subtotalAfterItemDiscounts = (rawSubtotal - productDiscounts).clamp(0.0, double.infinity);
 
-        final overallDisc = double.tryParse(_overallDiscountCtrl.text) ?? widget.discount ?? 0.0;
-        final calcNetTotal = (subtotalAfterItemDiscounts - overallDisc).clamp(0.0, double.infinity);
-        final totalDiscounts = productDiscounts + overallDisc;
+        final double overallDiscInTk = _calculateOverallDiscountTk(subtotalAfterItemDiscounts);
+        final double calcNetTotal = (subtotalAfterItemDiscounts - overallDiscInTk).clamp(0.0, double.infinity);
+        final double totalDiscounts = productDiscounts + overallDiscInTk;
 
         final itemCount = posState.totalItemCount > 0
             ? posState.totalItemCount
@@ -370,8 +392,10 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                                 setState(() {});
                               },
                               decoration: InputDecoration(
-                                labelText: 'Overall Discount',
+                                labelText: 'Overall Discount (৳ or %)',
                                 hintText: 'e.g. 10 or 10%',
+                                helperText: _getOverallDiscountHelperText(subtotalAfterItemDiscounts),
+                                helperMaxLines: 2,
                                 prefixIcon: const Icon(Icons.percent_rounded, size: 20),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -458,6 +482,9 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
                   child: FilledButton(
                     onPressed: () {
+                      // Sync overall calculated discount (in Tk) with PosBloc state
+                      InjectionContainer.posBloc.add(ApplyDiscountEvent(discountAmount: overallDiscInTk));
+
                       final double finalPaid;
                       if (_paymentMethod.toLowerCase() == 'due') {
                         finalPaid = 0.0;
