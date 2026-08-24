@@ -50,6 +50,14 @@ import '../../features/branches/domain/repositories/branch_repository.dart';
 import '../../features/branches/domain/usecases/create_branch_usecase.dart';
 import '../../features/branches/domain/usecases/get_branches_usecase.dart';
 import '../../features/branches/presentation/bloc/branch_bloc.dart';
+import '../../features/expenses/data/datasources/expenses_remote_data_source.dart';
+import '../../features/expenses/data/repositories/expenses_repository_impl.dart';
+import '../../features/expenses/domain/repositories/expenses_repository.dart';
+import '../../features/expenses/domain/usecases/create_expense_usecase.dart';
+import '../../features/expenses/domain/usecases/delete_expense_usecase.dart';
+import '../../features/expenses/domain/usecases/get_expenses_usecase.dart';
+import '../../features/expenses/domain/usecases/update_expense_usecase.dart';
+import '../../features/expenses/presentation/bloc/expenses_bloc.dart';
 import '../../features/reports/data/datasources/reports_local_data_source.dart';
 import '../../features/reports/data/datasources/reports_remote_data_source.dart';
 import '../../features/reports/data/repositories/reports_repository_impl.dart';
@@ -123,6 +131,7 @@ class InjectionContainer {
   static late final SuperAdminRemoteDataSource superAdminRemoteDataSource;
   static late final RecycleBinRemoteDataSource recycleBinRemoteDataSource;
   static late final BranchRemoteDataSource branchRemoteDataSource;
+  static late final ExpensesRemoteDataSource expensesRemoteDataSource;
 
   // Repositories
   static late final AuthRepository authRepository;
@@ -136,6 +145,7 @@ class InjectionContainer {
   static late final SubscriptionRepository subscriptionRepository;
   static late final RecycleBinRepository recycleBinRepository;
   static late final BranchRepository branchRepository;
+  static late final ExpensesRepository expensesRepository;
 
   // Use Cases
   static late final LoginUseCase loginUseCase;
@@ -186,6 +196,11 @@ class InjectionContainer {
   static late final GetBranchesUseCase getBranchesUseCase;
   static late final CreateBranchUseCase createBranchUseCase;
 
+  static late final GetExpensesUseCase getExpensesUseCase;
+  static late final CreateExpenseUseCase createExpenseUseCase;
+  static late final UpdateExpenseUseCase updateExpenseUseCase;
+  static late final DeleteExpenseUseCase deleteExpenseUseCase;
+
   // BLoC State Controllers
   static late final AuthBloc authBloc;
   static late final InventoryBloc inventoryBloc;
@@ -199,6 +214,7 @@ class InjectionContainer {
   static late final SuperAdminBloc superAdminBloc;
   static late final RecycleBinBloc recycleBinBloc;
   static late final BranchBloc branchBloc;
+  static late final ExpensesBloc expensesBloc;
 
   /// Initializes all singletons and dependencies.
   static Future<void> init() async {
@@ -234,6 +250,7 @@ class InjectionContainer {
     superAdminRemoteDataSource = SuperAdminRemoteDataSourceImpl(apiClient);
     recycleBinRemoteDataSource = RecycleBinRemoteDataSourceImpl(apiClient);
     branchRemoteDataSource = BranchRemoteDataSourceImpl(apiClient);
+    expensesRemoteDataSource = ExpensesRemoteDataSourceImpl(apiClient);
 
     // 3. Repositories
     authRepository = AuthRepositoryImpl(
@@ -290,6 +307,10 @@ class InjectionContainer {
       remoteDataSource: branchRemoteDataSource,
     );
 
+    expensesRepository = ExpensesRepositoryImpl(
+      remoteDataSource: expensesRemoteDataSource,
+    );
+
     // UseCases
     loginUseCase = LoginUseCase(authRepository);
     registerUseCase = RegisterUseCase(authRepository);
@@ -338,6 +359,11 @@ class InjectionContainer {
 
     getBranchesUseCase = GetBranchesUseCase(branchRepository);
     createBranchUseCase = CreateBranchUseCase(branchRepository);
+
+    getExpensesUseCase = GetExpensesUseCase(expensesRepository);
+    createExpenseUseCase = CreateExpenseUseCase(expensesRepository);
+    updateExpenseUseCase = UpdateExpenseUseCase(expensesRepository);
+    deleteExpenseUseCase = DeleteExpenseUseCase(expensesRepository);
 
     // 4. BLoC State Management Instances
     authBloc = AuthBloc(
@@ -414,6 +440,13 @@ class InjectionContainer {
     branchBloc = BranchBloc(
       getBranchesUseCase: getBranchesUseCase,
       createBranchUseCase: createBranchUseCase,
+    );
+
+    expensesBloc = ExpensesBloc(
+      getExpensesUseCase: getExpensesUseCase,
+      createExpenseUseCase: createExpenseUseCase,
+      updateExpenseUseCase: updateExpenseUseCase,
+      deleteExpenseUseCase: deleteExpenseUseCase,
     );
   }
 }

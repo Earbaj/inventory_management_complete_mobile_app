@@ -113,4 +113,14 @@ class ApiEndpoints {
 
   /// Endpoint for branches list & creation (GET / POST /api/branches) - Authenticated
   static String get branches => '$baseUrl/api/branches';
+
+  // ===========================================================================
+  // SHOP EXPENSES ENDPOINTS
+  // ===========================================================================
+
+  /// Endpoint for shop expenses list & creation (GET / POST /api/expenses) - Authenticated
+  static String get expenses => '$baseUrl/api/expenses';
+
+  /// Helper for expense details, update & delete (GET / PUT / DELETE /api/expenses/:id) - Authenticated
+  static String expenseById(String id) => '$baseUrl/api/expenses/$id';
 }

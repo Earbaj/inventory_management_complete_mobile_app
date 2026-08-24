@@ -7,6 +7,9 @@ import 'package:inventory_management_complete/features/staff_managers/presentati
 import 'package:inventory_management_complete/features/recycle_bin/presentation/bloc/recycle_bin_bloc.dart';
 import 'package:inventory_management_complete/features/recycle_bin/presentation/bloc/recycle_bin_event.dart';
 
+import 'package:inventory_management_complete/features/expenses/presentation/bloc/expenses_bloc.dart';
+import 'package:inventory_management_complete/features/expenses/presentation/bloc/expenses_event.dart';
+
 import 'core/di/injection_container.dart';
 import 'core/route/app_route.dart';
 import 'core/theme/app_theme.dart';
@@ -63,6 +66,9 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider<BranchBloc>(
           create: (context) => InjectionContainer.branchBloc..add(const FetchBranchesEvent()),
+        ),
+        BlocProvider<ExpensesBloc>(
+          create: (context) => InjectionContainer.expensesBloc..add(const FetchExpensesEvent()),
         ),
       ],
       child: MaterialApp.router(
