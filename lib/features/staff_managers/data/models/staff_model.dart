@@ -56,6 +56,7 @@ class StaffModel {
   final bool isActive;
   final String? createdAt;
   final String? password;
+  final String? branchId;
   final StaffPermissions permissions;
 
   const StaffModel({
@@ -67,6 +68,7 @@ class StaffModel {
     this.isActive = true,
     this.createdAt,
     this.password,
+    this.branchId,
     this.permissions = const StaffPermissions(),
   });
 
@@ -79,6 +81,7 @@ class StaffModel {
       role: json['role']?.toString() ?? 'manager',
       isActive: json['isActive'] ?? json['is_active'] ?? json['active'] ?? true,
       createdAt: json['createdAt']?.toString() ?? json['created_at']?.toString(),
+      branchId: json['branchId']?.toString() ?? json['branch_id']?.toString(),
       permissions: json['permissions'] is Map<String, dynamic>
           ? StaffPermissions.fromJson(json['permissions'])
           : const StaffPermissions(),
@@ -94,6 +97,7 @@ class StaffModel {
       'role': role,
       'isActive': isActive,
       if (password != null && password!.isNotEmpty) 'password': password,
+      if (branchId != null && branchId!.isNotEmpty) 'branchId': branchId,
       if (createdAt != null) 'createdAt': createdAt,
       'permissions': permissions.toJson(),
     };

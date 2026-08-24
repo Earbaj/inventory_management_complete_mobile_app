@@ -20,9 +20,9 @@ class ReportsRepositoryImpl implements ReportsRepository {
   });
 
   @override
-  Future<ReportSummaryEntity> getReportsSummary({DateTime? startDate, DateTime? endDate}) async {
+  Future<ReportSummaryEntity> getReportsSummary({DateTime? startDate, DateTime? endDate, String? branchId}) async {
     try {
-      final remoteModel = await remoteDataSource.getReportsSummary(startDate: startDate, endDate: endDate);
+      final remoteModel = await remoteDataSource.getReportsSummary(startDate: startDate, endDate: endDate, branchId: branchId);
       await localDataSource.cacheSummary(remoteModel);
       return ReportsMapper.modelToEntity(remoteModel);
     } catch (_) {
@@ -35,9 +35,9 @@ class ReportsRepositoryImpl implements ReportsRepository {
   }
 
   @override
-  Future<List<SaleEntity>> getInvoiceLogs({String? invoiceNoQuery, DateTime? startDate, DateTime? endDate}) async {
+  Future<List<SaleEntity>> getInvoiceLogs({String? invoiceNoQuery, DateTime? startDate, DateTime? endDate, String? branchId}) async {
     try {
-      final remoteModels = await remoteDataSource.getInvoiceLogs(query: invoiceNoQuery, startDate: startDate, endDate: endDate);
+      final remoteModels = await remoteDataSource.getInvoiceLogs(query: invoiceNoQuery, startDate: startDate, endDate: endDate, branchId: branchId);
       await posLocalDataSource.cacheSales(remoteModels);
       return remoteModels.map(PosMapper.saleModelToEntity).toList();
     } catch (_) {

@@ -222,6 +222,13 @@ class AppDrawer extends StatelessWidget {
                           currentRoute: currentRoute,
                         ),
                         _DrawerItem(
+                          title: 'Branches 🏢',
+                          icon: Icons.store_outlined,
+                          activeIcon: Icons.store_rounded,
+                          route: '/branches',
+                          currentRoute: currentRoute,
+                        ),
+                        _DrawerItem(
                           title: 'Recycle Bin ♻️',
                           icon: Icons.delete_sweep_outlined,
                           activeIcon: Icons.delete_sweep_rounded,

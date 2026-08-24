@@ -5,6 +5,7 @@ import '../../features/auth/presentation/view/login_screen.dart';
 import '../../features/auth/presentation/view/register_screen.dart';
 import '../../features/auth/presentation/view/forgot_password_screen.dart';
 import '../../features/auth/presentation/view/reset_password_screen.dart';
+import '../../features/branches/presentation/view/branch_management_screen.dart';
 import '../../features/customers/presentation/view/customers_screen.dart';
 import '../../features/dashboard/presentation/view/dashboard_screen.dart';
 import '../../features/inventory/presentation/view/inventory_screen.dart';
@@ -124,6 +125,13 @@ class AppRoute {
             path: '/staff-managers',
             builder: (context, state) {
               return const StaffManagersScreen();
+            },
+          ),
+
+          GoRoute(
+            path: '/branches',
+            builder: (context, state) {
+              return const BranchManagementScreen();
             },
           ),
 

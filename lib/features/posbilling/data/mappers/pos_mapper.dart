@@ -42,6 +42,8 @@ class PosMapper {
       isReturned: model.isReturned,
       createdAt: model.createdAt != null ? DateTime.tryParse(model.createdAt!) ?? DateTime.now() : DateTime.now(),
       servedBy: model.servedBy,
+      branchId: model.branchId,
+      branchName: model.branchName,
     );
   }
 
@@ -61,6 +63,8 @@ class PosMapper {
       isReturned: entity.isReturned,
       createdAt: entity.createdAt.toIso8601String(),
       servedBy: entity.servedBy,
+      branchId: entity.branchId,
+      branchName: entity.branchName,
     );
   }
 }

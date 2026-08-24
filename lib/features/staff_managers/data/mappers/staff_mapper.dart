@@ -13,6 +13,7 @@ class StaffMapper {
       isActive: model.isActive,
       createdAt: model.createdAt != null ? DateTime.tryParse(model.createdAt!) ?? DateTime.now() : DateTime.now(),
       password: model.password,
+      branchId: model.branchId,
       permissions: model.permissions,
     );
   }
@@ -27,6 +28,7 @@ class StaffMapper {
       isActive: entity.isActive,
       createdAt: entity.createdAt.toIso8601String(),
       password: entity.password,
+      branchId: entity.branchId,
       permissions: entity.permissions,
     );
   }

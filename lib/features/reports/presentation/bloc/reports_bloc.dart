@@ -39,11 +39,13 @@ class ReportsBloc extends Bloc<ReportsEvent, ReportsState> {
       final summary = await getReportsSummaryUseCase(
         startDate: event.startDate,
         endDate: event.endDate,
+        branchId: event.branchId,
       );
       final logs = await getInvoiceLogsUseCase(
         invoiceNoQuery: null,
         startDate: event.startDate,
         endDate: event.endDate,
+        branchId: event.branchId,
       );
 
       _cachedSummary = summary;

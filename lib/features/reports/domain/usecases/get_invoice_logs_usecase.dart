@@ -7,11 +7,12 @@ class GetInvoiceLogsUseCase {
 
   const GetInvoiceLogsUseCase(this.repository);
 
-  Future<List<SaleEntity>> call({String? invoiceNoQuery, DateTime? startDate, DateTime? endDate}) {
+  Future<List<SaleEntity>> call({String? invoiceNoQuery, DateTime? startDate, DateTime? endDate, String? branchId}) {
     return repository.getInvoiceLogs(
       invoiceNoQuery: invoiceNoQuery,
       startDate: startDate,
       endDate: endDate,
+      branchId: branchId,
     );
   }
 }

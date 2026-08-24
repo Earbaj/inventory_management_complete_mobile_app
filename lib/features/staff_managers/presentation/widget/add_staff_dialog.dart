@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/error/failures.dart';
+import '../../../branches/domain/entities/branch_entity.dart';
 import '../../domain/entities/staff_entity.dart';
 import '../../staff_manager_model.dart';
 import '../bloc/staff_event.dart';
@@ -23,11 +24,45 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _branchController = TextEditingController(text: 'Main Branch');
 
   StaffRole _selectedRole = StaffRole.manager;
   bool _obscurePassword = true;
   bool isSaving = false;
+  bool _isLoadingBranches = false;
+  List<BranchEntity> _branches = [];
+  String? _selectedBranchId;
+  String? _selectedBranchName;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBranches();
+  }
+
+  Future<void> _loadBranches() async {
+    setState(() {
+      _isLoadingBranches = true;
+    });
+    try {
+      final list = await InjectionContainer.getBranchesUseCase();
+      if (mounted) {
+        setState(() {
+          _branches = list;
+          if (list.isNotEmpty) {
+            _selectedBranchId = list.first.id;
+            _selectedBranchName = list.first.name;
+          }
+          _isLoadingBranches = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isLoadingBranches = false;
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -35,7 +70,6 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
     _emailController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
-    _branchController.dispose();
     super.dispose();
   }
 
@@ -62,6 +96,7 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
       phone: _phoneController.text.trim(),
       password: _passwordController.text.trim(),
       role: roleStr,
+      branchId: _selectedBranchId,
       isActive: true,
       createdAt: DateTime.now(),
     );
@@ -80,9 +115,7 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
             role: _selectedRole,
             status: StaffStatus.active,
             joinedDate: savedStaff.createdAt,
-            assignedBranch: _branchController.text.trim().isEmpty
-                ? 'Main Branch'
-                : _branchController.text.trim(),
+            assignedBranch: _selectedBranchName ?? 'Main Branch',
             salesServedCount: 0,
           ),
         );
@@ -349,15 +382,43 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
                       ),
                       const SizedBox(height: 14),
 
-                      // Branch / Department
-                      TextFormField(
-                        controller: _branchController,
-                        decoration: const InputDecoration(
-                          labelText: 'Assigned Branch / Dept',
-                          hintText: 'e.g. Main Outlet',
-                          prefixIcon: Icon(Icons.store_outlined),
+                      // Select Branch Dropdown
+                      if (_isLoadingBranches)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8.0),
+                          child: LinearProgressIndicator(),
+                        )
+                      else if (_branches.isNotEmpty)
+                        DropdownButtonFormField<String>(
+                          value: _selectedBranchId,
+                          decoration: const InputDecoration(
+                            labelText: 'Select Branch *',
+                            prefixIcon: Icon(Icons.store_outlined),
+                          ),
+                          items: _branches.map((branch) {
+                            return DropdownMenuItem<String>(
+                              value: branch.id,
+                              child: Text(branch.name),
+                            );
+                          }).toList(),
+                          onChanged: (branchId) {
+                            if (branchId != null) {
+                              setState(() {
+                                _selectedBranchId = branchId;
+                                final b = _branches.firstWhere((element) => element.id == branchId);
+                                _selectedBranchName = b.name;
+                              });
+                            }
+                          },
+                        )
+                      else
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8.0),
+                          child: Text(
+                            'No branches created yet. (Main Branch will be assigned)',
+                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                          ),
                         ),
-                      ),
                       const SizedBox(height: 24),
 
                       // Actions

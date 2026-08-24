@@ -44,6 +44,12 @@ import '../../features/recycle_bin/domain/usecases/get_trash_items_usecase.dart'
 import '../../features/recycle_bin/domain/usecases/permanent_delete_trash_item_usecase.dart';
 import '../../features/recycle_bin/domain/usecases/restore_trash_item_usecase.dart';
 import '../../features/recycle_bin/presentation/bloc/recycle_bin_bloc.dart';
+import '../../features/branches/data/datasources/branch_remote_data_source.dart';
+import '../../features/branches/data/repositories/branch_repository_impl.dart';
+import '../../features/branches/domain/repositories/branch_repository.dart';
+import '../../features/branches/domain/usecases/create_branch_usecase.dart';
+import '../../features/branches/domain/usecases/get_branches_usecase.dart';
+import '../../features/branches/presentation/bloc/branch_bloc.dart';
 import '../../features/reports/data/datasources/reports_local_data_source.dart';
 import '../../features/reports/data/datasources/reports_remote_data_source.dart';
 import '../../features/reports/data/repositories/reports_repository_impl.dart';
@@ -116,6 +122,7 @@ class InjectionContainer {
   static late final SubscriptionRemoteDataSource subscriptionRemoteDataSource;
   static late final SuperAdminRemoteDataSource superAdminRemoteDataSource;
   static late final RecycleBinRemoteDataSource recycleBinRemoteDataSource;
+  static late final BranchRemoteDataSource branchRemoteDataSource;
 
   // Repositories
   static late final AuthRepository authRepository;
@@ -128,6 +135,7 @@ class InjectionContainer {
   static late final StaffRepository staffRepository;
   static late final SubscriptionRepository subscriptionRepository;
   static late final RecycleBinRepository recycleBinRepository;
+  static late final BranchRepository branchRepository;
 
   // Use Cases
   static late final LoginUseCase loginUseCase;
@@ -175,6 +183,9 @@ class InjectionContainer {
   static late final RestoreTrashItemUseCase restoreTrashItemUseCase;
   static late final PermanentDeleteTrashItemUseCase permanentDeleteTrashItemUseCase;
 
+  static late final GetBranchesUseCase getBranchesUseCase;
+  static late final CreateBranchUseCase createBranchUseCase;
+
   // BLoC State Controllers
   static late final AuthBloc authBloc;
   static late final InventoryBloc inventoryBloc;
@@ -187,6 +198,7 @@ class InjectionContainer {
   static late final SubscriptionBloc subscriptionBloc;
   static late final SuperAdminBloc superAdminBloc;
   static late final RecycleBinBloc recycleBinBloc;
+  static late final BranchBloc branchBloc;
 
   /// Initializes all singletons and dependencies.
   static Future<void> init() async {
@@ -221,6 +233,7 @@ class InjectionContainer {
     subscriptionRemoteDataSource = SubscriptionRemoteDataSourceImpl(apiClient);
     superAdminRemoteDataSource = SuperAdminRemoteDataSourceImpl(apiClient);
     recycleBinRemoteDataSource = RecycleBinRemoteDataSourceImpl(apiClient);
+    branchRemoteDataSource = BranchRemoteDataSourceImpl(apiClient);
 
     // 3. Repositories
     authRepository = AuthRepositoryImpl(
@@ -273,6 +286,10 @@ class InjectionContainer {
       remoteDataSource: recycleBinRemoteDataSource,
     );
 
+    branchRepository = BranchRepositoryImpl(
+      remoteDataSource: branchRemoteDataSource,
+    );
+
     // UseCases
     loginUseCase = LoginUseCase(authRepository);
     registerUseCase = RegisterUseCase(authRepository);
@@ -318,6 +335,9 @@ class InjectionContainer {
     getTrashItemsUseCase = GetTrashItemsUseCase(recycleBinRepository);
     restoreTrashItemUseCase = RestoreTrashItemUseCase(recycleBinRepository);
     permanentDeleteTrashItemUseCase = PermanentDeleteTrashItemUseCase(recycleBinRepository);
+
+    getBranchesUseCase = GetBranchesUseCase(branchRepository);
+    createBranchUseCase = CreateBranchUseCase(branchRepository);
 
     // 4. BLoC State Management Instances
     authBloc = AuthBloc(
@@ -389,6 +409,11 @@ class InjectionContainer {
       getTrashItemsUseCase: getTrashItemsUseCase,
       restoreTrashItemUseCase: restoreTrashItemUseCase,
       permanentDeleteTrashItemUseCase: permanentDeleteTrashItemUseCase,
+    );
+
+    branchBloc = BranchBloc(
+      getBranchesUseCase: getBranchesUseCase,
+      createBranchUseCase: createBranchUseCase,
     );
   }
 }

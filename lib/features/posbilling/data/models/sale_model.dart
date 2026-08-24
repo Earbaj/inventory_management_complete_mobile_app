@@ -17,6 +17,8 @@ class SaleModel {
   final String isReturned;
   final String? createdAt;
   final String servedBy;
+  final String? branchId;
+  final String? branchName;
 
   const SaleModel({
     required this.id,
@@ -33,6 +35,8 @@ class SaleModel {
     this.isReturned = 'none',
     this.createdAt,
     this.servedBy = 'Cashier',
+    this.branchId,
+    this.branchName,
   });
 
   static double _parseDouble(dynamic val) {
@@ -110,6 +114,8 @@ class SaleModel {
       isReturned: json['isReturned']?.toString() ?? json['is_returned']?.toString() ?? 'none',
       createdAt: json['date']?.toString() ?? json['createdAt']?.toString() ?? json['created_at']?.toString(),
       servedBy: servedByName,
+      branchId: json['branchId']?.toString() ?? json['branch_id']?.toString() ?? (json['branch'] is Map ? json['branch']['id']?.toString() : null),
+      branchName: json['branchName']?.toString() ?? json['branch_name']?.toString() ?? (json['branch'] is Map ? json['branch']['name']?.toString() : null),
     );
   }
 

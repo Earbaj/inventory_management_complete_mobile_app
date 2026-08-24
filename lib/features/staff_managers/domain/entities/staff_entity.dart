@@ -10,6 +10,7 @@ class StaffEntity {
   final bool isActive;
   final DateTime createdAt;
   final String? password;
+  final String? branchId;
   final StaffPermissions permissions;
 
   const StaffEntity({
@@ -21,6 +22,7 @@ class StaffEntity {
     this.isActive = true,
     required this.createdAt,
     this.password,
+    this.branchId,
     this.permissions = const StaffPermissions(),
   });
 
@@ -33,6 +35,7 @@ class StaffEntity {
     bool? isActive,
     DateTime? createdAt,
     String? password,
+    String? branchId,
     StaffPermissions? permissions,
   }) {
     return StaffEntity(
@@ -44,6 +47,7 @@ class StaffEntity {
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       password: password ?? this.password,
+      branchId: branchId ?? this.branchId,
       permissions: permissions ?? this.permissions,
     );
   }

@@ -85,6 +85,17 @@ class PdfExportService {
                         fontWeight: pw.FontWeight.bold,
                       ),
                     ),
+                    if (sale.branchName != null && sale.branchName!.isNotEmpty) ...[
+                      pw.SizedBox(height: 2),
+                      pw.Text(
+                        'Branch: ${sale.branchName}',
+                        style: pw.TextStyle(
+                          fontSize: 11,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.blue800,
+                        ),
+                      ),
+                    ],
                     if (shopAddress.isNotEmpty) ...[
                       pw.SizedBox(height: 4),
                       pw.Text(

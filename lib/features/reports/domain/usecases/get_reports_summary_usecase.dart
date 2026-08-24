@@ -7,7 +7,7 @@ class GetReportsSummaryUseCase {
 
   const GetReportsSummaryUseCase(this.repository);
 
-  Future<ReportSummaryEntity> call({DateTime? startDate, DateTime? endDate}) {
-    return repository.getReportsSummary(startDate: startDate, endDate: endDate);
+  Future<ReportSummaryEntity> call({DateTime? startDate, DateTime? endDate, String? branchId}) {
+    return repository.getReportsSummary(startDate: startDate, endDate: endDate, branchId: branchId);
   }
 }

@@ -4,6 +4,9 @@ import 'package:inventory_management_complete/features/reports/presentation/bloc
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../branches/domain/entities/branch_entity.dart';
 import '../bloc/reports_event.dart';
 import '../bloc/reports_state.dart';
 import '../widget/invoice_logs_tab.dart';
@@ -23,17 +26,30 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
 
   DateFilterType _selectedDateFilter = DateFilterType.allTime;
   DateTimeRange? _customDateRange;
+  String? _selectedBranchId;
+  List<BranchEntity> _branches = [];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    // Dispatch initial fetch to ReportsBloc
+    _loadBranches();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        context.read<ReportsBloc>().add(const FetchReportsEvent());
+        context.read<ReportsBloc>().add(FetchReportsEvent(branchId: _selectedBranchId));
       }
     });
+  }
+
+  Future<void> _loadBranches() async {
+    try {
+      final list = await InjectionContainer.getBranchesUseCase();
+      if (mounted) {
+        setState(() {
+          _branches = list;
+        });
+      }
+    } catch (_) {}
   }
 
   @override
@@ -44,7 +60,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
   }
 
   void _onSearchChanged(BuildContext context, String query) {
-    context.read<ReportsBloc>().add(FetchReportsEvent(searchQuery: query));
+    context.read<ReportsBloc>().add(FetchReportsEvent(searchQuery: query, branchId: _selectedBranchId));
   }
 
   void _applyDateFilter(BuildContext context, DateFilterType filter) {
@@ -71,6 +87,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
     context.read<ReportsBloc>().add(FilterReportsByDateRangeEvent(
       startDate: start,
       endDate: end,
+      branchId: _selectedBranchId,
     ));
   }
 
@@ -138,6 +155,72 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
 
           return Column(
             children: [
+              // BRANCH FILTER DROPDOWN
+              if (_branches.isNotEmpty)
+                BlocSelector<AuthBloc, AuthState, bool>(
+                  selector: (state) => state is AuthenticatedState && (state.user?.role.toLowerCase() == 'admin' || state.user?.role.toLowerCase() == 'owner'),
+                  builder: (context, isAdmin) {
+                    if (!isAdmin) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String?>(
+                            value: _selectedBranchId,
+                            isExpanded: true,
+                            hint: const Row(
+                              children: [
+                                Icon(Icons.store_rounded, size: 20, color: Colors.blue),
+                                SizedBox(width: 8),
+                                Text('All Branches (Shop Aggregate)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                              ],
+                            ),
+                            items: [
+                              const DropdownMenuItem<String?>(
+                                value: null,
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.store_rounded, size: 20, color: Colors.blue),
+                                    SizedBox(width: 8),
+                                    Text('All Branches (Shop Aggregate)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                  ],
+                                ),
+                              ),
+                              ..._branches.map((b) {
+                                return DropdownMenuItem<String?>(
+                                  value: b.id,
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.location_on_outlined, size: 18, color: Colors.indigo),
+                                      const SizedBox(width: 8),
+                                      Text(b.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                    ],
+                                  ),
+                                );
+                              }),
+                            ],
+                            onChanged: (branchId) {
+                              setState(() {
+                                _selectedBranchId = branchId;
+                              });
+                              context.read<ReportsBloc>().add(FetchReportsEvent(
+                                searchQuery: _searchController.text,
+                                branchId: branchId,
+                              ));
+                            },
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+
               // DATE FILTER CHIPS
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,

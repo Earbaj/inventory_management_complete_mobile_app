@@ -6,8 +6,8 @@ import '../../../posbilling/data/models/sale_model.dart';
 import '../models/report_summary_model.dart';
 
 abstract class ReportsRemoteDataSource {
-  Future<ReportSummaryModel> getReportsSummary({DateTime? startDate, DateTime? endDate});
-  Future<List<SaleModel>> getInvoiceLogs({int page = 1, int limit = 20, String? query, DateTime? startDate, DateTime? endDate});
+  Future<ReportSummaryModel> getReportsSummary({DateTime? startDate, DateTime? endDate, String? branchId});
+  Future<List<SaleModel>> getInvoiceLogs({int page = 1, int limit = 20, String? query, DateTime? startDate, DateTime? endDate, String? branchId});
 }
 
 class ReportsRemoteDataSourceImpl implements ReportsRemoteDataSource {
@@ -16,14 +16,15 @@ class ReportsRemoteDataSourceImpl implements ReportsRemoteDataSource {
   ReportsRemoteDataSourceImpl(this.apiClient);
 
   @override
-  Future<ReportSummaryModel> getReportsSummary({DateTime? startDate, DateTime? endDate}) async {
-    developer.log('📊 [ReportsRemoteDataSource] getReportsSummary() called (startDate: $startDate, endDate: $endDate)', name: 'ReportsRemoteDataSource');
+  Future<ReportSummaryModel> getReportsSummary({DateTime? startDate, DateTime? endDate, String? branchId}) async {
+    developer.log('📊 [ReportsRemoteDataSource] getReportsSummary() called (startDate: $startDate, endDate: $endDate, branchId: $branchId)', name: 'ReportsRemoteDataSource');
     try {
       final response = await apiClient.get(
         ApiEndpoints.reportsSales,
         queryParameters: {
           if (startDate != null) 'startDate': startDate.toIso8601String(),
           if (endDate != null) 'endDate': endDate.toIso8601String(),
+          if (branchId != null && branchId.isNotEmpty) 'branchId': branchId,
         },
       );
 
@@ -32,14 +33,19 @@ class ReportsRemoteDataSourceImpl implements ReportsRemoteDataSource {
     } catch (e) {
       developer.log('⚠️ [ReportsRemoteDataSource] /api/reports/sales failed ($e). Attempting /api/dashboard/stats...', name: 'ReportsRemoteDataSource');
       try {
-        final response = await apiClient.get(ApiEndpoints.dashboardStats);
+        final response = await apiClient.get(
+          ApiEndpoints.dashboardStats,
+          queryParameters: {
+            if (branchId != null && branchId.isNotEmpty) 'branchId': branchId,
+          },
+        );
         developer.log('✅ [ReportsRemoteDataSource] getReportsSummary() success from ${ApiEndpoints.dashboardStats}.', name: 'ReportsRemoteDataSource');
         return ReportSummaryModel.fromJson(response is Map<String, dynamic> ? response : {});
       } catch (e2, stackTrace) {
         developer.log('⚠️ [ReportsRemoteDataSource] Backend summary endpoints failed. Calculating summary metrics locally from sales logs...', name: 'ReportsRemoteDataSource', error: e2, stackTrace: stackTrace);
 
         // Fallback calculation from sales logs if endpoints fail
-        final salesLogs = await getInvoiceLogs(startDate: startDate, endDate: endDate);
+        final salesLogs = await getInvoiceLogs(startDate: startDate, endDate: endDate, branchId: branchId);
         final double totalRev = salesLogs.fold(0.0, (sum, s) => sum + s.netTotal);
         final double totalDisc = salesLogs.fold(0.0, (sum, s) => sum + s.discountAmount);
         final double totalD = salesLogs.fold(0.0, (sum, s) => sum + s.dueAmount);
@@ -67,8 +73,9 @@ class ReportsRemoteDataSourceImpl implements ReportsRemoteDataSource {
     String? query,
     DateTime? startDate,
     DateTime? endDate,
+    String? branchId,
   }) async {
-    developer.log('📊 [ReportsRemoteDataSource] getInvoiceLogs() page: $page, limit: $limit, query: "$query"', name: 'ReportsRemoteDataSource');
+    developer.log('📊 [ReportsRemoteDataSource] getInvoiceLogs() page: $page, limit: $limit, query: "$query", branchId: "$branchId"', name: 'ReportsRemoteDataSource');
     try {
       final response = await apiClient.get(
         '${EnvConfig.apiBaseUrl}/api/sales',
@@ -78,6 +85,7 @@ class ReportsRemoteDataSourceImpl implements ReportsRemoteDataSource {
           if (query != null && query.isNotEmpty) 'search': query,
           if (startDate != null) 'startDate': startDate.toIso8601String(),
           if (endDate != null) 'endDate': endDate.toIso8601String(),
+          if (branchId != null && branchId.isNotEmpty) 'branchId': branchId,
         },
       );
 

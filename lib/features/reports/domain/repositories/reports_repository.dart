@@ -4,8 +4,8 @@ import '../entities/report_summary_entity.dart';
 /// Abstract Reports Repository Contract
 abstract class ReportsRepository {
   /// Fetches overall reports summary metrics (GET /api/reports/summary).
-  Future<ReportSummaryEntity> getReportsSummary({DateTime? startDate, DateTime? endDate});
+  Future<ReportSummaryEntity> getReportsSummary({DateTime? startDate, DateTime? endDate, String? branchId});
 
   /// Fetches sales invoice transaction logs (GET /api/sales).
-  Future<List<SaleEntity>> getInvoiceLogs({String? invoiceNoQuery, DateTime? startDate, DateTime? endDate});
+  Future<List<SaleEntity>> getInvoiceLogs({String? invoiceNoQuery, DateTime? startDate, DateTime? endDate, String? branchId});
 }

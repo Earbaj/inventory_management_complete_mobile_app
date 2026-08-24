@@ -106,4 +106,11 @@ class ApiEndpoints {
 
   /// Permanently hard-delete item (DELETE /api/trash/permanent/:entityType/:id) - Shop Admin Only
   static String trashPermanent(String entityType, String id) => '$baseUrl/api/trash/permanent/$entityType/$id';
+
+  // ===========================================================================
+  // BRANCH MANAGEMENT ENDPOINTS
+  // ===========================================================================
+
+  /// Endpoint for branches list & creation (GET / POST /api/branches) - Authenticated
+  static String get branches => '$baseUrl/api/branches';
 }

@@ -20,6 +20,8 @@ import '../widgets/sales_chart.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/top_selling_items.dart';
 
+import '../../../branches/domain/entities/branch_entity.dart';
+
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -29,6 +31,8 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAliveClientMixin {
   String selectedPeriod = 'This Month';
+  String? _selectedBranchId;
+  List<BranchEntity> _branches = [];
 
   @override
   bool get wantKeepAlive => true;
@@ -39,6 +43,18 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
     context.read<ReportsBloc>().add(const FetchReportsEvent());
     context.read<InventoryBloc>().add(const FetchInventoryItemsEvent());
     context.read<CustomerBloc>().add(const FetchCustomersEvent());
+    _loadBranches();
+  }
+
+  Future<void> _loadBranches() async {
+    try {
+      final list = await InjectionContainer.getBranchesUseCase();
+      if (mounted) {
+        setState(() {
+          _branches = list;
+        });
+      }
+    } catch (_) {}
   }
 
   String getGreeting() {
@@ -110,7 +126,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                         IconButton(
                           onPressed: () {
                             // Event Dispatching via context
-                            context.read<ReportsBloc>().add(const FetchReportsEvent());
+                            context.read<ReportsBloc>().add(FetchReportsEvent(branchId: _selectedBranchId));
                             context.read<InventoryBloc>().add(const FetchInventoryItemsEvent());
                             context.read<CustomerBloc>().add(const FetchCustomersEvent());
                           },
@@ -120,6 +136,65 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                     ),
                   ),
                 ),
+
+                // ADMIN BRANCH FILTER DROPDOWN
+                if (isAdmin && _branches.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String?>(
+                            value: _selectedBranchId,
+                            isExpanded: true,
+                            hint: const Row(
+                              children: [
+                                Icon(Icons.store_rounded, size: 20, color: Colors.blue),
+                                SizedBox(width: 8),
+                                Text('All Branches (Shop Aggregate)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                              ],
+                            ),
+                            items: [
+                              const DropdownMenuItem<String?>(
+                                value: null,
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.store_rounded, size: 20, color: Colors.blue),
+                                    SizedBox(width: 8),
+                                    Text('All Branches (Shop Aggregate)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                  ],
+                                ),
+                              ),
+                              ..._branches.map((b) {
+                                return DropdownMenuItem<String?>(
+                                  value: b.id,
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.location_on_outlined, size: 18, color: Colors.indigo),
+                                      const SizedBox(width: 8),
+                                      Text(b.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                    ],
+                                  ),
+                                );
+                              }),
+                            ],
+                            onChanged: (branchId) {
+                              setState(() {
+                                _selectedBranchId = branchId;
+                              });
+                              context.read<ReportsBloc>().add(FetchReportsEvent(branchId: branchId));
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
 
                 // QUICK NAVIGATION ACTIONS
                 SliverToBoxAdapter(

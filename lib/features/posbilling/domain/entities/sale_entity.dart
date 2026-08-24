@@ -17,6 +17,8 @@ class SaleEntity {
   final String isReturned; // 'none', 'partially_returned', 'full' / 'returned'
   final DateTime createdAt;
   final String servedBy;
+  final String? branchId;
+  final String? branchName;
 
   const SaleEntity({
     required this.id,
@@ -33,6 +35,8 @@ class SaleEntity {
     this.isReturned = 'none',
     required this.createdAt,
     this.servedBy = 'Cashier',
+    this.branchId,
+    this.branchName,
   });
 
   /// Computed property: true if sale has an associated customer.
