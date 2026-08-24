@@ -236,6 +236,13 @@ class AppDrawer extends StatelessWidget {
                           currentRoute: currentRoute,
                         ),
                         _DrawerItem(
+                          title: 'AI Insights 🤖',
+                          icon: Icons.auto_awesome_outlined,
+                          activeIcon: Icons.auto_awesome_rounded,
+                          route: '/ai-insights',
+                          currentRoute: currentRoute,
+                        ),
+                        _DrawerItem(
                           title: 'Recycle Bin ♻️',
                           icon: Icons.delete_sweep_outlined,
                           activeIcon: Icons.delete_sweep_rounded,

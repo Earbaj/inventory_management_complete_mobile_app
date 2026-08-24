@@ -123,4 +123,17 @@ class ApiEndpoints {
 
   /// Helper for expense details, update & delete (GET / PUT / DELETE /api/expenses/:id) - Authenticated
   static String expenseById(String id) => '$baseUrl/api/expenses/$id';
+
+  // ===========================================================================
+  // GEMINI AI PREDICTIONS & INTELLIGENCE ENDPOINTS
+  // ===========================================================================
+
+  /// Endpoint for AI product demand forecasting (GET /api/ai/predict-demand) - Authenticated
+  static String get aiPredictDemand => '$baseUrl/api/ai/predict-demand';
+
+  /// Endpoint for AI customer credit score rating (GET /api/ai/customer-credit-score/:customerId) - Authenticated
+  static String aiCustomerCreditScore(String customerId) => '$baseUrl/api/ai/customer-credit-score/$customerId';
+
+  /// Endpoint for AI business growth advisor (GET /api/ai/business-advisor) - Authenticated
+  static String get aiBusinessAdvisor => '$baseUrl/api/ai/business-advisor';
 }

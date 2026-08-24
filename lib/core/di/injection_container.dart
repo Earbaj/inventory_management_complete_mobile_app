@@ -58,6 +58,13 @@ import '../../features/expenses/domain/usecases/delete_expense_usecase.dart';
 import '../../features/expenses/domain/usecases/get_expenses_usecase.dart';
 import '../../features/expenses/domain/usecases/update_expense_usecase.dart';
 import '../../features/expenses/presentation/bloc/expenses_bloc.dart';
+import '../../features/ai_insights/data/datasources/ai_insights_remote_data_source.dart';
+import '../../features/ai_insights/data/repositories/ai_insights_repository_impl.dart';
+import '../../features/ai_insights/domain/repositories/ai_insights_repository.dart';
+import '../../features/ai_insights/domain/usecases/get_business_advisor_usecase.dart';
+import '../../features/ai_insights/domain/usecases/get_customer_credit_score_usecase.dart';
+import '../../features/ai_insights/domain/usecases/get_predict_demand_usecase.dart';
+import '../../features/ai_insights/presentation/bloc/ai_insights_bloc.dart';
 import '../../features/reports/data/datasources/reports_local_data_source.dart';
 import '../../features/reports/data/datasources/reports_remote_data_source.dart';
 import '../../features/reports/data/repositories/reports_repository_impl.dart';
@@ -132,6 +139,7 @@ class InjectionContainer {
   static late final RecycleBinRemoteDataSource recycleBinRemoteDataSource;
   static late final BranchRemoteDataSource branchRemoteDataSource;
   static late final ExpensesRemoteDataSource expensesRemoteDataSource;
+  static late final AiInsightsRemoteDataSource aiInsightsRemoteDataSource;
 
   // Repositories
   static late final AuthRepository authRepository;
@@ -146,6 +154,7 @@ class InjectionContainer {
   static late final RecycleBinRepository recycleBinRepository;
   static late final BranchRepository branchRepository;
   static late final ExpensesRepository expensesRepository;
+  static late final AiInsightsRepository aiInsightsRepository;
 
   // Use Cases
   static late final LoginUseCase loginUseCase;
@@ -201,6 +210,10 @@ class InjectionContainer {
   static late final UpdateExpenseUseCase updateExpenseUseCase;
   static late final DeleteExpenseUseCase deleteExpenseUseCase;
 
+  static late final GetPredictDemandUseCase getPredictDemandUseCase;
+  static late final GetCustomerCreditScoreUseCase getCustomerCreditScoreUseCase;
+  static late final GetBusinessAdvisorUseCase getBusinessAdvisorUseCase;
+
   // BLoC State Controllers
   static late final AuthBloc authBloc;
   static late final InventoryBloc inventoryBloc;
@@ -215,6 +228,7 @@ class InjectionContainer {
   static late final RecycleBinBloc recycleBinBloc;
   static late final BranchBloc branchBloc;
   static late final ExpensesBloc expensesBloc;
+  static late final AiInsightsBloc aiInsightsBloc;
 
   /// Initializes all singletons and dependencies.
   static Future<void> init() async {
@@ -251,6 +265,7 @@ class InjectionContainer {
     recycleBinRemoteDataSource = RecycleBinRemoteDataSourceImpl(apiClient);
     branchRemoteDataSource = BranchRemoteDataSourceImpl(apiClient);
     expensesRemoteDataSource = ExpensesRemoteDataSourceImpl(apiClient);
+    aiInsightsRemoteDataSource = AiInsightsRemoteDataSourceImpl(apiClient);
 
     // 3. Repositories
     authRepository = AuthRepositoryImpl(
@@ -311,6 +326,10 @@ class InjectionContainer {
       remoteDataSource: expensesRemoteDataSource,
     );
 
+    aiInsightsRepository = AiInsightsRepositoryImpl(
+      remoteDataSource: aiInsightsRemoteDataSource,
+    );
+
     // UseCases
     loginUseCase = LoginUseCase(authRepository);
     registerUseCase = RegisterUseCase(authRepository);
@@ -364,6 +383,10 @@ class InjectionContainer {
     createExpenseUseCase = CreateExpenseUseCase(expensesRepository);
     updateExpenseUseCase = UpdateExpenseUseCase(expensesRepository);
     deleteExpenseUseCase = DeleteExpenseUseCase(expensesRepository);
+
+    getPredictDemandUseCase = GetPredictDemandUseCase(aiInsightsRepository);
+    getCustomerCreditScoreUseCase = GetCustomerCreditScoreUseCase(aiInsightsRepository);
+    getBusinessAdvisorUseCase = GetBusinessAdvisorUseCase(aiInsightsRepository);
 
     // 4. BLoC State Management Instances
     authBloc = AuthBloc(
@@ -448,5 +471,13 @@ class InjectionContainer {
       updateExpenseUseCase: updateExpenseUseCase,
       deleteExpenseUseCase: deleteExpenseUseCase,
     );
+
+    aiInsightsBloc = AiInsightsBloc(
+      getPredictDemandUseCase: getPredictDemandUseCase,
+      getCustomerCreditScoreUseCase: getCustomerCreditScoreUseCase,
+      getBusinessAdvisorUseCase: getBusinessAdvisorUseCase,
+    );
+  }
+}
   }
 }

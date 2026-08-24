@@ -9,6 +9,8 @@ import 'package:inventory_management_complete/features/recycle_bin/presentation/
 
 import 'package:inventory_management_complete/features/expenses/presentation/bloc/expenses_bloc.dart';
 import 'package:inventory_management_complete/features/expenses/presentation/bloc/expenses_event.dart';
+import 'package:inventory_management_complete/features/ai_insights/presentation/bloc/ai_insights_bloc.dart';
+import 'package:inventory_management_complete/features/ai_insights/presentation/bloc/ai_insights_event.dart';
 
 import 'core/di/injection_container.dart';
 import 'core/route/app_route.dart';
@@ -69,6 +71,9 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider<ExpensesBloc>(
           create: (context) => InjectionContainer.expensesBloc..add(const FetchExpensesEvent()),
+        ),
+        BlocProvider<AiInsightsBloc>(
+          create: (context) => InjectionContainer.aiInsightsBloc..add(const FetchAllAiInsightsEvent()),
         ),
       ],
       child: MaterialApp.router(
