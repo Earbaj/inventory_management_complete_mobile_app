@@ -1,4 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:inventory_management_complete/features/branches/presentation/bloc/branch_bloc.dart';
+import 'package:inventory_management_complete/features/branches/presentation/bloc/branch_event.dart';
 import 'package:inventory_management_complete/features/posbilling/presentation/bloc/pos_bloc.dart';
 import 'package:inventory_management_complete/features/reports/presentation/bloc/reports_bloc.dart';
 import 'package:inventory_management_complete/features/staff_managers/presentation/bloc/staff_bloc.dart';
@@ -58,6 +60,9 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider<RecycleBinBloc>(
           create: (context) => InjectionContainer.recycleBinBloc..add(const FetchTrashItemsEvent()),
+        ),
+        BlocProvider<BranchBloc>(
+          create: (context) => InjectionContainer.branchBloc..add(const FetchBranchesEvent()),
         ),
       ],
       child: MaterialApp.router(
