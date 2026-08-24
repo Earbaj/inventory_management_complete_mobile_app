@@ -382,8 +382,25 @@ class TransactionDetailsSheet extends StatelessWidget {
               valueColor: tx.runningBalance < 0 ? Colors.orange[800] : Colors.green[700],
             ),
             if (saleInvoice != null && !isOpening) ...[
+              if (saleInvoice!.originalGrandTotal > 0) ...[
+                const SizedBox(height: 8),
+                _buildDetailRow('Original Price', '৳ ${saleInvoice!.originalGrandTotal.toStringAsFixed(2)}'),
+              ],
+              if (saleInvoice!.totalRefunded > 0 || saleInvoice!.isReturned != 'none') ...[
+                const SizedBox(height: 8),
+                _buildDetailRow(
+                  'Returned Amount',
+                  '৳ ${saleInvoice!.totalRefunded.toStringAsFixed(2)} (${saleInvoice!.isReturned.replaceAll('_', ' ').toUpperCase()})',
+                  valueColor: Colors.red[700],
+                  isBold: true,
+                ),
+              ],
               const SizedBox(height: 8),
-              _buildDetailRow('Net Total', '৳ ${saleInvoice!.netTotal.toStringAsFixed(2)}'),
+              _buildDetailRow(
+                'Net Payable Total',
+                '৳ ${(saleInvoice!.netGrandTotal > 0 ? saleInvoice!.netGrandTotal : saleInvoice!.netTotal).toStringAsFixed(2)}',
+                isBold: true,
+              ),
               const SizedBox(height: 8),
               _buildDetailRow('Paid Amount', '৳ ${saleInvoice!.paidAmount.toStringAsFixed(2)}', valueColor: Colors.green[700]),
               const SizedBox(height: 8),

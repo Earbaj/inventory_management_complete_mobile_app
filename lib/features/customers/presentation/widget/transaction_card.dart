@@ -18,11 +18,12 @@ class TransactionCard extends StatelessWidget {
     final isSale = transaction.type == TransactionType.sale;
     final isPayment = transaction.type == TransactionType.payment;
     final isOpening = transaction.type == TransactionType.opening;
+    final isReturn = transaction.type == TransactionType.returnInvoice;
 
     final Color iconColor;
     if (isSale) {
       iconColor = Colors.orange[800]!;
-    } else if (isPayment) {
+    } else if (isPayment || isReturn) {
       iconColor = Colors.green[700]!;
     } else if (isOpening) {
       iconColor = Colors.blue[800]!;
@@ -38,7 +39,7 @@ class TransactionCard extends StatelessWidget {
     } else if (isOpening) {
       icon = Icons.info_outline_rounded;
     } else {
-      icon = Icons.assignment_return_outlined;
+      icon = Icons.assignment_return_rounded;
     }
 
     final String title;
@@ -49,7 +50,7 @@ class TransactionCard extends StatelessWidget {
     } else if (isOpening) {
       title = 'Opening Balance';
     } else {
-      title = 'Product Return';
+      title = 'Product Return (Credit)';
     }
 
     return Card(
@@ -115,7 +116,7 @@ class TransactionCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      '৳ ${transaction.amount.toStringAsFixed(2)}',
+                      '${isReturn || isPayment ? '+৳' : '৳'} ${transaction.amount.toStringAsFixed(2)}${isReturn ? ' (Return)' : ''}',
                       style: TextStyle(
                         fontWeight: FontWeight.w800,
                         color: iconColor,

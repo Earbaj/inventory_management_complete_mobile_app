@@ -19,6 +19,9 @@ class SaleModel {
   final String servedBy;
   final String? branchId;
   final String? branchName;
+  final double originalGrandTotal;
+  final double totalRefunded;
+  final double netGrandTotal;
 
   const SaleModel({
     required this.id,
@@ -37,6 +40,9 @@ class SaleModel {
     this.servedBy = 'Cashier',
     this.branchId,
     this.branchName,
+    this.originalGrandTotal = 0.0,
+    this.totalRefunded = 0.0,
+    this.netGrandTotal = 0.0,
   });
 
   static double _parseDouble(dynamic val) {
@@ -95,6 +101,10 @@ class SaleModel {
       servedByName = json['createdByName']?.toString() ?? json['createdByRole']?.toString() ?? 'Cashier';
     }
 
+    final double origGrand = _parseDouble(json['originalGrandTotal'] ?? json['original_grand_total'] ?? json['originalTotal'] ?? json['subtotal'] ?? calcNet);
+    final double totRefunded = _parseDouble(json['totalRefunded'] ?? json['total_refunded'] ?? json['refundedAmount']);
+    final double netGrand = _parseDouble(json['netGrandTotal'] ?? json['net_grand_total'] ?? (origGrand - totRefunded));
+
     return SaleModel(
       id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
       invoiceNo: invNo.isNotEmpty
@@ -116,6 +126,9 @@ class SaleModel {
       servedBy: servedByName,
       branchId: json['branchId']?.toString() ?? json['branch_id']?.toString() ?? (json['branch'] is Map ? json['branch']['id']?.toString() : null),
       branchName: json['branchName']?.toString() ?? json['branch_name']?.toString() ?? (json['branch'] is Map ? json['branch']['name']?.toString() : null),
+      originalGrandTotal: origGrand,
+      totalRefunded: totRefunded,
+      netGrandTotal: netGrand > 0 ? netGrand : calcNet,
     );
   }
 

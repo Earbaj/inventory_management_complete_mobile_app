@@ -19,6 +19,9 @@ class SaleEntity {
   final String servedBy;
   final String? branchId;
   final String? branchName;
+  final double originalGrandTotal;
+  final double totalRefunded;
+  final double netGrandTotal;
 
   const SaleEntity({
     required this.id,
@@ -37,6 +40,9 @@ class SaleEntity {
     this.servedBy = 'Cashier',
     this.branchId,
     this.branchName,
+    this.originalGrandTotal = 0.0,
+    this.totalRefunded = 0.0,
+    this.netGrandTotal = 0.0,
   });
 
   /// Computed property: true if sale has an associated customer.

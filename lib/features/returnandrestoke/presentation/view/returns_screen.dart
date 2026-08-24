@@ -28,7 +28,7 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
   CustomerEntity? _selectedCustomer;
   SaleEntity? _selectedInvoice;
   final Map<String, int> _returnQuantities = {};
-  String _refundMethod = 'cash';
+  String _refundMethod = 'due_adjust';
   bool _isRestocked = true;
   bool _isSubmitting = false;
 

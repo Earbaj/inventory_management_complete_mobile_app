@@ -44,6 +44,9 @@ class PosMapper {
       servedBy: model.servedBy,
       branchId: model.branchId,
       branchName: model.branchName,
+      originalGrandTotal: model.originalGrandTotal,
+      totalRefunded: model.totalRefunded,
+      netGrandTotal: model.netGrandTotal,
     );
   }
 
@@ -65,6 +68,9 @@ class PosMapper {
       servedBy: entity.servedBy,
       branchId: entity.branchId,
       branchName: entity.branchName,
+      originalGrandTotal: entity.originalGrandTotal,
+      totalRefunded: entity.totalRefunded,
+      netGrandTotal: entity.netGrandTotal,
     );
   }
 }

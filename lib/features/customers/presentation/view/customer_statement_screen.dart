@@ -79,6 +79,15 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
   }
 
   static String _extractRef(String typeStr, String desc, String fallbackId) {
+    if (typeStr == 'return' || typeStr == 'credit_note') {
+      final regExp = RegExp(r'#?(INV-[\w\-]+|RET-[\w\-]+)');
+      final match = regExp.firstMatch(desc);
+      if (match != null && match.group(1) != null) {
+        return 'RET-${match.group(1)}';
+      }
+      final shortId = fallbackId.length > 6 ? fallbackId.substring(0, 6).toUpperCase() : fallbackId;
+      return 'RETURN-$shortId';
+    }
     final regExp = RegExp(r'#?(INV-[\w\-]+)');
     final match = regExp.firstMatch(desc);
     if (match != null && match.group(1) != null) {
@@ -140,13 +149,15 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
             computedPaid += salePaid;
           } else if (typeStr == 'payment' || typeStr == 'due_payment') {
             computedPaid += amountAbs;
+          } else if (typeStr == 'return' || typeStr == 'credit_note') {
+            // Return acts as credit adjustment reducing overall due
           }
 
           final TransactionType type = typeStr == 'opening'
               ? TransactionType.opening
               : (typeStr == 'payment' || typeStr == 'due_payment')
                   ? TransactionType.payment
-                  : (typeStr == 'return' ? TransactionType.returnInvoice : TransactionType.sale);
+                  : ((typeStr == 'return' || typeStr == 'credit_note') ? TransactionType.returnInvoice : TransactionType.sale);
 
           parsedTransactions.add(CustomerTransaction(
             id: idStr,
