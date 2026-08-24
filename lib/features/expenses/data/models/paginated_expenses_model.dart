@@ -1,3 +1,4 @@
+import '../../../../core/utils/money_util.dart';
 import '../../../recycle_bin/data/models/pagination_meta_model.dart';
 import '../../domain/entities/paginated_expenses_entity.dart';
 import 'expense_model.dart';
@@ -14,12 +15,7 @@ class PaginatedExpensesModel {
     required this.meta,
   });
 
-  static double _parseDouble(dynamic val) {
-    if (val == null) return 0.0;
-    if (val is num) return val.toDouble();
-    if (val is String) return double.tryParse(val) ?? 0.0;
-    return 0.0;
-  }
+  static double _parseDouble(dynamic val) => MoneyUtil.parseMoney(val);
 
   factory PaginatedExpensesModel.fromJson(Map<String, dynamic> json) {
     final List rawList = json['data'] is List ? json['data'] : (json['expenses'] is List ? json['expenses'] : []);

@@ -1,3 +1,4 @@
+import '../../../../core/utils/money_util.dart';
 import '../../../inventory/data/models/inventory_item_model.dart';
 
 /// Data Transfer Object (DTO) for Cart Items in JSON payloads.
@@ -14,12 +15,7 @@ class CartItemModel {
     this.discountType = 'amount',
   });
 
-  static double _parseDouble(dynamic val) {
-    if (val == null) return 0.0;
-    if (val is num) return val.toDouble();
-    if (val is String) return double.tryParse(val) ?? 0.0;
-    return 0.0;
-  }
+  static double _parseDouble(dynamic val) => MoneyUtil.parseMoney(val);
 
   factory CartItemModel.fromJson(Map<String, dynamic> json) {
     final itemData = json['item'] is Map<String, dynamic>

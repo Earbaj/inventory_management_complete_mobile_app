@@ -1,3 +1,5 @@
+import '../../../../core/utils/money_util.dart';
+
 /// Data Transfer Object (DTO) for Return Item JSON payload.
 class ReturnItemModel {
   final String id;
@@ -32,12 +34,7 @@ class ReturnItemModel {
     this.createdAt,
   });
 
-  static double _parseDouble(dynamic val) {
-    if (val == null) return 0.0;
-    if (val is num) return val.toDouble();
-    if (val is String) return double.tryParse(val) ?? 0.0;
-    return 0.0;
-  }
+  static double _parseDouble(dynamic val) => MoneyUtil.parseMoney(val);
 
   static int _parseInt(dynamic val) {
     if (val == null) return 0;

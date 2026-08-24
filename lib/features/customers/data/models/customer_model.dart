@@ -1,3 +1,5 @@
+import '../../../../core/utils/money_util.dart';
+
 /// Data Transfer Object (DTO) for Customer REST API JSON payload.
 class CustomerModel {
   final String id;
@@ -16,12 +18,7 @@ class CustomerModel {
     this.closingBalance = 0.0,
   });
 
-  static double _parseDouble(dynamic val) {
-    if (val == null) return 0.0;
-    if (val is num) return val.toDouble();
-    if (val is String) return double.tryParse(val) ?? 0.0;
-    return 0.0;
-  }
+  static double _parseDouble(dynamic val) => MoneyUtil.parseMoney(val);
 
   factory CustomerModel.fromJson(Map<String, dynamic> json) {
     return CustomerModel(

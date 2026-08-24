@@ -1,3 +1,4 @@
+import '../../../../core/utils/money_util.dart';
 import '../../domain/entities/expense_entity.dart';
 
 /// Data Transfer Object (DTO) for Expense JSON payloads.
@@ -18,12 +19,7 @@ class ExpenseModel {
     this.note,
   });
 
-  static double _parseDouble(dynamic val) {
-    if (val == null) return 0.0;
-    if (val is num) return val.toDouble();
-    if (val is String) return double.tryParse(val) ?? 0.0;
-    return 0.0;
-  }
+  static double _parseDouble(dynamic val) => MoneyUtil.parseMoney(val);
 
   factory ExpenseModel.fromJson(Map<String, dynamic> json) {
     return ExpenseModel(

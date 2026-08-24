@@ -1,3 +1,5 @@
+import '../../../../core/utils/money_util.dart';
+
 /// Data Transfer Object (DTO) for Reports Summary JSON payload.
 class ReportSummaryModel {
   final double totalRevenue;
@@ -19,12 +21,7 @@ class ReportSummaryModel {
   });
 
   factory ReportSummaryModel.fromJson(Map<String, dynamic> json) {
-    double parseDouble(dynamic val) {
-      if (val == null) return 0.0;
-      if (val is num) return val.toDouble();
-      if (val is String) return double.tryParse(val) ?? 0.0;
-      return 0.0;
-    }
+    double parseDouble(dynamic val) => MoneyUtil.parseMoney(val);
 
     int parseInt(dynamic val) {
       if (val == null) return 0;

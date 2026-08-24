@@ -1,3 +1,4 @@
+import '../../../../core/utils/money_util.dart';
 import '../../../customers/data/models/customer_model.dart';
 import 'cart_item_model.dart';
 
@@ -45,12 +46,7 @@ class SaleModel {
     this.netGrandTotal = 0.0,
   });
 
-  static double _parseDouble(dynamic val) {
-    if (val == null) return 0.0;
-    if (val is num) return val.toDouble();
-    if (val is String) return double.tryParse(val) ?? 0.0;
-    return 0.0;
-  }
+  static double _parseDouble(dynamic val) => MoneyUtil.parseMoney(val);
 
   factory SaleModel.fromJson(Map<String, dynamic> json) {
     final List rawItems = json['items'] ?? [];
