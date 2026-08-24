@@ -1,13 +1,14 @@
+import '../entities/pagination_meta_entity.dart';
 import '../entities/trash_item_entity.dart';
 
 /// Repository interface contract for Recycle Bin & Data Recovery operations.
 abstract class RecycleBinRepository {
-  /// Fetches soft-deleted items (GET /api/trash).
-  Future<List<TrashItemEntity>> getTrashItems({
+  /// Fetches soft-deleted items with pagination metadata (GET /api/trash).
+  Future<PaginatedTrashEntity> getTrashItems({
     String? entityType,
     String? search,
     int page = 1,
-    int limit = 20,
+    int limit = 10,
   });
 
   /// Restores soft-deleted item back to active database list (POST /api/trash/restore/:entityType/:id).

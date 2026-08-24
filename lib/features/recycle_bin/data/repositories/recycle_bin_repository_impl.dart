@@ -1,4 +1,5 @@
 import '../../../../core/error/failures.dart';
+import '../../domain/entities/pagination_meta_entity.dart';
 import '../../domain/entities/trash_item_entity.dart';
 import '../../domain/repositories/recycle_bin_repository.dart';
 import '../datasources/recycle_bin_remote_data_source.dart';
@@ -9,20 +10,20 @@ class RecycleBinRepositoryImpl implements RecycleBinRepository {
   RecycleBinRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<List<TrashItemEntity>> getTrashItems({
+  Future<PaginatedTrashEntity> getTrashItems({
     String? entityType,
     String? search,
     int page = 1,
-    int limit = 20,
+    int limit = 10,
   }) async {
     try {
-      final models = await remoteDataSource.getTrashItems(
+      final paginatedModel = await remoteDataSource.getTrashItems(
         entityType: entityType,
         search: search,
         page: page,
         limit: limit,
       );
-      return models.map((m) => m.toEntity()).toList();
+      return paginatedModel.toEntity();
     } catch (e) {
       if (e is Failure) rethrow;
       throw NetworkFailure(e.toString());

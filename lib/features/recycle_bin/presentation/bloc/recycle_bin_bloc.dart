@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../domain/entities/pagination_meta_entity.dart';
 import '../../domain/entities/trash_item_entity.dart';
 import '../../domain/usecases/get_trash_items_usecase.dart';
 import '../../domain/usecases/permanent_delete_trash_item_usecase.dart';
@@ -13,8 +14,12 @@ class RecycleBinBloc extends Bloc<RecycleBinEvent, RecycleBinState> {
   final PermanentDeleteTrashItemUseCase permanentDeleteTrashItemUseCase;
 
   List<TrashItemEntity> _allItems = [];
+  PaginationMetaEntity _meta = PaginationMetaEntity.empty();
   String _activeFilter = 'all';
   String _searchQuery = '';
+  int _currentPage = 1;
+  bool _isFetchingMore = false;
+  bool _hasReachedMax = false;
 
   RecycleBinBloc({
     required this.getTrashItemsUseCase,
@@ -22,6 +27,7 @@ class RecycleBinBloc extends Bloc<RecycleBinEvent, RecycleBinState> {
     required this.permanentDeleteTrashItemUseCase,
   }) : super(const RecycleBinInitialState()) {
     on<FetchTrashItemsEvent>(_onFetchItems);
+    on<LoadMoreTrashItemsEvent>(_onLoadMoreItems);
     on<RestoreTrashItemEvent>(_onRestoreItem);
     on<PermanentDeleteTrashItemEvent>(_onPermanentDeleteItem);
   }
@@ -37,17 +43,64 @@ class RecycleBinBloc extends Bloc<RecycleBinEvent, RecycleBinState> {
       _searchQuery = event.search!;
     }
 
-    emit(const RecycleBinLoadingState());
+    _currentPage = event.page;
+    _hasReachedMax = false;
+
+    if (_currentPage == 1 && !event.isRefresh) {
+      emit(const RecycleBinLoadingState());
+    }
+
     try {
-      _allItems = await getTrashItemsUseCase(
+      final paginatedResult = await getTrashItemsUseCase(
         entityType: _activeFilter,
         search: _searchQuery,
+        page: _currentPage,
+        limit: 10,
       );
+
+      _allItems = List.from(paginatedResult.items);
+      _meta = paginatedResult.meta;
+      _hasReachedMax = !paginatedResult.meta.hasNextPage;
+
       _emitLoadedState(emit);
     } catch (e) {
       emit(RecycleBinErrorState(
         e.toString().replaceAll('Exception: ', '').replaceAll('ServerFailure: ', ''),
       ));
+    }
+  }
+
+  Future<void> _onLoadMoreItems(
+    LoadMoreTrashItemsEvent event,
+    Emitter<RecycleBinState> emit,
+  ) async {
+    if (_isFetchingMore || _hasReachedMax) return;
+    if (state is! RecycleBinLoadedState) return;
+
+    _isFetchingMore = true;
+    final currentState = state as RecycleBinLoadedState;
+    emit(currentState.copyWith(isLoadingMore: true));
+
+    final nextPage = _currentPage + 1;
+
+    try {
+      final paginatedResult = await getTrashItemsUseCase(
+        entityType: _activeFilter,
+        search: _searchQuery,
+        page: nextPage,
+        limit: 10,
+      );
+
+      _currentPage = nextPage;
+      _allItems.addAll(paginatedResult.items);
+      _meta = paginatedResult.meta;
+      _hasReachedMax = !paginatedResult.meta.hasNextPage;
+      _isFetchingMore = false;
+
+      _emitLoadedState(emit);
+    } catch (e) {
+      _isFetchingMore = false;
+      emit(currentState.copyWith(isLoadingMore: false));
     }
   }
 
@@ -61,6 +114,7 @@ class RecycleBinBloc extends Bloc<RecycleBinEvent, RecycleBinState> {
         id: event.id,
       );
       _allItems.removeWhere((item) => item.id == event.id);
+      _decrementMetaTotal();
       emit(RecycleBinOperationSuccessState('"${event.title}" restored successfully!'));
       _emitLoadedState(emit);
     } catch (e) {
@@ -70,32 +124,6 @@ class RecycleBinBloc extends Bloc<RecycleBinEvent, RecycleBinState> {
     }
   }
 
-  /**
-   * ============================================================================
-   * Permanent Delete Trash Item Handler
-   * ============================================================================
-   *
-   * [কী করা হয়েছে]:
-   * ১. ইউজকেসের মাধ্যমে ডেটাবেজ/সার্ভার থেকে আইটেমটি স্থায়ীভাবে ডিলিট করা হয়েছে।
-   * ২. অপারেশন সফল হলে লোকাল মেমরি (_allItems) থেকে আইটেমটি রিমুভ করে
-   *    UI-তে সাকসেস মেসেজ ও আপডেটেড লোডেড স্টেট এমিট করা হয়েছে।
-   *
-   * [শুধু 'id' না নিয়ে 'entityType' কেন নেওয়া হয়েছে?]:
-   * ১. পলিমরফিক রিসাইকেল বিন (Multi-table Database):
-   *    অ্যাপে বিভিন্ন ধরনের ডেটা (Note, Folder, Task ইত্যাদি) ভিন্ন ভিন্ন টেবিলে
-   *    সংরক্ষিত থাকে। ব্যাকএন্ডকে নির্দিষ্ট টেবিল চেনানোর জন্য এটি প্রয়োজন:
-   *    - entityType: "note", id: "123" -> notes টেবিল থেকে ডিলিট
-   *    - entityType: "task", id: "123" -> tasks টেবিল থেকে ডিলিট
-   *
-   * ২. এপিআই রাউটিং (Dynamic Endpoint):
-   *    ব্যাকএন্ড যদি ডাইনামিক পাথ ব্যবহার করে, যেমন:
-   *    /api/trash/{entityType}/{id}/permanent-delete
-   *
-   * ৩. আইডি কনফ্লিক্ট প্রতিরোধ (ID Collision):
-   *    আলাদা আলাদা টেবিলে একই অটো-ইনক্রিমেন্ট আইডি (যেমন: ID = 5) থাকতে পারে।
-   *    'entityType' ছাড়া সঠিক টেবিলের ৫ নম্বর রেকর্ড শনাক্ত করা সম্ভব নয়।
-   * ============================================================================
-   */
   Future<void> _onPermanentDeleteItem(
     PermanentDeleteTrashItemEvent event,
     Emitter<RecycleBinState> emit,
@@ -106,6 +134,7 @@ class RecycleBinBloc extends Bloc<RecycleBinEvent, RecycleBinState> {
         id: event.id,
       );
       _allItems.removeWhere((item) => item.id == event.id);
+      _decrementMetaTotal();
       emit(RecycleBinOperationSuccessState('"${event.title}" permanently deleted from database.'));
       _emitLoadedState(emit);
     } catch (e) {
@@ -115,11 +144,26 @@ class RecycleBinBloc extends Bloc<RecycleBinEvent, RecycleBinState> {
     }
   }
 
+  void _decrementMetaTotal() {
+    final newTotal = (_meta.total - 1) < 0 ? 0 : _meta.total - 1;
+    _meta = PaginationMetaEntity(
+      total: newTotal,
+      page: _meta.page,
+      limit: _meta.limit,
+      totalPages: _meta.totalPages,
+      hasNextPage: _meta.hasNextPage,
+      hasPrevPage: _meta.hasPrevPage,
+    );
+  }
+
   void _emitLoadedState(Emitter<RecycleBinState> emit) {
     emit(RecycleBinLoadedState(
       items: List.from(_allItems),
+      meta: _meta,
       activeFilter: _activeFilter,
       searchQuery: _searchQuery,
+      isLoadingMore: false,
+      hasReachedMax: _hasReachedMax,
     ));
   }
 }

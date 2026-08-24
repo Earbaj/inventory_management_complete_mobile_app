@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
 import '../bloc/recycle_bin_bloc.dart';
 import '../bloc/recycle_bin_event.dart';
@@ -17,6 +16,7 @@ class RecycleBinScreen extends StatefulWidget {
 
 class _RecycleBinScreenState extends State<RecycleBinScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   String _selectedFilter = 'all';
 
   final List<(String, String)> _filterOptions = [
@@ -28,15 +28,33 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.position.pixels;
+    if (maxScroll - currentScroll <= 200) {
+      context.read<RecycleBinBloc>().add(const LoadMoreTrashItemsEvent());
+    }
   }
 
   void _onSearchChanged(BuildContext context, String query) {
     context.read<RecycleBinBloc>().add(FetchTrashItemsEvent(
       entityType: _selectedFilter,
       search: query,
+      page: 1,
     ));
   }
 
@@ -47,6 +65,16 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
     context.read<RecycleBinBloc>().add(FetchTrashItemsEvent(
       entityType: filterKey,
       search: _searchController.text,
+      page: 1,
+    ));
+  }
+
+  Future<void> _onRefresh(BuildContext context) async {
+    context.read<RecycleBinBloc>().add(FetchTrashItemsEvent(
+      entityType: _selectedFilter,
+      search: _searchController.text,
+      page: 1,
+      isRefresh: true,
     ));
   }
 
@@ -76,6 +104,8 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
               context.read<RecycleBinBloc>().add(FetchTrashItemsEvent(
                 entityType: _selectedFilter,
                 search: _searchController.text,
+                page: 1,
+                isRefresh: true,
               ));
             },
             icon: const Icon(Icons.refresh_rounded),
@@ -165,6 +195,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                         context.read<RecycleBinBloc>().add(FetchTrashItemsEvent(
                           entityType: _selectedFilter,
                           search: _searchController.text,
+                          page: 1,
                         ));
                       },
                       icon: const Icon(Icons.refresh_rounded),
@@ -184,6 +215,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
 
           final loadedState = state is RecycleBinLoadedState ? state : null;
           final trashItems = loadedState?.filteredItems ?? [];
+          final meta = loadedState?.meta;
 
           return Column(
             children: [
@@ -215,83 +247,134 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                 ),
               ),
 
-              // FILTER CHIPS
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
+              // FILTER CHIPS & META COUNTER
+              Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 child: Row(
-                  children: _filterOptions.map((opt) {
-                    final (key, label) = opt;
-                    final isSelected = _selectedFilter == key;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: FilterChip(
-                        label: Text(label),
-                        selected: isSelected,
-                        onSelected: (_) => _onFilterSelected(context, key),
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: _filterOptions.map((opt) {
+                            final (key, label) = opt;
+                            final isSelected = _selectedFilter == key;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: FilterChip(
+                                label: Text(label),
+                                selected: isSelected,
+                                onSelected: (_) => _onFilterSelected(context, key),
+                              ),
+                            );
+                          }).toList(),
+                        ),
                       ),
-                    );
-                  }).toList(),
+                    ),
+                    if (meta != null) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${meta.total} items',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: colorScheme.onPrimaryContainer,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
 
               const SizedBox(height: 8),
 
-              // RECYCLE BIN LIST
+              // RECYCLE BIN LIST WITH PAGINATION
               Expanded(
                 child: trashItems.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.restore_from_trash_rounded,
-                              size: 64,
-                              color: Colors.grey.shade400,
+                    ? RefreshIndicator(
+                        onRefresh: () => _onRefresh(context),
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          child: Container(
+                            height: MediaQuery.of(context).size.height * 0.5,
+                            alignment: Alignment.center,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.restore_from_trash_rounded,
+                                  size: 64,
+                                  color: Colors.grey.shade400,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Recycle Bin is Empty',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey.shade700,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'No soft-deleted records match your filter criteria.',
+                                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Recycle Bin is Empty',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey.shade700,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              'No soft-deleted records match your filter criteria.',
-                              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-                            ),
-                          ],
+                          ),
                         ),
                       )
-                    : ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                        itemCount: trashItems.length,
-                        itemBuilder: (context, index) {
-                          final item = trashItems[index];
-                          return TrashItemCard(
-                            item: item,
-                            onRestore: () {
-                              context.read<RecycleBinBloc>().add(
-                                RestoreTrashItemEvent(
-                                  entityType: item.entityType,
-                                  id: item.id,
-                                  title: item.title,
+                    : RefreshIndicator(
+                        onRefresh: () => _onRefresh(context),
+                        child: ListView.builder(
+                          controller: _scrollController,
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                          itemCount: trashItems.length + (loadedState?.isLoadingMore == true ? 1 : 0),
+                          itemBuilder: (context, index) {
+                            if (index == trashItems.length) {
+                              return const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 16.0),
+                                child: Center(
+                                  child: SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(strokeWidth: 2.5),
+                                  ),
                                 ),
                               );
-                            },
-                            onPermanentDelete: () {
-                              context.read<RecycleBinBloc>().add(
-                                PermanentDeleteTrashItemEvent(
-                                  entityType: item.entityType,
-                                  id: item.id,
-                                  title: item.title,
-                                ),
-                              );
-                            },
-                          );
-                        },
+                            }
+
+                            final item = trashItems[index];
+                            return TrashItemCard(
+                              item: item,
+                              onRestore: () {
+                                context.read<RecycleBinBloc>().add(
+                                  RestoreTrashItemEvent(
+                                    entityType: item.entityType,
+                                    id: item.id,
+                                    title: item.title,
+                                  ),
+                                );
+                              },
+                              onPermanentDelete: () {
+                                context.read<RecycleBinBloc>().add(
+                                  PermanentDeleteTrashItemEvent(
+                                    entityType: item.entityType,
+                                    id: item.id,
+                                    title: item.title,
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
                       ),
               ),
             ],

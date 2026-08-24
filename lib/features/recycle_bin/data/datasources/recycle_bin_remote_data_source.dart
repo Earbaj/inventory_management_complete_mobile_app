@@ -1,14 +1,15 @@
 import 'dart:developer' as developer;
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
+import '../models/pagination_meta_model.dart';
 import '../models/trash_item_model.dart';
 
 abstract class RecycleBinRemoteDataSource {
-  Future<List<TrashItemModel>> getTrashItems({
+  Future<PaginatedTrashModel> getTrashItems({
     String? entityType,
     String? search,
     int page = 1,
-    int limit = 20,
+    int limit = 10,
   });
 
   Future<void> restoreItem(String entityType, String id);
@@ -22,14 +23,14 @@ class RecycleBinRemoteDataSourceImpl implements RecycleBinRemoteDataSource {
   RecycleBinRemoteDataSourceImpl(this.apiClient);
 
   @override
-  Future<List<TrashItemModel>> getTrashItems({
+  Future<PaginatedTrashModel> getTrashItems({
     String? entityType,
     String? search,
     int page = 1,
-    int limit = 20,
+    int limit = 10,
   }) async {
     developer.log(
-      '♻️ [RecycleBinRemoteDataSource] getTrashItems() calling GET ${ApiEndpoints.trash} (type: $entityType, search: "$search")...',
+      '♻️ [RecycleBinRemoteDataSource] getTrashItems() calling GET ${ApiEndpoints.trash} (type: $entityType, search: "$search", page: $page, limit: $limit)...',
       name: 'RecycleBinRemoteDataSource',
     );
     try {
@@ -43,15 +44,13 @@ class RecycleBinRemoteDataSourceImpl implements RecycleBinRemoteDataSource {
         },
       );
 
-      final List list = response is List
-          ? response
-          : (response['data'] ?? response['items'] ?? []);
+      final paginatedResult = PaginatedTrashModel.fromJson(response);
 
       developer.log(
-        '✅ [RecycleBinRemoteDataSource] getTrashItems() success. Parsed ${list.length} trash items.',
+        '✅ [RecycleBinRemoteDataSource] getTrashItems() success. Parsed ${paginatedResult.items.length} trash items (page ${paginatedResult.meta.page}/${paginatedResult.meta.totalPages}, total: ${paginatedResult.meta.total}).',
         name: 'RecycleBinRemoteDataSource',
       );
-      return list.map((json) => TrashItemModel.fromJson(json)).toList();
+      return paginatedResult;
     } catch (e) {
       developer.log('⚠️ [RecycleBinRemoteDataSource] getTrashItems() API Error: $e', name: 'RecycleBinRemoteDataSource');
       rethrow;
