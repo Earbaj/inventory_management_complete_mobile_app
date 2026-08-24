@@ -6,6 +6,7 @@ import '../../features/auth/presentation/view/register_screen.dart';
 import '../../features/auth/presentation/view/forgot_password_screen.dart';
 import '../../features/auth/presentation/view/reset_password_screen.dart';
 import '../../features/ai_insights/presentation/view/ai_insights_screen.dart';
+import '../../features/export/presentation/view/data_export_screen.dart';
 import '../../features/branches/presentation/view/branch_management_screen.dart';
 import '../../features/customers/presentation/view/customers_screen.dart';
 import '../../features/dashboard/presentation/view/dashboard_screen.dart';
@@ -148,6 +149,13 @@ class AppRoute {
             path: '/ai-insights',
             builder: (context, state) {
               return const AiInsightsScreen();
+            },
+          ),
+
+          GoRoute(
+            path: '/export',
+            builder: (context, state) {
+              return const DataExportScreen();
             },
           ),
 

@@ -156,6 +156,33 @@ class ApiClient {
     }
   }
 
+  /// Performs an HTTP GET request specifically for CSV plain text files.
+  Future<String> getCsv(
+    String url, {
+    Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
+    bool isPublic = false,
+  }) async {
+    try {
+      final response = await _dio.get(
+        url,
+        queryParameters: queryParameters,
+        options: Options(
+          responseType: ResponseType.plain,
+          headers: headers,
+          extra: {'isPublic': isPublic},
+        ),
+      );
+
+      return response.data?.toString() ?? '';
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    } catch (e) {
+      if (e is Failure) rethrow;
+      throw NetworkFailure(e.toString());
+    }
+  }
+
   /// Performs an HTTP PUT request.
   Future<dynamic> put(
     String url, {

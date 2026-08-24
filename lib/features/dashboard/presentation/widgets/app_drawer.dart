@@ -243,6 +243,13 @@ class AppDrawer extends StatelessWidget {
                           currentRoute: currentRoute,
                         ),
                         _DrawerItem(
+                          title: 'Data Export 📥',
+                          icon: Icons.cloud_download_outlined,
+                          activeIcon: Icons.cloud_download_rounded,
+                          route: '/export',
+                          currentRoute: currentRoute,
+                        ),
+                        _DrawerItem(
                           title: 'Recycle Bin ♻️',
                           icon: Icons.delete_sweep_outlined,
                           activeIcon: Icons.delete_sweep_rounded,

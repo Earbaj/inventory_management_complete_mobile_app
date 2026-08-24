@@ -65,6 +65,14 @@ import '../../features/ai_insights/domain/usecases/get_business_advisor_usecase.
 import '../../features/ai_insights/domain/usecases/get_customer_credit_score_usecase.dart';
 import '../../features/ai_insights/domain/usecases/get_predict_demand_usecase.dart';
 import '../../features/ai_insights/presentation/bloc/ai_insights_bloc.dart';
+import '../../features/export/data/datasources/export_remote_data_source.dart';
+import '../../features/export/data/repositories/export_repository_impl.dart';
+import '../../features/export/domain/repositories/export_repository.dart';
+import '../../features/export/domain/usecases/export_customer_ledger_usecase.dart';
+import '../../features/export/domain/usecases/export_customers_usecase.dart';
+import '../../features/export/domain/usecases/export_inventory_usecase.dart';
+import '../../features/export/domain/usecases/export_sales_usecase.dart';
+import '../../features/export/presentation/bloc/export_bloc.dart';
 import '../../features/reports/data/datasources/reports_local_data_source.dart';
 import '../../features/reports/data/datasources/reports_remote_data_source.dart';
 import '../../features/reports/data/repositories/reports_repository_impl.dart';
@@ -140,6 +148,7 @@ class InjectionContainer {
   static late final BranchRemoteDataSource branchRemoteDataSource;
   static late final ExpensesRemoteDataSource expensesRemoteDataSource;
   static late final AiInsightsRemoteDataSource aiInsightsRemoteDataSource;
+  static late final ExportRemoteDataSource exportRemoteDataSource;
 
   // Repositories
   static late final AuthRepository authRepository;
@@ -155,6 +164,7 @@ class InjectionContainer {
   static late final BranchRepository branchRepository;
   static late final ExpensesRepository expensesRepository;
   static late final AiInsightsRepository aiInsightsRepository;
+  static late final ExportRepository exportRepository;
 
   // Use Cases
   static late final LoginUseCase loginUseCase;
@@ -214,6 +224,11 @@ class InjectionContainer {
   static late final GetCustomerCreditScoreUseCase getCustomerCreditScoreUseCase;
   static late final GetBusinessAdvisorUseCase getBusinessAdvisorUseCase;
 
+  static late final ExportInventoryUseCase exportInventoryUseCase;
+  static late final ExportCustomersUseCase exportCustomersUseCase;
+  static late final ExportSalesUseCase exportSalesUseCase;
+  static late final ExportCustomerLedgerUseCase exportCustomerLedgerUseCase;
+
   // BLoC State Controllers
   static late final AuthBloc authBloc;
   static late final InventoryBloc inventoryBloc;
@@ -229,6 +244,7 @@ class InjectionContainer {
   static late final BranchBloc branchBloc;
   static late final ExpensesBloc expensesBloc;
   static late final AiInsightsBloc aiInsightsBloc;
+  static late final ExportBloc exportBloc;
 
   /// Initializes all singletons and dependencies.
   static Future<void> init() async {
@@ -266,6 +282,7 @@ class InjectionContainer {
     branchRemoteDataSource = BranchRemoteDataSourceImpl(apiClient);
     expensesRemoteDataSource = ExpensesRemoteDataSourceImpl(apiClient);
     aiInsightsRemoteDataSource = AiInsightsRemoteDataSourceImpl(apiClient);
+    exportRemoteDataSource = ExportRemoteDataSourceImpl(apiClient);
 
     // 3. Repositories
     authRepository = AuthRepositoryImpl(
@@ -330,6 +347,10 @@ class InjectionContainer {
       remoteDataSource: aiInsightsRemoteDataSource,
     );
 
+    exportRepository = ExportRepositoryImpl(
+      remoteDataSource: exportRemoteDataSource,
+    );
+
     // UseCases
     loginUseCase = LoginUseCase(authRepository);
     registerUseCase = RegisterUseCase(authRepository);
@@ -387,6 +408,11 @@ class InjectionContainer {
     getPredictDemandUseCase = GetPredictDemandUseCase(aiInsightsRepository);
     getCustomerCreditScoreUseCase = GetCustomerCreditScoreUseCase(aiInsightsRepository);
     getBusinessAdvisorUseCase = GetBusinessAdvisorUseCase(aiInsightsRepository);
+
+    exportInventoryUseCase = ExportInventoryUseCase(exportRepository);
+    exportCustomersUseCase = ExportCustomersUseCase(exportRepository);
+    exportSalesUseCase = ExportSalesUseCase(exportRepository);
+    exportCustomerLedgerUseCase = ExportCustomerLedgerUseCase(exportRepository);
 
     // 4. BLoC State Management Instances
     authBloc = AuthBloc(
@@ -477,7 +503,12 @@ class InjectionContainer {
       getCustomerCreditScoreUseCase: getCustomerCreditScoreUseCase,
       getBusinessAdvisorUseCase: getBusinessAdvisorUseCase,
     );
-  }
-}
+
+    exportBloc = ExportBloc(
+      exportInventoryUseCase: exportInventoryUseCase,
+      exportCustomersUseCase: exportCustomersUseCase,
+      exportSalesUseCase: exportSalesUseCase,
+      exportCustomerLedgerUseCase: exportCustomerLedgerUseCase,
+    );
   }
 }

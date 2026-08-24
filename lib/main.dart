@@ -11,6 +11,7 @@ import 'package:inventory_management_complete/features/expenses/presentation/blo
 import 'package:inventory_management_complete/features/expenses/presentation/bloc/expenses_event.dart';
 import 'package:inventory_management_complete/features/ai_insights/presentation/bloc/ai_insights_bloc.dart';
 import 'package:inventory_management_complete/features/ai_insights/presentation/bloc/ai_insights_event.dart';
+import 'package:inventory_management_complete/features/export/presentation/bloc/export_bloc.dart';
 
 import 'core/di/injection_container.dart';
 import 'core/route/app_route.dart';
@@ -74,6 +75,9 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider<AiInsightsBloc>(
           create: (context) => InjectionContainer.aiInsightsBloc..add(const FetchAllAiInsightsEvent()),
+        ),
+        BlocProvider<ExportBloc>(
+          create: (context) => InjectionContainer.exportBloc,
         ),
       ],
       child: MaterialApp.router(

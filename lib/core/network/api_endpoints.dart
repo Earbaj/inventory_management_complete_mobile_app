@@ -136,4 +136,20 @@ class ApiEndpoints {
 
   /// Endpoint for AI business growth advisor (GET /api/ai/business-advisor) - Authenticated
   static String get aiBusinessAdvisor => '$baseUrl/api/ai/business-advisor';
+
+  // ===========================================================================
+  // BULK CSV DATA EXPORT ENDPOINTS
+  // ===========================================================================
+
+  /// Export inventory list to CSV (GET /api/export/inventory) - Authenticated
+  static String get exportInventory => '$baseUrl/api/export/inventory';
+
+  /// Export customer list & due balances to CSV (GET /api/export/customers) - Authenticated
+  static String get exportCustomers => '$baseUrl/api/export/customers';
+
+  /// Export sales invoices history to CSV (GET /api/export/sales) - Authenticated (canExportExcel)
+  static String get exportSales => '$baseUrl/api/export/sales';
+
+  /// Export customer transaction ledger statement to CSV (GET /api/export/ledger/:customerId) - Authenticated
+  static String exportCustomerLedger(String customerId) => '$baseUrl/api/export/ledger/$customerId';
 }
