@@ -63,6 +63,7 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
   late TextEditingController _overallDiscountCtrl;
   late TextEditingController _paidCtrl;
   bool _isPaidEdited = false;
+  String _overallDiscountType = 'percent'; // Default toggle type: 'percent' or 'amount'
 
   @override
   void initState() {
@@ -70,6 +71,11 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
     _paymentMethod = widget.selectedPayment ?? 'cash';
     _overallDiscountCtrl = widget.discountController ?? TextEditingController();
     _paidCtrl = TextEditingController();
+
+    // If initial text already contains %, detect percentage mode
+    if (_overallDiscountCtrl.text.endsWith('%')) {
+      _overallDiscountType = 'percent';
+    }
 
     _updateDefaultPaidAmount(widget.cartItems);
   }
@@ -101,21 +107,21 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
     super.dispose();
   }
 
-  _ParsedDiscount _parseDiscount(String input) {
+  _ParsedDiscount _parseDiscount(String input, [String defaultType = 'amount']) {
     final text = input.trim();
-    if (text.isEmpty) return const _ParsedDiscount(0.0, 'amount');
+    if (text.isEmpty) return _ParsedDiscount(0.0, defaultType);
     if (text.endsWith('%')) {
       final pctText = text.replaceAll('%', '').trim();
       final pct = double.tryParse(pctText) ?? 0.0;
       return _ParsedDiscount(pct, 'percent');
     }
     final val = double.tryParse(text) ?? 0.0;
-    return _ParsedDiscount(val, 'amount');
+    return _ParsedDiscount(val, defaultType);
   }
 
   double _calculateOverallDiscountTk(double baseSubtotal) {
     if (baseSubtotal <= 0) return 0.0;
-    final parsed = _parseDiscount(_overallDiscountCtrl.text);
+    final parsed = _parseDiscount(_overallDiscountCtrl.text, _overallDiscountType);
     if (parsed.value <= 0) return 0.0;
     if (parsed.type == 'percent') {
       return (baseSubtotal * (parsed.value / 100.0)).clamp(0.0, baseSubtotal);
@@ -125,8 +131,12 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
 
   String _getOverallDiscountHelperText(double baseSubtotal) {
     final text = _overallDiscountCtrl.text.trim();
-    if (text.isEmpty) return 'Enter amount (৳) or percentage (%) e.g. 10%';
-    final parsed = _parseDiscount(text);
+    if (text.isEmpty) {
+      return _overallDiscountType == 'percent'
+          ? 'Enter % (e.g. 10 for 10% discount)'
+          : 'Enter flat amount in ৳ (e.g. 50)';
+    }
+    final parsed = _parseDiscount(text, _overallDiscountType);
     if (parsed.value <= 0) return 'Invalid discount format';
     if (parsed.type == 'percent') {
       final tkVal = _calculateOverallDiscountTk(baseSubtotal);
@@ -136,11 +146,10 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
   }
 
   void _showProductDiscountDialog(BuildContext context, CartItemEntity cartItem) {
+    String selectedType = cartItem.discountType;
     final String initialText;
     if (cartItem.discount > 0) {
-      initialText = cartItem.discountType == 'percent'
-          ? '${cartItem.discount.toStringAsFixed(0)}%'
-          : cartItem.discount.toStringAsFixed(0);
+      initialText = cartItem.discount.toStringAsFixed(cartItem.discount % 1 == 0 ? 0 : 1);
     } else {
       initialText = '';
     }
@@ -148,56 +157,113 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'Product Discount for ${cartItem.item.name}',
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Unit Price: ৳${cartItem.item.retailSellPrice.toStringAsFixed(2)} | Qty: ${cartItem.quantity}',
-              style: const TextStyle(fontSize: 13, color: Colors.grey),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final colorScheme = Theme.of(context).colorScheme;
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Text(
+              'Product Discount for ${cartItem.item.name}',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 4),
-            Text(
-              'Total Item Raw Price: ৳${cartItem.rawSubtotal.toStringAsFixed(2)}',
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Unit Price: ৳${cartItem.item.retailSellPrice.toStringAsFixed(2)} | Qty: ${cartItem.quantity}',
+                  style: const TextStyle(fontSize: 13, color: Colors.grey),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Total Item Raw Price: ৳${cartItem.rawSubtotal.toStringAsFixed(2)}',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: discCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: selectedType == 'percent' ? 'Item Discount (%)' : 'Item Discount (৳)',
+                    hintText: selectedType == 'percent' ? 'e.g. 10 for 10%' : 'e.g. 50 for ৳50 off',
+                    border: const OutlineInputBorder(),
+                    suffixIcon: Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              setDialogState(() {
+                                selectedType = 'amount';
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: selectedType == 'amount' ? colorScheme.primary : Colors.grey.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '৳',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  color: selectedType == 'amount' ? Colors.white : Colors.black87,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          GestureDetector(
+                            onTap: () {
+                              setDialogState(() {
+                                selectedType = 'percent';
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: selectedType == 'percent' ? colorScheme.primary : Colors.grey.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '%',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  color: selectedType == 'percent' ? Colors.white : Colors.black87,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: discCtrl,
-              keyboardType: TextInputType.text,
-              decoration: const InputDecoration(
-                labelText: 'Item Discount (৳ or %)',
-                hintText: 'e.g. 10 or 10%',
-                prefixText: '৳ / % ',
-                border: OutlineInputBorder(),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final parsed = _parseDiscount(discCtrl.text);
-              InjectionContainer.posBloc.add(UpdateCartItemDiscountEvent(
-                itemId: cartItem.item.id,
-                discount: parsed.value,
-                discountType: parsed.type,
-              ));
-              Navigator.pop(ctx);
-            },
-            child: const Text('Save'),
-          ),
-        ],
+              FilledButton(
+                onPressed: () {
+                  final parsed = _parseDiscount(discCtrl.text, selectedType);
+                  InjectionContainer.posBloc.add(UpdateCartItemDiscountEvent(
+                    itemId: cartItem.item.id,
+                    discount: parsed.value,
+                    discountType: parsed.type,
+                  ));
+                  Navigator.pop(ctx);
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -392,11 +458,73 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                                 setState(() {});
                               },
                               decoration: InputDecoration(
-                                labelText: 'Overall Discount (৳ or %)',
-                                hintText: 'e.g. 10 or 10%',
+                                labelText: _overallDiscountType == 'percent'
+                                    ? 'Overall Discount (%)'
+                                    : 'Overall Discount (৳)',
+                                hintText: _overallDiscountType == 'percent' ? 'e.g. 10' : 'e.g. 50',
                                 helperText: _getOverallDiscountHelperText(subtotalAfterItemDiscounts),
                                 helperMaxLines: 2,
-                                prefixIcon: const Icon(Icons.percent_rounded, size: 20),
+                                prefixIcon: Icon(
+                                  _overallDiscountType == 'percent' ? Icons.percent_rounded : Icons.attach_money_rounded,
+                                  size: 20,
+                                ),
+                                suffixIcon: Padding(
+                                  padding: const EdgeInsets.only(right: 6),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      GestureDetector(
+                                        onTap: () {
+                                          setState(() {
+                                            _overallDiscountType = 'amount';
+                                          });
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: _overallDiscountType == 'amount'
+                                                ? colorScheme.primary
+                                                : Colors.grey.withValues(alpha: 0.2),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            '৳',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 12,
+                                              color: _overallDiscountType == 'amount' ? Colors.white : Colors.black87,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      GestureDetector(
+                                        onTap: () {
+                                          setState(() {
+                                            _overallDiscountType = 'percent';
+                                          });
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: _overallDiscountType == 'percent'
+                                                ? colorScheme.primary
+                                                : Colors.grey.withValues(alpha: 0.2),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            '%',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 12,
+                                              color: _overallDiscountType == 'percent' ? Colors.white : Colors.black87,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                               ),
