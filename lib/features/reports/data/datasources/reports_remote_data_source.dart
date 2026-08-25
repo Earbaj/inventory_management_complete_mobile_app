@@ -21,6 +21,8 @@ class ReportsRemoteDataSourceImpl implements ReportsRemoteDataSource {
     try {
       final response = await apiClient.get(
         ApiEndpoints.reportsSales,
+        cache: true,
+        maxStale: const Duration(minutes: 2),
         queryParameters: {
           if (startDate != null) 'startDate': startDate.toIso8601String(),
           if (endDate != null) 'endDate': endDate.toIso8601String(),
@@ -35,6 +37,8 @@ class ReportsRemoteDataSourceImpl implements ReportsRemoteDataSource {
       try {
         final response = await apiClient.get(
           ApiEndpoints.dashboardStats,
+          cache: true,
+          maxStale: const Duration(minutes: 2),
           queryParameters: {
             if (branchId != null && branchId.isNotEmpty) 'branchId': branchId,
           },

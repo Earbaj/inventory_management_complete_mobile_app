@@ -103,7 +103,11 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
   Future<List<String>> getCategories() async {
     developer.log('📦 [InventoryRemoteDataSource] getCategories() calling GET ${ApiEndpoints.categories}', name: 'InventoryRemoteDataSource');
     try {
-      final response = await apiClient.get(ApiEndpoints.categories);
+      final response = await apiClient.get(
+        ApiEndpoints.categories,
+        cache: true,
+        maxStale: const Duration(minutes: 30),
+      );
       final List list = response is List ? response : (response['categories'] ?? response['data'] ?? []);
       return list.map((c) => (c is Map ? c['name'] : c).toString()).toList();
     } catch (e, stackTrace) {

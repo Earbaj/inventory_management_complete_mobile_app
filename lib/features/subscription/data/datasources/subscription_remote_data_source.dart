@@ -27,7 +27,11 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
   Future<List<SubscriptionPackageModel>> getPackages() async {
     developer.log('💳 [SubscriptionRemoteDataSource] Calling GET ${ApiEndpoints.subscriptionPackages}...', name: 'SubscriptionRemoteDataSource');
     try {
-      final response = await apiClient.get(ApiEndpoints.subscriptionPackages);
+      final response = await apiClient.get(
+        ApiEndpoints.subscriptionPackages,
+        cache: true,
+        maxStale: const Duration(hours: 1),
+      );
       developer.log('✅ [SubscriptionRemoteDataSource] Packages Response: $response', name: 'SubscriptionRemoteDataSource');
       final List list = response is List ? response : (response['packages'] ?? response['data'] ?? []);
       if (list.isEmpty) {
@@ -82,7 +86,11 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
   Future<PaymentInfoModel> getPaymentInfo() async {
     developer.log('💳 [SubscriptionRemoteDataSource] Calling GET ${ApiEndpoints.paymentInfo}...', name: 'SubscriptionRemoteDataSource');
     try {
-      final response = await apiClient.get(ApiEndpoints.paymentInfo);
+      final response = await apiClient.get(
+        ApiEndpoints.paymentInfo,
+        cache: true,
+        maxStale: const Duration(hours: 1),
+      );
       developer.log('✅ [SubscriptionRemoteDataSource] Payment Info Response: $response', name: 'SubscriptionRemoteDataSource');
       return PaymentInfoModel.fromJson(response is Map<String, dynamic> ? response : {});
     } catch (e, stackTrace) {

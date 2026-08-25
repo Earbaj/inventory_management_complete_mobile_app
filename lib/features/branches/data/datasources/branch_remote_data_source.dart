@@ -21,7 +21,11 @@ class BranchRemoteDataSourceImpl implements BranchRemoteDataSource {
   Future<List<BranchModel>> getBranches() async {
     developer.log('🏢 [BranchRemoteDataSource] getBranches() calling GET ${ApiEndpoints.branches}...', name: 'BranchRemoteDataSource');
     try {
-      final response = await apiClient.get(ApiEndpoints.branches);
+      final response = await apiClient.get(
+        ApiEndpoints.branches,
+        cache: true,
+        maxStale: const Duration(minutes: 30),
+      );
 
       final List list = response is List
           ? response

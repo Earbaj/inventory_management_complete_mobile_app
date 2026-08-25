@@ -1,5 +1,6 @@
 import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
+import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 import '../config/env_config.dart';
 import '../error/failures.dart';
 
@@ -9,15 +10,28 @@ typedef OnUnauthorizedCallback = void Function();
 /// Core Network API Client (Dio Engine)
 ///
 /// Handles HTTP communications, automatic Bearer JWT Token injection via request interceptors,
-/// comprehensive request/response/error logging, and global 401 Unauthorized session handling.
+/// HTTP Caching with DioCacheInterceptor, comprehensive request/response/error logging,
+/// and global 401 Unauthorized session handling.
 class ApiClient {
   late final Dio _dio;
+  late final MemCacheStore _cacheStore;
+  late final CacheOptions _defaultCacheOptions;
   String? _authToken;
 
   /// Global callback triggered on 401 Unauthorized status for authenticated routes.
   OnUnauthorizedCallback? onUnauthorized;
 
-  ApiClient({Dio? dio}) {
+  ApiClient({Dio? dio, MemCacheStore? cacheStore}) {
+    _cacheStore = cacheStore ?? MemCacheStore();
+    _defaultCacheOptions = CacheOptions(
+      store: _cacheStore,
+      policy: CachePolicy.request,
+      hitCacheOnErrorExcept: const [401, 403],
+      maxStale: const Duration(hours: 1),
+      priority: CachePriority.normal,
+      allowPostMethod: false,
+    );
+
     _dio = dio ??
         Dio(
           BaseOptions(
@@ -34,6 +48,12 @@ class ApiClient {
     _setupInterceptors();
   }
 
+  /// Clears stored cache responses from memory store.
+  Future<void> clearCache() async {
+    await _cacheStore.clean();
+    developer.log('🧹 [ApiClient] Memory cache cleared successfully.', name: 'ApiClient');
+  }
+
   /// Updates active Bearer JWT Token used in request interceptors.
   void setAuthToken(String? token) {
     _authToken = token;
@@ -46,8 +66,11 @@ class ApiClient {
     developer.log('🔑 [ApiClient] Auth Bearer Token cleared.', name: 'ApiClient');
   }
 
-  /// Sets up Dio Interceptors for request token injection, detailed logging, and error handling.
+  /// Sets up Dio Interceptors for HTTP Caching, request token injection, detailed logging, and error handling.
   void _setupInterceptors() {
+    // Add Dio Cache Interceptor first
+    _dio.interceptors.add(DioCacheInterceptor(options: _defaultCacheOptions));
+
     _dio.interceptors.add(
       InterceptorsWrapper(
         // 1. Request Interceptor: Injects Authorization Header & logs request details
@@ -131,19 +154,44 @@ class ApiClient {
   }
 
   /// Performs an HTTP GET request.
+  /// Set [cache] to `true` to enable Dio caching for static, reference, or AI endpoints.
   Future<dynamic> get(
     String url, {
     Map<String, dynamic>? queryParameters,
     Map<String, String>? headers,
     bool isPublic = false,
+    bool cache = false,
+    Duration? maxStale,
+    CachePolicy? cachePolicy,
   }) async {
     try {
+      final Map<String, dynamic> extra = {'isPublic': isPublic};
+
+      if (cache) {
+        final cacheOptions = CacheOptions(
+          store: _cacheStore,
+          policy: cachePolicy ?? CachePolicy.request,
+          hitCacheOnErrorExcept: const [401, 403],
+          maxStale: maxStale ?? const Duration(minutes: 30),
+          priority: CachePriority.normal,
+          allowPostMethod: false,
+        );
+        extra.addAll(cacheOptions.toExtra());
+      } else {
+        final noCacheOptions = CacheOptions(
+          store: _cacheStore,
+          policy: CachePolicy.noCache,
+          allowPostMethod: false,
+        );
+        extra.addAll(noCacheOptions.toExtra());
+      }
+
       final response = await _dio.get(
         url,
         queryParameters: queryParameters,
         options: Options(
           headers: headers,
-          extra: {'isPublic': isPublic},
+          extra: extra,
         ),
       );
 

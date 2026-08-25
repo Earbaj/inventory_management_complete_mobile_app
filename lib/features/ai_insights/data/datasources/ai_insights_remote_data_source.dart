@@ -23,7 +23,11 @@ class AiInsightsRemoteDataSourceImpl implements AiInsightsRemoteDataSource {
       name: 'AiInsightsRemoteDataSource',
     );
     try {
-      final response = await apiClient.get(ApiEndpoints.aiPredictDemand);
+      final response = await apiClient.get(
+        ApiEndpoints.aiPredictDemand,
+        cache: true,
+        maxStale: const Duration(minutes: 10),
+      );
 
       developer.log(
         '✅ [AiInsightsRemoteDataSource] getPredictDemand() success. Response: $response',
@@ -53,7 +57,11 @@ class AiInsightsRemoteDataSourceImpl implements AiInsightsRemoteDataSource {
       name: 'AiInsightsRemoteDataSource',
     );
     try {
-      final response = await apiClient.get(endpoint);
+      final response = await apiClient.get(
+        endpoint,
+        cache: true,
+        maxStale: const Duration(minutes: 10),
+      );
 
       developer.log(
         '✅ [AiInsightsRemoteDataSource] getCustomerCreditScore() success for customerId: "$customerId"',
@@ -82,7 +90,11 @@ class AiInsightsRemoteDataSourceImpl implements AiInsightsRemoteDataSource {
       name: 'AiInsightsRemoteDataSource',
     );
     try {
-      final response = await apiClient.get(ApiEndpoints.aiBusinessAdvisor);
+      final response = await apiClient.get(
+        ApiEndpoints.aiBusinessAdvisor,
+        cache: true,
+        maxStale: const Duration(minutes: 15),
+      );
 
       developer.log(
         '✅ [AiInsightsRemoteDataSource] getBusinessAdvisor() success. Response: $response',
