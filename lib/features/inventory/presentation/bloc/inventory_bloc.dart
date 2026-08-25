@@ -52,12 +52,15 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     }
 
     try {
-      developer.log('📦 [InventoryBloc] Fetching inventory items & categories...', name: 'InventoryBloc');
+      final apiSearch = _currentSearchQuery.trim().isEmpty ? null : _currentSearchQuery.trim();
+      final apiCategory = _currentCategory == 'All' ? null : _currentCategory;
+
+      developer.log('📦 [InventoryBloc] Fetching inventory items from API (search: "$apiSearch", category: "$apiCategory")...', name: 'InventoryBloc');
       _allItems = await getItemsUseCase(GetInventoryItemsParams(
         page: event.page,
         limit: event.limit,
-        searchQuery: null,
-        category: null,
+        searchQuery: apiSearch,
+        category: apiCategory,
       ));
 
       _fetchedCategories = await remoteDataSource.getCategories();

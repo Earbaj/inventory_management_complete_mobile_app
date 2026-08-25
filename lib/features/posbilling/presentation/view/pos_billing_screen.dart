@@ -28,6 +28,7 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
 
   String selectedCategory = 'All';
   StreamSubscription<PosState>? _posSubscription;
+  Timer? _searchDebounceTimer;
 
   @override
   void initState() {
@@ -62,10 +63,23 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
 
   @override
   void dispose() {
+    _searchDebounceTimer?.cancel();
     _posSubscription?.cancel();
     searchController.dispose();
     discountController.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged(String query) {
+    _searchDebounceTimer?.cancel();
+    _searchDebounceTimer = Timer(const Duration(milliseconds: 400), () {
+      InjectionContainer.inventoryBloc.add(
+        FetchInventoryItemsEvent(
+          searchQuery: query,
+          category: selectedCategory,
+        ),
+      );
+    });
   }
 
   @override
@@ -101,9 +115,7 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
             child: TextField(
               controller: searchController,
-              onChanged: (_) {
-                setState(() {});
-              },
+              onChanged: _onSearchChanged,
               decoration: InputDecoration(
                 hintText: 'Search product name or SKU',
                 prefixIcon: const Icon(Icons.search_rounded),
@@ -114,7 +126,7 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
                       IconButton(
                         onPressed: () {
                           searchController.clear();
-                          setState(() {});
+                          _onSearchChanged('');
                         },
                         icon: const Icon(Icons.close_rounded),
                       ),
@@ -198,6 +210,12 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
                               setState(() {
                                 selectedCategory = category;
                               });
+                              InjectionContainer.inventoryBloc.add(
+                                FetchInventoryItemsEvent(
+                                  searchQuery: searchController.text,
+                                  category: category,
+                                ),
+                              );
                             },
                           );
                         },

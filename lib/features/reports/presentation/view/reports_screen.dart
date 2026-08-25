@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inventory_management_complete/features/reports/presentation/bloc/reports_bloc.dart';
@@ -28,6 +29,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
   DateTimeRange? _customDateRange;
   String? _selectedBranchId;
   List<BranchEntity> _branches = [];
+  Timer? _searchDebounceTimer;
 
   @override
   void initState() {
@@ -54,13 +56,19 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
 
   @override
   void dispose() {
+    _searchDebounceTimer?.cancel();
     _tabController.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
   void _onSearchChanged(BuildContext context, String query) {
-    context.read<ReportsBloc>().add(FetchReportsEvent(searchQuery: query, branchId: _selectedBranchId));
+    _searchDebounceTimer?.cancel();
+    _searchDebounceTimer = Timer(const Duration(milliseconds: 400), () {
+      if (mounted) {
+        context.read<ReportsBloc>().add(FetchReportsEvent(searchQuery: query, branchId: _selectedBranchId));
+      }
+    });
   }
 
   void _applyDateFilter(BuildContext context, DateFilterType filter) {

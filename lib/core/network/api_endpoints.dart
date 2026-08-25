@@ -39,6 +39,12 @@ class ApiEndpoints {
   /// Endpoint for sales report (GET /api/reports/sales) - Authenticated
   static String get reportsSales => '$baseUrl/api/reports/sales';
 
+  /// Endpoint for sales checkout & invoice search (GET / POST /api/sales) - Authenticated
+  static String get sales => '$baseUrl/api/sales';
+
+  /// Helper for printable thermal receipt HTML (GET /api/sales/invoice/:invoiceNumber/print) - Authenticated
+  static String printInvoice(String invoiceNumber) => '$baseUrl/api/sales/invoice/$invoiceNumber/print';
+
   // ===========================================================================
   // SUBSCRIPTIONS & PAYMENTS ENDPOINTS
   // ===========================================================================

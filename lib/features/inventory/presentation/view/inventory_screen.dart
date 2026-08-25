@@ -35,7 +35,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   String selectedCategory = 'All';
   bool isFilterVisible = false;
   UserEntity? user;
-  
+  Timer? _searchDebounceTimer;
 
   @override
   void initState() {
@@ -50,21 +50,24 @@ class _InventoryScreenState extends State<InventoryScreen> {
     );
   }
 
-
   @override
   void dispose() {
+    _searchDebounceTimer?.cancel();
     searchController.dispose();
     super.dispose();
   }
 
   void _onSearchChanged(String query) {
-    InjectionContainer.inventoryBloc.add(
-      FetchInventoryItemsEvent(
-        searchQuery: query,
-        category: selectedCategory,
-        filter: selectedFilter,
-      ),
-    );
+    _searchDebounceTimer?.cancel();
+    _searchDebounceTimer = Timer(const Duration(milliseconds: 400), () {
+      InjectionContainer.inventoryBloc.add(
+        FetchInventoryItemsEvent(
+          searchQuery: query,
+          category: selectedCategory,
+          filter: selectedFilter,
+        ),
+      );
+    });
   }
 
   void _onCategorySelected(String category) {
