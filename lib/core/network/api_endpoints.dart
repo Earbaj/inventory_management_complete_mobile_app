@@ -113,6 +113,39 @@ class ApiEndpoints {
   /// Permanently hard-delete item (DELETE /api/trash/permanent/:entityType/:id) - Shop Admin Only
   static String trashPermanent(String entityType, String id) => '$baseUrl/api/trash/permanent/$entityType/$id';
 
+  /// Empty all soft-deleted items permanently (DELETE /api/trash/empty) - Shop Admin Only
+  static String get trashEmpty => '$baseUrl/api/trash/empty';
+
+  /// Cleanup audit logs older than specified days (DELETE /api/audit-logs/cleanup?days=90) - Shop Admin Only
+  static String auditLogsCleanup({int days = 90}) => '$baseUrl/api/audit-logs/cleanup?days=$days';
+
+  // ===========================================================================
+  // SUPPLIERS & PURCHASE ORDERS ENDPOINTS
+  // ===========================================================================
+
+  /// Endpoint for supplier list & creation (GET / POST /api/suppliers) - Admin & Manager
+  static String get suppliers => '$baseUrl/api/suppliers';
+
+  /// Helper for supplier detail, update, delete (GET / PUT / DELETE /api/suppliers/:id) - Admin & Manager
+  static String supplierById(String id) => '$baseUrl/api/suppliers/$id';
+
+  /// Endpoint for purchase order creation & history (POST / GET /api/suppliers/purchase-orders) - Admin & Manager
+  static String get purchaseOrders => '$baseUrl/api/suppliers/purchase-orders';
+
+  // ===========================================================================
+  // BULK IMPORT ENDPOINTS
+  // ===========================================================================
+
+  /// Endpoint for CSV bulk inventory import (POST /api/items/import-csv) - Admin Only
+  static String get importCsv => '$baseUrl/api/items/import-csv';
+
+  // ===========================================================================
+  // USER PROFILE & ACCOUNT DELETION ENDPOINTS
+  // ===========================================================================
+
+  /// Endpoint for user profile deletion (DELETE /api/auth/me) - Authenticated
+  static String get deleteAccount => '$baseUrl/api/auth/me';
+
   // ===========================================================================
   // BRANCH MANAGEMENT ENDPOINTS
   // ===========================================================================

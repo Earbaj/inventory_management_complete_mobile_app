@@ -116,6 +116,10 @@ import '../../features/subscription/presentation/bloc/subscription_bloc.dart';
 
 import '../../features/super_admin/data/datasources/super_admin_remote_data_source.dart';
 import '../../features/super_admin/presentation/bloc/super_admin_bloc.dart';
+import '../../features/suppliers/data/datasources/supplier_local_data_source.dart';
+import '../../features/suppliers/data/datasources/supplier_remote_data_source.dart';
+import '../../features/suppliers/data/repositories/supplier_repository_impl.dart';
+import '../../features/suppliers/presentation/bloc/supplier_bloc.dart';
 import '../network/api_client.dart';
 
 /// Service Locator / Dependency Injection Container
@@ -149,6 +153,8 @@ class InjectionContainer {
   static late final ExpensesRemoteDataSource expensesRemoteDataSource;
   static late final AiInsightsRemoteDataSource aiInsightsRemoteDataSource;
   static late final ExportRemoteDataSource exportRemoteDataSource;
+  static late final SupplierLocalDataSource supplierLocalDataSource;
+  static late final SupplierRemoteDataSource supplierRemoteDataSource;
 
   // Repositories
   static late final AuthRepository authRepository;
@@ -165,6 +171,7 @@ class InjectionContainer {
   static late final ExpensesRepository expensesRepository;
   static late final AiInsightsRepository aiInsightsRepository;
   static late final ExportRepository exportRepository;
+  static late final SupplierRepository supplierRepository;
 
   // Use Cases
   static late final LoginUseCase loginUseCase;
@@ -245,6 +252,7 @@ class InjectionContainer {
   static late final ExpensesBloc expensesBloc;
   static late final AiInsightsBloc aiInsightsBloc;
   static late final ExportBloc exportBloc;
+  static late final SupplierBloc supplierBloc;
 
   /// Initializes all singletons and dependencies.
   static Future<void> init() async {
@@ -283,6 +291,8 @@ class InjectionContainer {
     expensesRemoteDataSource = ExpensesRemoteDataSourceImpl(apiClient);
     aiInsightsRemoteDataSource = AiInsightsRemoteDataSourceImpl(apiClient);
     exportRemoteDataSource = ExportRemoteDataSourceImpl(apiClient);
+    supplierLocalDataSource = SupplierLocalDataSourceImpl();
+    supplierRemoteDataSource = SupplierRemoteDataSourceImpl(apiClient);
 
     // 3. Repositories
     authRepository = AuthRepositoryImpl(
@@ -349,6 +359,12 @@ class InjectionContainer {
 
     exportRepository = ExportRepositoryImpl(
       remoteDataSource: exportRemoteDataSource,
+    );
+
+    supplierRepository = SupplierRepositoryImpl(
+      remoteDataSource: supplierRemoteDataSource,
+      localDataSource: supplierLocalDataSource,
+      inventoryLocalDataSource: inventoryLocalDataSource,
     );
 
     // UseCases
@@ -484,6 +500,11 @@ class InjectionContainer {
       getTrashItemsUseCase: getTrashItemsUseCase,
       restoreTrashItemUseCase: restoreTrashItemUseCase,
       permanentDeleteTrashItemUseCase: permanentDeleteTrashItemUseCase,
+      remoteDataSource: recycleBinRemoteDataSource,
+    );
+
+    supplierBloc = SupplierBloc(
+      repository: supplierRepository,
     );
 
     branchBloc = BranchBloc(

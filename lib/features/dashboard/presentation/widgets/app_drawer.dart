@@ -250,10 +250,24 @@ class AppDrawer extends StatelessWidget {
                           currentRoute: currentRoute,
                         ),
                         _DrawerItem(
+                          title: 'Suppliers / মহাজন হিসাব 🚚',
+                          icon: Icons.local_shipping_outlined,
+                          activeIcon: Icons.local_shipping_rounded,
+                          route: '/suppliers',
+                          currentRoute: currentRoute,
+                        ),
+                        _DrawerItem(
                           title: 'Recycle Bin ♻️',
                           icon: Icons.delete_sweep_outlined,
                           activeIcon: Icons.delete_sweep_rounded,
                           route: '/recycle-bin',
+                          currentRoute: currentRoute,
+                        ),
+                        _DrawerItem(
+                          title: 'My Profile / প্রোফাইল 👤',
+                          icon: Icons.person_outline,
+                          activeIcon: Icons.person_rounded,
+                          route: '/profile',
                           currentRoute: currentRoute,
                         ),
                         // ৪. Settings

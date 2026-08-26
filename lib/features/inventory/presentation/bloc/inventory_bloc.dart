@@ -37,6 +37,7 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     on<UpdateInventoryItemEvent>(_onUpdateItem);
     on<DeleteInventoryItemEvent>(_onDeleteItem);
     on<CreateCategoryEvent>(_onCreateCategory);
+    on<ImportCsvEvent>(_onImportCsv);
   }
 
   Future<void> _onFetchItems(
@@ -146,6 +147,34 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     } catch (e, stackTrace) {
       developer.log('❌ [InventoryBloc] _onCreateCategory Error: $e', name: 'InventoryBloc', error: e, stackTrace: stackTrace);
       emit(InventoryErrorState('Failed to create category: $e'));
+    }
+  }
+
+  Future<void> _onImportCsv(
+    ImportCsvEvent event,
+    Emitter<InventoryState> emit,
+  ) async {
+    developer.log('📦 [InventoryBloc] Importing ${event.items.length} CSV product items...', name: 'InventoryBloc');
+    try {
+      await remoteDataSource.importCsv(event.items);
+      for (final json in event.items) {
+        final entity = InventoryItemEntity(
+          id: json['id']?.toString() ?? 'csv_${DateTime.now().millisecondsSinceEpoch}_${json['name']}',
+          name: json['name']?.toString() ?? 'Imported Product',
+          sku: json['sku']?.toString() ?? json['barcode']?.toString() ?? 'SKU-${DateTime.now().millisecondsSinceEpoch}',
+          category: json['category']?.toString() ?? 'General',
+          price: (json['price'] ?? json['sellingPrice'] ?? 0.0).toDouble(),
+          costPrice: (json['costPrice'] ?? 0.0).toDouble(),
+          quantity: (json['quantity'] ?? json['stock'] ?? 10) as int,
+          minStockThreshold: (json['minStockThreshold'] ?? 5) as int,
+          unit: json['unit']?.toString() ?? 'pcs',
+        );
+        _allItems.insert(0, entity);
+      }
+      emit(InventoryOperationSuccessState('${event.items.length} টি প্রোডাক্ট সফলভাবে ইম্পোর্ট করা হয়েছে! 📦'));
+      _emitLoadedState(emit);
+    } catch (e) {
+      emit(InventoryErrorState('CSV ইম্পোর্ট করতে ব্যর্থ: $e'));
     }
   }
 

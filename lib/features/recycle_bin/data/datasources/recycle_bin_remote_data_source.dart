@@ -1,8 +1,6 @@
-import 'dart:developer' as developer;
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../models/pagination_meta_model.dart';
-import '../models/trash_item_model.dart';
 
 abstract class RecycleBinRemoteDataSource {
   Future<PaginatedTrashModel> getTrashItems({
@@ -15,6 +13,10 @@ abstract class RecycleBinRemoteDataSource {
   Future<void> restoreItem(String entityType, String id);
 
   Future<void> permanentDeleteItem(String entityType, String id);
+
+  Future<void> emptyTrash();
+
+  Future<void> cleanupAuditLogs({int days = 90});
 }
 
 class RecycleBinRemoteDataSourceImpl implements RecycleBinRemoteDataSource {
@@ -88,6 +90,29 @@ class RecycleBinRemoteDataSourceImpl implements RecycleBinRemoteDataSource {
     } catch (e) {
       developer.log('⚠️ [RecycleBinRemoteDataSource] permanentDeleteItem() API Error: $e', name: 'RecycleBinRemoteDataSource');
       rethrow;
+    }
+  }
+
+  @override
+  Future<void> emptyTrash() async {
+    developer.log('🧹 [RecycleBinRemoteDataSource] Calling DELETE ${ApiEndpoints.trashEmpty}', name: 'RecycleBinRemoteDataSource');
+    try {
+      await apiClient.delete(ApiEndpoints.trashEmpty);
+      developer.log('✅ [RecycleBinRemoteDataSource] emptyTrash success.', name: 'RecycleBinRemoteDataSource');
+    } catch (e) {
+      developer.log('⚠️ [RecycleBinRemoteDataSource] emptyTrash API Error: $e', name: 'RecycleBinRemoteDataSource');
+    }
+  }
+
+  @override
+  Future<void> cleanupAuditLogs({int days = 90}) async {
+    final url = ApiEndpoints.auditLogsCleanup(days: days);
+    developer.log('🧹 [RecycleBinRemoteDataSource] Calling DELETE $url', name: 'RecycleBinRemoteDataSource');
+    try {
+      await apiClient.delete(url);
+      developer.log('✅ [RecycleBinRemoteDataSource] cleanupAuditLogs success.', name: 'RecycleBinRemoteDataSource');
+    } catch (e) {
+      developer.log('⚠️ [RecycleBinRemoteDataSource] cleanupAuditLogs API Error: $e', name: 'RecycleBinRemoteDataSource');
     }
   }
 }

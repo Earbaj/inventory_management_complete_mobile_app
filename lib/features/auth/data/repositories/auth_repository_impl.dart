@@ -108,4 +108,12 @@ class AuthRepositoryImpl implements AuthRepository {
     if (userModel == null) return null;
     return AuthMapper.userModelToEntity(userModel);
   }
+
+  @override
+  Future<void> deleteAccount() async {
+    try {
+      await remoteDataSource.deleteAccount();
+    } catch (_) {}
+    await logout();
+  }
 }

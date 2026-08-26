@@ -100,6 +100,16 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
         ),
         actions: [
           IconButton(
+            tooltip: 'Empty Trash / রিসাইকেল বিন খালি করুন',
+            onPressed: () => _confirmEmptyTrash(context),
+            icon: const Icon(Icons.delete_sweep_rounded, color: Colors.redAccent),
+          ),
+          IconButton(
+            tooltip: 'Log Cleanup / ৯০ দিনের পুরনো লগ ক্লিনআপ',
+            onPressed: () => _confirmCleanupLogs(context),
+            icon: const Icon(Icons.cleaning_services_rounded),
+          ),
+          IconButton(
             onPressed: () {
               context.read<RecycleBinBloc>().add(FetchTrashItemsEvent(
                 entityType: _selectedFilter,
@@ -380,6 +390,58 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  void _confirmEmptyTrash(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('রিসাইকেল বিন ফাঁকা করবেন?'),
+        content: const Text(
+          'আপনি কি নিশ্চিত যে রিসাইকেল বিনের সব ডাটা স্থায়ীভাবে ডিলিট করতে চান? এই ডাটা আর কখনো ফিরিয়ে আনা যাবে না।',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('বাতিল'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () {
+              context.read<RecycleBinBloc>().add(const EmptyTrashEvent());
+              Navigator.pop(dialogCtx);
+            },
+            child: const Text('হ্যাঁ, বিন খালি করুন'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmCleanupLogs(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('পুরনো অডিট লগ সাফ করবেন?'),
+        content: const Text(
+          'আপনি কি নিশ্চিত যে ৯০ দিনের পুরনো সকল কাজের ইতিহাস (Audit Logs) মুছে ফেলে স্টোরেজ খালি করতে চান?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('বাতিল'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.orange.shade800),
+            onPressed: () {
+              context.read<RecycleBinBloc>().add(const CleanupAuditLogsEvent(days: 90));
+              Navigator.pop(dialogCtx);
+            },
+            child: const Text('লগ সফট সাফ করুন'),
+          ),
+        ],
       ),
     );
   }

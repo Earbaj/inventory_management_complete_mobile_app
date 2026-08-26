@@ -30,6 +30,8 @@ abstract class AuthRemoteDataSource {
   });
 
   Future<UserModel> getMe();
+
+  Future<void> deleteAccount();
 }
 
 /// Remote Data Source Implementation using [ApiClient]
@@ -153,6 +155,18 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       return UserModel.fromJson(userData);
     } catch (e, stackTrace) {
       developer.log('❌ [AuthRemoteDataSource] getMe() API Error: $e', name: 'AuthRemoteDataSource', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    developer.log('🔐 [AuthRemoteDataSource] Calling DELETE ${ApiEndpoints.deleteAccount}...', name: 'AuthRemoteDataSource');
+    try {
+      await apiClient.delete(ApiEndpoints.deleteAccount);
+      developer.log('✅ [AuthRemoteDataSource] deleteAccount() successful.', name: 'AuthRemoteDataSource');
+    } catch (e, stackTrace) {
+      developer.log('⚠️ [AuthRemoteDataSource] deleteAccount() API Error: $e', name: 'AuthRemoteDataSource', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }

@@ -16,6 +16,7 @@ abstract class InventoryRemoteDataSource {
   Future<void> deleteItem(String itemId);
   Future<List<String>> getCategories();
   Future<void> createCategory(String name, {String? description});
+  Future<void> importCsv(List<Map<String, dynamic>> items);
 }
 
 class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
@@ -131,6 +132,20 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
     } catch (e, stackTrace) {
       developer.log('❌ [InventoryRemoteDataSource] createCategory() API Error: $e', name: 'InventoryRemoteDataSource', error: e, stackTrace: stackTrace);
       rethrow;
+    }
+  }
+
+  @override
+  Future<void> importCsv(List<Map<String, dynamic>> items) async {
+    developer.log('📦 [InventoryRemoteDataSource] Calling POST ${ApiEndpoints.importCsv} with ${items.length} items...', name: 'InventoryRemoteDataSource');
+    try {
+      await apiClient.post(
+        ApiEndpoints.importCsv,
+        body: {'items': items},
+      );
+      developer.log('✅ [InventoryRemoteDataSource] importCsv success.', name: 'InventoryRemoteDataSource');
+    } catch (e, stackTrace) {
+      developer.log('⚠️ [InventoryRemoteDataSource] importCsv API call error: $e', name: 'InventoryRemoteDataSource', error: e, stackTrace: stackTrace);
     }
   }
 }

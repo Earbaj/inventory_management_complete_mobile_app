@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../data/datasources/recycle_bin_remote_data_source.dart';
 import '../../domain/entities/pagination_meta_entity.dart';
 import '../../domain/entities/trash_item_entity.dart';
 import '../../domain/usecases/get_trash_items_usecase.dart';
@@ -12,6 +13,7 @@ class RecycleBinBloc extends Bloc<RecycleBinEvent, RecycleBinState> {
   final GetTrashItemsUseCase getTrashItemsUseCase;
   final RestoreTrashItemUseCase restoreTrashItemUseCase;
   final PermanentDeleteTrashItemUseCase permanentDeleteTrashItemUseCase;
+  final RecycleBinRemoteDataSource remoteDataSource;
 
   List<TrashItemEntity> _allItems = [];
   PaginationMetaEntity _meta = PaginationMetaEntity.empty();
@@ -25,11 +27,14 @@ class RecycleBinBloc extends Bloc<RecycleBinEvent, RecycleBinState> {
     required this.getTrashItemsUseCase,
     required this.restoreTrashItemUseCase,
     required this.permanentDeleteTrashItemUseCase,
+    required this.remoteDataSource,
   }) : super(const RecycleBinInitialState()) {
     on<FetchTrashItemsEvent>(_onFetchItems);
     on<LoadMoreTrashItemsEvent>(_onLoadMoreItems);
     on<RestoreTrashItemEvent>(_onRestoreItem);
     on<PermanentDeleteTrashItemEvent>(_onPermanentDeleteItem);
+    on<EmptyTrashEvent>(_onEmptyTrash);
+    on<CleanupAuditLogsEvent>(_onCleanupAuditLogs);
   }
 
   Future<void> _onFetchItems(
@@ -141,6 +146,41 @@ class RecycleBinBloc extends Bloc<RecycleBinEvent, RecycleBinState> {
       emit(RecycleBinErrorState(
         e.toString().replaceAll('Exception: ', '').replaceAll('ServerFailure: ', ''),
       ));
+    }
+  }
+
+  Future<void> _onEmptyTrash(
+    EmptyTrashEvent event,
+    Emitter<RecycleBinState> emit,
+  ) async {
+    try {
+      await remoteDataSource.emptyTrash();
+      _allItems.clear();
+      _meta = const PaginationMetaEntity(
+        total: 0,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPrevPage: false,
+      );
+      emit(const RecycleBinOperationSuccessState('রিসাইকেল বিন সম্পূর্ণ ফাঁকা করা হয়েছে! 🧹'));
+      _emitLoadedState(emit);
+    } catch (e) {
+      emit(RecycleBinErrorState('রিসাইকেল বিন ফাঁকা করতে ব্যর্থ: ${e.toString()}'));
+    }
+  }
+
+  Future<void> _onCleanupAuditLogs(
+    CleanupAuditLogsEvent event,
+    Emitter<RecycleBinState> emit,
+  ) async {
+    try {
+      await remoteDataSource.cleanupAuditLogs(days: event.days);
+      emit(RecycleBinOperationSuccessState('${event.days} দিনের পুরনো অডিট লগ সাফ করা হয়েছে। 🧹'));
+      _emitLoadedState(emit);
+    } catch (e) {
+      emit(RecycleBinErrorState('অডিট লগ সাফ করতে ব্যর্থ: ${e.toString()}'));
     }
   }
 

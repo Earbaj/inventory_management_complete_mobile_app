@@ -32,4 +32,6 @@ abstract class AuthRepository {
   Future<String?> getSavedToken();
 
   Future<UserEntity?> getSavedUser();
+
+  Future<void> deleteAccount();
 }

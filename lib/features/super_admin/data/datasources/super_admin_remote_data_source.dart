@@ -132,12 +132,14 @@ class SuperAdminRemoteDataSourceImpl implements SuperAdminRemoteDataSource {
 
   @override
   Future<void> deleteShop(String shopId) async {
-    developer.log('👑 [SuperAdminRemoteDataSource] Calling DELETE /api/admin/shops/$shopId...', name: 'SuperAdminRemoteDataSource');
+    final url = ApiEndpoints.adminShopById(shopId);
+    developer.log('👑 [SuperAdminRemoteDataSource] Calling DELETE $url...', name: 'SuperAdminRemoteDataSource');
     try {
-      final response = await apiClient.delete('${ApiEndpoints.baseUrl}/api/admin/shops/$shopId');
+      final response = await apiClient.delete(url);
       developer.log('✅ [SuperAdminRemoteDataSource] Shop $shopId deleted! Response: $response', name: 'SuperAdminRemoteDataSource');
     } catch (e, stackTrace) {
-      developer.log('⚠️ [SuperAdminRemoteDataSource] deleteShop() API call errored or unhandled endpoint: $e', name: 'SuperAdminRemoteDataSource', error: e, stackTrace: stackTrace);
+      developer.log('⚠️ [SuperAdminRemoteDataSource] deleteShop() API call error: $e', name: 'SuperAdminRemoteDataSource', error: e, stackTrace: stackTrace);
+      rethrow;
     }
   }
 }

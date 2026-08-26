@@ -19,6 +19,8 @@ import '../../features/reports/presentation/view/reports_screen.dart';
 import '../../features/settings/presentation/view/settings_screen.dart';
 import '../../features/staff_managers/presentation/view/staff_managers_screen.dart';
 import '../../features/super_admin/presentation/view/super_admin_screen.dart';
+import '../../features/suppliers/presentation/view/suppliers_screen.dart';
+import '../../features/profile/presentation/view/profile_screen.dart';
 import '../../features/splash/presentation/view/splash_screen.dart';
 import '../../features/dashboard/presentation/widgets/app_drawer.dart';
 
@@ -170,6 +172,20 @@ class AppRoute {
             path: '/settings',
             builder: (context, state) {
               return const SettingsScreen();
+            },
+          ),
+
+          GoRoute(
+            path: '/suppliers',
+            builder: (context, state) {
+              return const SuppliersScreen();
+            },
+          ),
+
+          GoRoute(
+            path: '/profile',
+            builder: (context, state) {
+              return const ProfileScreen();
             },
           ),
 

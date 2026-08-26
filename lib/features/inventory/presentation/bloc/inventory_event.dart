@@ -50,3 +50,10 @@ class CreateCategoryEvent extends InventoryEvent {
 
   const CreateCategoryEvent({required this.name, this.description});
 }
+
+/// Event: Bulk imports products via CSV items list.
+class ImportCsvEvent extends InventoryEvent {
+  final List<Map<String, dynamic>> items;
+
+  const ImportCsvEvent(this.items);
+}

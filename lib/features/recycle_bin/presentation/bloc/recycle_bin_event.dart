@@ -47,3 +47,14 @@ class PermanentDeleteTrashItemEvent extends RecycleBinEvent {
     required this.title,
   });
 }
+
+/// Event: Empties all items in the Recycle Bin permanently.
+class EmptyTrashEvent extends RecycleBinEvent {
+  const EmptyTrashEvent();
+}
+
+/// Event: Cleans up audit logs older than specified days.
+class CleanupAuditLogsEvent extends RecycleBinEvent {
+  final int days;
+  const CleanupAuditLogsEvent({this.days = 90});
+}

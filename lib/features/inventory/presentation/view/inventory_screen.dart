@@ -442,6 +442,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
         title: const Text('Inventory'),
         actions: [
           IconButton(
+            tooltip: 'Import CSV / এক্সেল ফাইল আপলোড',
+            onPressed: () => _showImportCsvDialog(context),
+            icon: const Icon(Icons.upload_file_rounded),
+          ),
+          IconButton(
             tooltip: 'Refresh',
             onPressed: () {
               InjectionContainer.inventoryBloc.add(
@@ -455,13 +460,13 @@ class _InventoryScreenState extends State<InventoryScreen> {
             icon: const Icon(Icons.refresh_rounded),
           ),
           IconButton(
-            tooltip: 'Refresh',
+            tooltip: 'Filter',
             onPressed: () {
               setState(() {
-                isFilterVisible =!isFilterVisible;
+                isFilterVisible = !isFilterVisible;
               });
             },
-            icon: Icon(isFilterVisible ? Icons.filter_alt_off:Icons.filter_alt),
+            icon: Icon(isFilterVisible ? Icons.filter_alt_off : Icons.filter_alt),
           ),
         ],
       ),
@@ -746,6 +751,92 @@ class _InventoryScreenState extends State<InventoryScreen> {
           },
         );
       },
+    );
+  }
+
+  void _showImportCsvDialog(BuildContext context) {
+    final csvController = TextEditingController(
+      text: 'Name,Category,SellingPrice,CostPrice,StockQuantity,Barcode\n'
+          'সয়াবিন তেল ১ লিটার,গ্রোসারী,190,165,50,890123456789\n'
+          'মিনিকেট চাল ২৫ কেজি,চাল ও ডাল,1650,1480,20,890987654321',
+    );
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Bulk CSV Import / এক্সেল থেকে প্রোডাক্ট আপলোড'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'CSV ফরম্যাটের ডাটা পেস্ট করুন (কমা দিয়ে আলাদা করা):',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: csvController,
+                maxLines: 8,
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  hintText: 'Name,Category,SellingPrice,CostPrice,StockQuantity,Barcode...',
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'টিপস: হেডার ঠিক রেখে এক্সেল ফাইল থেকে কপি করে পেস্ট করুন।',
+                style: TextStyle(fontSize: 11, color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('বাতিল'),
+          ),
+          FilledButton.icon(
+            icon: const Icon(Icons.upload_file),
+            label: const Text('ইম্পোর্ট করুন'),
+            onPressed: () {
+              final rawText = csvController.text.trim();
+              if (rawText.isEmpty) return;
+
+              final lines = rawText.split('\n');
+              if (lines.length < 2) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('কমপক্ষে ১ টি ডাটা লাইন থাকা আবশ্যক!')),
+                );
+                return;
+              }
+
+              final List<Map<String, dynamic>> items = [];
+              for (int i = 1; i < lines.length; i++) {
+                final line = lines[i].trim();
+                if (line.isEmpty) continue;
+                final parts = line.split(',');
+                if (parts.isNotEmpty) {
+                  items.add({
+                    'name': parts[0].trim(),
+                    'category': parts.length > 1 ? parts[1].trim() : 'General',
+                    'sellingPrice': parts.length > 2 ? double.tryParse(parts[2].trim()) ?? 0.0 : 0.0,
+                    'costPrice': parts.length > 3 ? double.tryParse(parts[3].trim()) ?? 0.0 : 0.0,
+                    'quantity': parts.length > 4 ? int.tryParse(parts[4].trim()) ?? 10 : 10,
+                    'barcode': parts.length > 5 ? parts[5].trim() : '',
+                  });
+                }
+              }
+
+              if (items.isNotEmpty) {
+                InjectionContainer.inventoryBloc.add(ImportCsvEvent(items));
+                Navigator.pop(dialogCtx);
+              }
+            },
+          ),
+        ],
+      ),
     );
   }
 }
