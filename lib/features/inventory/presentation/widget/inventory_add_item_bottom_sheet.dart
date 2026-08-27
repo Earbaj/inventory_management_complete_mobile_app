@@ -625,9 +625,9 @@ class _AddItemSheetState extends State<AddItemSheet> {
                             try {
                               await InjectionContainer.inventoryRemoteDataSource.createCategory(newCategoryName);
 
-                              // Notify InventoryBloc to refresh categories so parent screen updates immediately
+                              // Locally add to Bloc's categories without refetching all items
                               InjectionContainer.inventoryBloc.add(
-                                const FetchInventoryItemsEvent(),
+                                AddCategoryLocalEvent(newCategoryName),
                               );
 
                               if (dialogContext.mounted) {
@@ -648,7 +648,7 @@ class _AddItemSheetState extends State<AddItemSheet> {
                                   rawErr.contains('409') ||
                                   rawErr.toLowerCase().contains('conflict')) {
                                 InjectionContainer.inventoryBloc.add(
-                                  const FetchInventoryItemsEvent(),
+                                  AddCategoryLocalEvent(newCategoryName),
                                 );
                                 if (dialogContext.mounted) {
                                   Navigator.pop(dialogContext);

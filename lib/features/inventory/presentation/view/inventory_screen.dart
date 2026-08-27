@@ -13,6 +13,7 @@ import '../bloc/inventory_state.dart';
 import '../widget/inventory_add_item_bottom_sheet.dart';
 import '../widget/inventory_empty_state.dart';
 import '../widget/inventory_item_card.dart';
+import '../widget/inventory_shimmer.dart';
 import '../widget/inventory_summery.dart';
 
 enum InventoryFilter {
@@ -394,6 +395,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                             description: description.isNotEmpty ? description : null,
                                           );
 
+                                          InjectionContainer.inventoryBloc.add(
+                                            AddCategoryLocalEvent(categoryName),
+                                          );
+
                                           if (dialogContext.mounted) {
                                             Navigator.pop(dialogContext, categoryName);
                                           }
@@ -406,7 +411,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                           if (rawErr.toLowerCase().contains('already exists') ||
                                               rawErr.contains('409') ||
                                               rawErr.toLowerCase().contains('conflict')) {
-                                            // Category already exists on server, treat as success!
+                                            InjectionContainer.inventoryBloc.add(
+                                              AddCategoryLocalEvent(categoryName),
+                                            );
                                             if (dialogContext.mounted) {
                                               Navigator.pop(dialogContext, categoryName);
                                             }
@@ -578,7 +585,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
           final state = snapshot;
 
           if (state is InventoryLoadingState && state is! InventoryLoadedState) {
-            return const Center(child: CircularProgressIndicator());
+            return const InventoryFullScreenShimmer();
           }
 
           if (state is InventoryErrorState) {
@@ -724,12 +731,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               // ITEM LIST
               Expanded(
                 child: (loadedState != null && loadedState.isListLoading)
-                    ? const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(32),
-                          child: CircularProgressIndicator(),
-                        ),
-                      )
+                    ? const InventoryListShimmer()
                     : filteredItems.isEmpty
                         ? const EmptyInventory()
                         : ListView.builder(

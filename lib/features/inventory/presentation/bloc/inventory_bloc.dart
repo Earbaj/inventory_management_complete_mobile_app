@@ -38,6 +38,7 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     on<DeleteInventoryItemEvent>(_onDeleteItem);
     on<CreateCategoryEvent>(_onCreateCategory);
     on<ImportCsvEvent>(_onImportCsv);
+    on<AddCategoryLocalEvent>(_onAddCategoryLocal);
   }
 
   Future<void> _onFetchItems(
@@ -200,6 +201,18 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     } catch (e) {
       emit(InventoryErrorState('CSV ইম্পোর্ট করতে ব্যর্থ: $e'));
     }
+  }
+
+  void _onAddCategoryLocal(
+    AddCategoryLocalEvent event,
+    Emitter<InventoryState> emit,
+  ) {
+    final name = event.categoryName.trim();
+    if (name.isNotEmpty && !_fetchedCategories.contains(name)) {
+      _fetchedCategories.add(name);
+      developer.log('🏷️ [InventoryBloc] Locally added category "$name" to category list without refetching all items', name: 'InventoryBloc');
+    }
+    _emitLoadedState(emit, isListLoading: false);
   }
 
   void _emitLoadedState(Emitter<InventoryState> emit, {bool isListLoading = false}) {

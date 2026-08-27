@@ -57,3 +57,10 @@ class ImportCsvEvent extends InventoryEvent {
 
   const ImportCsvEvent(this.items);
 }
+
+/// Event: Locally adds a newly created category name to the category list without reloading items.
+class AddCategoryLocalEvent extends InventoryEvent {
+  final String categoryName;
+
+  const AddCategoryLocalEvent(this.categoryName);
+}
