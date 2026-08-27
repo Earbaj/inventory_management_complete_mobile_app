@@ -6,6 +6,8 @@ import 'package:printing/printing.dart';
 
 import '../../../../core/route/app_route.dart';
 import '../../../../core/services/pdf_export_service.dart';
+import '../../../../core/di/injection_container.dart';
+import '../../../customers/customer_transaction.dart';
 import '../../../customers/domain/entities/customer_entity.dart';
 import '../../../customers/presentation/bloc/customer_bloc.dart';
 import '../../../customers/presentation/bloc/customer_state.dart';
@@ -27,6 +29,7 @@ class DataExportScreen extends StatefulWidget {
 
 class _DataExportScreenState extends State<DataExportScreen> {
   CustomerEntity? _selectedCustomerForLedger;
+  bool _isLoadingLedgerPdf = false;
 
   void _showCsvPreviewDialog(String fileName, String csvContent) {
     showDialog(
@@ -111,6 +114,47 @@ class _DataExportScreenState extends State<DataExportScreen> {
     );
   }
 
+  static double _parseDouble(dynamic val) {
+    if (val == null) return 0.0;
+    if (val is num) return val.toDouble();
+    if (val is String) return double.tryParse(val) ?? 0.0;
+    return 0.0;
+  }
+
+  static double _parseTotalFromDescription(String desc, double fallbackAmount) {
+    final regExp = RegExp(r'Total:\s*([\d\.]+)');
+    final match = regExp.firstMatch(desc);
+    if (match != null && match.group(1) != null) {
+      return double.tryParse(match.group(1)!) ?? fallbackAmount;
+    }
+    return fallbackAmount;
+  }
+
+  static String _extractRef(String typeStr, String desc, String fallbackId) {
+    if (typeStr == 'return' || typeStr == 'credit_note') {
+      final regExp = RegExp(r'#?(INV-[\w\-]+|RET-[\w\-]+)');
+      final match = regExp.firstMatch(desc);
+      if (match != null && match.group(1) != null) {
+        return 'RET-${match.group(1)}';
+      }
+      final shortId = fallbackId.length > 6 ? fallbackId.substring(0, 6).toUpperCase() : fallbackId;
+      return 'RETURN-$shortId';
+    }
+    final regExp = RegExp(r'#?(INV-[\w\-]+)');
+    final match = regExp.firstMatch(desc);
+    if (match != null && match.group(1) != null) {
+      return match.group(1)!;
+    }
+    if (typeStr == 'payment') {
+      final shortId = fallbackId.length > 6 ? fallbackId.substring(0, 6).toUpperCase() : fallbackId;
+      return 'PAY-$shortId';
+    }
+    if (typeStr == 'opening') {
+      return 'OPENING';
+    }
+    return fallbackId.length > 8 ? fallbackId.substring(0, 8).toUpperCase() : fallbackId;
+  }
+
   Future<void> _exportLedgerPdf() async {
     if (_selectedCustomerForLedger == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -119,16 +163,72 @@ class _DataExportScreenState extends State<DataExportScreen> {
       return;
     }
 
-    final pdfBytes = await PdfExportService.generateCustomerStatementPdf(
-      customer: _selectedCustomerForLedger!,
-      transactions: const [], // Auto-populated from customer ledger
-      startDate: DateTime.now().subtract(const Duration(days: 90)),
-      endDate: DateTime.now(),
-    );
-    await Printing.layoutPdf(
-      onLayout: (format) async => pdfBytes,
-      name: 'customer_ledger_${_selectedCustomerForLedger!.name}.pdf',
-    );
+    setState(() => _isLoadingLedgerPdf = true);
+
+    try {
+      final data = await InjectionContainer.customerRemoteDataSource.getCustomerLedger(
+        customerId: _selectedCustomerForLedger!.id,
+      );
+
+      final Map<String, dynamic> payload = data;
+      final List rawList = payload['data'] is List
+          ? payload['data']
+          : (payload['ledger'] is List ? payload['ledger'] : (payload['transactions'] is List ? payload['transactions'] : []));
+
+      final List<CustomerTransaction> parsedTransactions = [];
+
+      for (int i = 0; i < rawList.length; i++) {
+        final item = rawList[i];
+        if (item is Map<String, dynamic>) {
+          final String typeStr = item['type']?.toString().toLowerCase() ?? 'sale';
+          final String desc = item['description']?.toString() ?? '';
+          final double rawAmount = _parseDouble(item['amount']);
+          final double amountAbs = rawAmount.abs();
+          final double newBal = _parseDouble(item['newBalance'] ?? item['new_balance']);
+          final String idStr = item['id']?.toString() ?? item['referenceId']?.toString() ?? UniqueKey().toString();
+          final DateTime date = DateTime.tryParse(item['date']?.toString() ?? item['createdAt']?.toString() ?? '') ?? DateTime.now();
+
+          final TransactionType type = typeStr == 'opening'
+              ? TransactionType.opening
+              : (typeStr == 'payment' || typeStr == 'due_payment')
+                  ? TransactionType.payment
+                  : ((typeStr == 'return' || typeStr == 'credit_note') ? TransactionType.returnInvoice : TransactionType.sale);
+
+          parsedTransactions.add(CustomerTransaction(
+            id: idStr,
+            date: date,
+            reference: _extractRef(typeStr, desc, idStr),
+            type: type,
+            amount: typeStr == 'sale' ? _parseTotalFromDescription(desc, amountAbs) : amountAbs,
+            runningBalance: newBal,
+            note: desc,
+          ));
+        }
+      }
+
+      final pdfBytes = await PdfExportService.generateCustomerStatementPdf(
+        customer: _selectedCustomerForLedger!,
+        transactions: parsedTransactions,
+        startDate: DateTime.now().subtract(const Duration(days: 90)),
+        endDate: DateTime.now(),
+      );
+
+      if (mounted) {
+        setState(() => _isLoadingLedgerPdf = false);
+      }
+
+      await Printing.layoutPdf(
+        onLayout: (format) async => pdfBytes,
+        name: 'customer_ledger_${_selectedCustomerForLedger!.name}.pdf',
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingLedgerPdf = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load ledger: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   @override
@@ -172,7 +272,7 @@ class _DataExportScreenState extends State<DataExportScreen> {
         },
         builder: (context, state) {
           final isLoading = state is ExportLoadingState;
-          final loadingMsg = isLoading ? (state as ExportLoadingState).message : '';
+          final loadingMsg = state is ExportLoadingState ? state.message : '';
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -285,7 +385,7 @@ class _DataExportScreenState extends State<DataExportScreen> {
               Card(
                 margin: const EdgeInsets.only(bottom: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                elevation: 1.5,
+                elevation: 0,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -295,9 +395,12 @@ class _DataExportScreenState extends State<DataExportScreen> {
                         children: [
                           Icon(Icons.assignment_outlined, color: Colors.teal, size: 24),
                           SizedBox(width: 10),
-                          Text(
-                            '4. Export Customer Ledger Statement',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          Expanded(
+                            child: Text(
+                              '4. Export Customer Ledger Statement',
+                              maxLines: 2,
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ],
                       ),
@@ -329,7 +432,7 @@ class _DataExportScreenState extends State<DataExportScreen> {
                         children: [
                           Expanded(
                             child: OutlinedButton.icon(
-                              onPressed: isLoading || _selectedCustomerForLedger == null
+                              onPressed: isLoading || _selectedCustomerForLedger == null || _isLoadingLedgerPdf
                                   ? null
                                   : () {
                                       context
@@ -342,7 +445,7 @@ class _DataExportScreenState extends State<DataExportScreen> {
                               ),
                               icon: const Icon(Icons.table_chart_outlined, color: Colors.green, size: 18),
                               label: const Text(
-                                'Export Ledger CSV 📊',
+                                'Export Ledger CSV',
                                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.green),
                               ),
                             ),
@@ -350,7 +453,7 @@ class _DataExportScreenState extends State<DataExportScreen> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: FilledButton.icon(
-                              onPressed: isLoading || _selectedCustomerForLedger == null
+                              onPressed: isLoading || _selectedCustomerForLedger == null || _isLoadingLedgerPdf
                                   ? null
                                   : _exportLedgerPdf,
                               style: FilledButton.styleFrom(
@@ -358,10 +461,19 @@ class _DataExportScreenState extends State<DataExportScreen> {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 padding: const EdgeInsets.symmetric(vertical: 12),
                               ),
-                              icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
-                              label: const Text(
-                                'Export Ledger PDF 📄',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                              icon: _isLoadingLedgerPdf
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      ),
+                                    )
+                                  : const Icon(Icons.picture_as_pdf_rounded, size: 18),
+                              label: Text(
+                                _isLoadingLedgerPdf ? 'Loading...' : 'Export Ledger PDF',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
                               ),
                             ),
                           ),

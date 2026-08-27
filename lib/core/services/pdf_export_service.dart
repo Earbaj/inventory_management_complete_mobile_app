@@ -56,7 +56,14 @@ class PdfExportService {
     required SaleEntity sale,
     required ShopProfileEntity shopProfile,
   }) async {
-    final pdf = pw.Document();
+    final font = await PdfGoogleFonts.notoSansBengaliRegular();
+    final boldFont = await PdfGoogleFonts.notoSansBengaliBold();
+    final pdf = pw.Document(
+      theme: pw.ThemeData.withFont(
+        base: font,
+        bold: boldFont,
+      ),
+    );
 
     final currency = (shopProfile.currencySymbol == '৳' || shopProfile.currencySymbol.isEmpty) ? 'Tk ' : '${shopProfile.currencySymbol} ';
     final shopName = shopProfile.shopName.isNotEmpty ? shopProfile.shopName : 'INVENTORY POS STORE';
@@ -251,7 +258,14 @@ class PdfExportService {
     required List<CustomerTransaction> transactions,
     required ShopProfileEntity shopProfile,
   }) async {
-    final pdf = pw.Document();
+    final font = await PdfGoogleFonts.notoSansBengaliRegular();
+    final boldFont = await PdfGoogleFonts.notoSansBengaliBold();
+    final pdf = pw.Document(
+      theme: pw.ThemeData.withFont(
+        base: font,
+        bold: boldFont,
+      ),
+    );
 
     final currency = (shopProfile.currencySymbol == '৳' || shopProfile.currencySymbol.isEmpty) ? 'Tk ' : '${shopProfile.currencySymbol} ';
     final shopName = shopProfile.shopName.isNotEmpty ? shopProfile.shopName : 'INVENTORY POS STORE';
@@ -395,6 +409,15 @@ class PdfExportService {
                 headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10, color: PdfColors.white),
                 headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey800),
                 cellStyle: const pw.TextStyle(fontSize: 10),
+                // কলামের উইডথ সেট করার অংশ
+                columnWidths: const {
+                  0: pw.FlexColumnWidth(1.5), // Date
+                  1: pw.FlexColumnWidth(1.5), // Reference
+                  2: pw.FlexColumnWidth(3.0), // Description (বেশি জায়গা দেওয়া হলো)
+                  3: pw.FlexColumnWidth(1.5), // Debit (+)
+                  4: pw.FlexColumnWidth(1.5), // Credit (-)
+                  5: pw.FlexColumnWidth(1.5), // Balance
+                },
                 headerAlignments: {
                   0: pw.Alignment.center,
                   1: pw.Alignment.center,
@@ -503,7 +526,14 @@ class PdfExportService {
   }
 
   static Future<Uint8List> generateInventoryReportPdf({required List<dynamic> items}) async {
-    final pdf = pw.Document();
+    final font = await PdfGoogleFonts.notoSansBengaliRegular();
+    final boldFont = await PdfGoogleFonts.notoSansBengaliBold();
+    final pdf = pw.Document(
+      theme: pw.ThemeData.withFont(
+        base: font,
+        bold: boldFont,
+      ),
+    );
 
     // Get shop profile
     ShopProfileEntity shopProfile = const ShopProfileEntity(
@@ -565,7 +595,14 @@ class PdfExportService {
   }
 
   static Future<Uint8List> generateCustomersListPdf({required List<dynamic> customers}) async {
-    final pdf = pw.Document();
+    final font = await PdfGoogleFonts.notoSansBengaliRegular();
+    final boldFont = await PdfGoogleFonts.notoSansBengaliBold();
+    final pdf = pw.Document(
+      theme: pw.ThemeData.withFont(
+        base: font,
+        bold: boldFont,
+      ),
+    );
 
     ShopProfileEntity shopProfile = const ShopProfileEntity(
       id: 'default',
@@ -599,7 +636,7 @@ class PdfExportService {
               ),
             ),
             pw.TableHelper.fromTextArray(
-              headers: ['Customer Name', 'Phone', 'Email', 'Address', 'Current Balance'],
+              headers: ['Customer Name', 'Phone', 'Address', 'Current Balance'],
               data: customers.map((c) {
                 final double bal = c.rawBalance;
                 final balStr = bal < 0
@@ -608,7 +645,6 @@ class PdfExportService {
                 return [
                   c.name,
                   c.phone,
-                  c.email ?? 'N/A',
                   c.address ?? 'N/A',
                   balStr,
                 ];
@@ -633,7 +669,14 @@ class PdfExportService {
     required DateTime startDate,
     required DateTime endDate,
   }) async {
-    final pdf = pw.Document();
+    final font = await PdfGoogleFonts.notoSansBengaliRegular();
+    final boldFont = await PdfGoogleFonts.notoSansBengaliBold();
+    final pdf = pw.Document(
+      theme: pw.ThemeData.withFont(
+        base: font,
+        bold: boldFont,
+      ),
+    );
 
     ShopProfileEntity shopProfile = const ShopProfileEntity(
       id: 'default',

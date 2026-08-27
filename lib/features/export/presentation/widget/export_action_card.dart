@@ -28,7 +28,7 @@ class ExportActionCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 14),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      elevation: 1.5,
+      elevation: 0,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -79,7 +79,7 @@ class ExportActionCard extends StatelessWidget {
                     ),
                     icon: const Icon(Icons.table_chart_outlined, color: Colors.green, size: 18),
                     label: const Text(
-                      'Export CSV 📊',
+                      'Export CSV',
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.green),
                     ),
                   ),
@@ -97,7 +97,7 @@ class ExportActionCard extends StatelessWidget {
                     ),
                     icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
                     label: const Text(
-                      'Export PDF 📄',
+                      'Export PDF',
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                     ),
                   ),

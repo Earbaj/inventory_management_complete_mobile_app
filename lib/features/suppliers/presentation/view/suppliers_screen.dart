@@ -66,15 +66,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> with TickerProviderSt
       }
     });
   }
-
-  void _closeFab() {
-    if (_isFabOpen) {
-      setState(() {
-        _isFabOpen = false;
-        _fabAnimationController.reverse();
-      });
-    }
-  }
+  
 
   @override
   Widget build(BuildContext context) {
