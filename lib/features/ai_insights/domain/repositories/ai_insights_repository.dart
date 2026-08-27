@@ -1,6 +1,6 @@
-import 'entities/business_advisor_entity.dart';
-import 'entities/customer_credit_score_entity.dart';
-import 'entities/demand_forecast_entity.dart';
+import '../entities/business_advisor_entity.dart';
+import '../entities/customer_credit_score_entity.dart';
+import '../entities/demand_forecast_entity.dart';
 
 /// Abstract Repository Contract for AI Predictions & Intelligence.
 abstract class AiInsightsRepository {
