@@ -216,7 +216,11 @@ class _Logo extends StatelessWidget {
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Icon(Icons.inventory_2_outlined, color: color, size: 40),
+      padding: EdgeInsets.all(10),
+      child: Image.asset(
+        'assets/icon/app_logo.png', // আপনার ইমেজের সঠিক পাথ দিন
+        fit: BoxFit.cover, // পুরো বক্স কাভার করার জন্য (বা BoxFit.contain ব্যবহার করতে পারেন)
+      ),
     );
   }
 }

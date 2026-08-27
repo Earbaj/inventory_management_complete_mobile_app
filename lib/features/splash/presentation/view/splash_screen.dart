@@ -198,27 +198,15 @@ class _InventoryLogo extends StatelessWidget {
       height: 145,
 
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.15),
+        color: Colors.white.withValues(alpha: 0.50),
         shape: BoxShape.circle,
       ),
 
       child: Center(
-        child: Container(
-          width: 105,
-          height: 105,
-
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(28),
-          ),
-
-          child: const Icon(
-            Icons.inventory_2_outlined,
-            size: 62,
-            color: Color(0xFF2563EB),
-          ),
-        ),
-      ),
+        child: Image.asset(
+          'assets/icon/app_logo.png', // আপনার ইমেজের সঠিক পাথ দিন
+          fit: BoxFit.cover, // পুরো বক্স কাভার করার জন্য (বা BoxFit.contain ব্যবহার করতে পারেন)
+        ),),
     );
   }
 }

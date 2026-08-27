@@ -73,10 +73,10 @@ class AppDrawer extends StatelessWidget {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(17),
                         ),
-                        child: Icon(
-                          Icons.inventory_2_outlined,
-                          color: colorScheme.primary,
-                          size: 32,
+                        padding: EdgeInsets.all(10),
+                        child: Image.asset(
+                          'assets/icon/app_logo.png', // আপনার ইমেজের সঠিক পাথ দিন
+                          fit: BoxFit.cover, // পুরো বক্স কাভার করার জন্য (বা BoxFit.contain ব্যবহার করতে পারেন)
                         ),
                       ),
                       const SizedBox(height: 15),
