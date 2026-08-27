@@ -17,22 +17,26 @@ class SupplierLoadedState extends SupplierState {
   final List<SupplierEntity> suppliers;
   final List<PurchaseOrderEntity> purchaseOrders;
   final String? successMessage;
+  final bool isSaving;
 
   const SupplierLoadedState({
     required this.suppliers,
     required this.purchaseOrders,
     this.successMessage,
+    this.isSaving = false,
   });
 
   SupplierLoadedState copyWith({
     List<SupplierEntity>? suppliers,
     List<PurchaseOrderEntity>? purchaseOrders,
     String? successMessage,
+    bool? isSaving,
   }) {
     return SupplierLoadedState(
       suppliers: suppliers ?? this.suppliers,
       purchaseOrders: purchaseOrders ?? this.purchaseOrders,
       successMessage: successMessage,
+      isSaving: isSaving ?? this.isSaving,
     );
   }
 }

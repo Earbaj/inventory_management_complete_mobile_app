@@ -54,6 +54,10 @@ class SupplierBloc extends Bloc<SupplierEvent, SupplierState> {
     CreateSupplierEvent event,
     Emitter<SupplierState> emit,
   ) async {
+    final currentState = state;
+    if (currentState is SupplierLoadedState) {
+      emit(currentState.copyWith(isSaving: true));
+    }
     try {
       await createSupplierUseCase(event.supplier);
       final suppliers = await getSuppliersUseCase();
@@ -62,8 +66,12 @@ class SupplierBloc extends Bloc<SupplierEvent, SupplierState> {
         suppliers: suppliers,
         purchaseOrders: orders,
         successMessage: 'নতুন মহাজন প্রোফাইল সফলভাবে তৈরি হয়েছে।',
+        isSaving: false,
       ));
     } catch (e) {
+      if (currentState is SupplierLoadedState) {
+        emit(currentState.copyWith(isSaving: false));
+      }
       emit(SupplierErrorState('মহাজন তৈরি করা সম্ভব হয়নি: ${e.toString()}'));
     }
   }
@@ -72,6 +80,10 @@ class SupplierBloc extends Bloc<SupplierEvent, SupplierState> {
     UpdateSupplierEvent event,
     Emitter<SupplierState> emit,
   ) async {
+    final currentState = state;
+    if (currentState is SupplierLoadedState) {
+      emit(currentState.copyWith(isSaving: true));
+    }
     try {
       await updateSupplierUseCase(event.supplier);
       final suppliers = await getSuppliersUseCase();
@@ -80,8 +92,12 @@ class SupplierBloc extends Bloc<SupplierEvent, SupplierState> {
         suppliers: suppliers,
         purchaseOrders: orders,
         successMessage: 'মহাজনের তথ্য আপডেট হয়েছে।',
+        isSaving: false,
       ));
     } catch (e) {
+      if (currentState is SupplierLoadedState) {
+        emit(currentState.copyWith(isSaving: false));
+      }
       emit(SupplierErrorState('তথ্য আপডেট করতে ব্যর্থ: ${e.toString()}'));
     }
   }
@@ -90,6 +106,10 @@ class SupplierBloc extends Bloc<SupplierEvent, SupplierState> {
     DeleteSupplierEvent event,
     Emitter<SupplierState> emit,
   ) async {
+    final currentState = state;
+    if (currentState is SupplierLoadedState) {
+      emit(currentState.copyWith(isSaving: true));
+    }
     try {
       await deleteSupplierUseCase(event.id);
       final suppliers = await getSuppliersUseCase();
@@ -98,8 +118,12 @@ class SupplierBloc extends Bloc<SupplierEvent, SupplierState> {
         suppliers: suppliers,
         purchaseOrders: orders,
         successMessage: 'মহাজন প্রোফাইল ডিলিট করা হয়েছে।',
+        isSaving: false,
       ));
     } catch (e) {
+      if (currentState is SupplierLoadedState) {
+        emit(currentState.copyWith(isSaving: false));
+      }
       emit(SupplierErrorState('মহাজন ডিলিট করতে ব্যর্থ: ${e.toString()}'));
     }
   }
@@ -108,6 +132,10 @@ class SupplierBloc extends Bloc<SupplierEvent, SupplierState> {
     CreatePurchaseOrderEvent event,
     Emitter<SupplierState> emit,
   ) async {
+    final currentState = state;
+    if (currentState is SupplierLoadedState) {
+      emit(currentState.copyWith(isSaving: true));
+    }
     try {
       await createPurchaseOrderUseCase(event.order);
       final suppliers = await getSuppliersUseCase();
@@ -116,8 +144,12 @@ class SupplierBloc extends Bloc<SupplierEvent, SupplierState> {
         suppliers: suppliers,
         purchaseOrders: orders,
         successMessage: 'পাইকারি ক্রয়ের মেমো তৈরি ও ইনভেন্টরি স্টক সফলভাবে বাড়ানো হয়েছে! 🚚',
+        isSaving: false,
       ));
     } catch (e) {
+      if (currentState is SupplierLoadedState) {
+        emit(currentState.copyWith(isSaving: false));
+      }
       emit(SupplierErrorState('ক্রয়ের মেমো তৈরি ব্যর্থ: ${e.toString()}'));
     }
   }
