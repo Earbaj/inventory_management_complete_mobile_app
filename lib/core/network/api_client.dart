@@ -317,7 +317,7 @@ class ApiClient {
   dynamic _handleResponse(Response response) {
     final statusCode = response.statusCode ?? 200;
 
-    if (statusCode >= 200 && statusCode < 300) {
+    if ((statusCode >= 200 && statusCode < 300) || statusCode == 304) {
       return response.data;
     }
 

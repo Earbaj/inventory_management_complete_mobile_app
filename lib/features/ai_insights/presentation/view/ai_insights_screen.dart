@@ -54,13 +54,7 @@ class _AiInsightsScreenState extends State<AiInsightsScreen> {
           },
           icon: const Icon(Icons.menu_rounded),
         ),
-        title: const Row(
-          children: [
-            Icon(Icons.auto_awesome_rounded, color: Colors.purple, size: 22),
-            SizedBox(width: 8),
-            Text('AI Insights & Predictions'),
-          ],
-        ),
+        title: Text('AI Insights & Predictions',maxLines: 1,overflow: TextOverflow.ellipsis,),
         actions: [
           IconButton(
             onPressed: () {
@@ -184,7 +178,6 @@ class _AiInsightsScreenState extends State<AiInsightsScreen> {
                 ),
 
                 const SizedBox(height: 18),
-
                 // AI CUSTOMER CREDIT SCORE LOOKUP SECTION
                 Card(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -258,7 +251,6 @@ class _AiInsightsScreenState extends State<AiInsightsScreen> {
                 ),
 
                 const SizedBox(height: 16),
-
                 // AI DEMAND FORECAST CARD
                 if (demandForecast != null)
                   DemandForecastCard(forecast: demandForecast)
