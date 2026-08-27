@@ -116,7 +116,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ListTile(
                               leading: const Icon(Icons.phone_outlined, color: Colors.green),
                               title: const Text('মোবাইল নম্বর'),
-                              subtitle: Text(_user!.phone.isNotEmpty ? _user!.phone : 'N/A'),
+                              subtitle: Text(_user!.phone!.isNotEmpty ? _user!.phone! : 'N/A'),
                             ),
                             if (_user!.shopName != null && _user!.shopName!.isNotEmpty) ...[
                               const Divider(height: 1),

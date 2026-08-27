@@ -611,7 +611,7 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                   child: FilledButton(
                     onPressed: () {
                       // Sync overall calculated discount (in Tk) with PosBloc state
-                      InjectionContainer.posBloc.add(ApplyDiscountEvent(discountAmount: overallDiscInTk));
+                      InjectionContainer.posBloc.add(ApplyDiscountEvent(overallDiscInTk));
 
                       final double finalPaid;
                       if (_paymentMethod.toLowerCase() == 'due') {

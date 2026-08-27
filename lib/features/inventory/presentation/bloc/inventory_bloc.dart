@@ -163,10 +163,10 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
           name: json['name']?.toString() ?? 'Imported Product',
           sku: json['sku']?.toString() ?? json['barcode']?.toString() ?? 'SKU-${DateTime.now().millisecondsSinceEpoch}',
           category: json['category']?.toString() ?? 'General',
-          price: (json['price'] ?? json['sellingPrice'] ?? 0.0).toDouble(),
-          costPrice: (json['costPrice'] ?? 0.0).toDouble(),
-          quantity: (json['quantity'] ?? json['stock'] ?? 10) as int,
-          minStockThreshold: (json['minStockThreshold'] ?? 5) as int,
+          retailSellPrice: (json['price'] ?? json['sellingPrice'] ?? 0.0).toDouble(),
+          purchasePrice: (json['costPrice'] ?? 0.0).toDouble(),
+          stockQuantity: (json['quantity'] ?? json['stock'] ?? 10) as int,
+          lowStockQuantity: (json['minStockThreshold'] ?? 5) as int,
           unit: json['unit']?.toString() ?? 'pcs',
         );
         _allItems.insert(0, entity);

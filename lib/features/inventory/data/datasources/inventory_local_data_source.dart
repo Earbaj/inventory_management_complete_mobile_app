@@ -3,8 +3,11 @@ import '../models/inventory_item_model.dart';
 abstract class InventoryLocalDataSource {
   Future<void> cacheItems(List<InventoryItemModel> items);
   Future<List<InventoryItemModel>> getCachedItems();
+  Future<List<InventoryItemModel>> getItems();
   Future<bool> isCacheValid();
   Future<void> clearCache();
+  Future<InventoryItemModel?> getItemById(String id);
+  Future<void> updateItem(InventoryItemModel item);
 }
 
 class InventoryLocalDataSourceImpl implements InventoryLocalDataSource {
@@ -43,8 +46,36 @@ class InventoryLocalDataSourceImpl implements InventoryLocalDataSource {
   }
 
   @override
+  Future<List<InventoryItemModel>> getItems() => getCachedItems();
+
+  @override
   Future<void> clearCache() async {
     _cachedItems = null;
     _lastCacheTime = null;
+  }
+
+  @override
+  Future<InventoryItemModel?> getItemById(String id) async {
+    if (_cachedItems == null) return null;
+    final index = _cachedItems!.indexWhere((item) => item.id == id);
+    if (index != -1) {
+      return _cachedItems![index];
+    }
+    return null;
+  }
+
+  @override
+  Future<void> updateItem(InventoryItemModel item) async {
+    if (_cachedItems == null) {
+      _cachedItems = [item];
+      _lastCacheTime = DateTime.now();
+      return;
+    }
+    final index = _cachedItems!.indexWhere((el) => el.id == item.id);
+    if (index != -1) {
+      _cachedItems![index] = item;
+    } else {
+      _cachedItems!.add(item);
+    }
   }
 }

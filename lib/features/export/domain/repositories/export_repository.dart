@@ -1,4 +1,4 @@
-import 'entities/export_file_entity.dart';
+import '../entities/export_file_entity.dart';
 
 /// Abstract Repository Contract for Bulk Data Exports.
 abstract class ExportRepository {

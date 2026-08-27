@@ -58,6 +58,39 @@ class InventoryItemModel {
     );
   }
 
+  int get quantity => stockQuantity;
+  double get costPrice => purchasePrice;
+
+  InventoryItemModel copyWith({
+    String? id,
+    String? name,
+    String? sku,
+    String? category,
+    String? unit,
+    int? stockQuantity,
+    int? quantity,
+    int? lowStockQuantity,
+    double? retailSellPrice,
+    double? purchasePrice,
+    double? costPrice,
+    String? createdAt,
+    String? updatedAt,
+  }) {
+    return InventoryItemModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      sku: sku ?? this.sku,
+      category: category ?? this.category,
+      unit: unit ?? this.unit,
+      stockQuantity: quantity ?? stockQuantity ?? this.stockQuantity,
+      lowStockQuantity: lowStockQuantity ?? this.lowStockQuantity,
+      retailSellPrice: retailSellPrice ?? this.retailSellPrice,
+      purchasePrice: costPrice ?? purchasePrice ?? this.purchasePrice,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       if (id.isNotEmpty) 'id': id,

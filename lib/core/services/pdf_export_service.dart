@@ -9,6 +9,8 @@ import '../../features/customers/domain/entities/customer_entity.dart';
 import '../../features/customers/customer_transaction.dart';
 import '../../features/posbilling/domain/entities/sale_entity.dart';
 import '../../features/settings/domain/entities/shop_profile_entity.dart';
+import '../di/injection_container.dart';
+import '../../features/settings/presentation/bloc/settings_state.dart';
 
 /// Professional PDF Export & Print Service for Sales Invoices and Customer Statements.
 class PdfExportService {
@@ -498,5 +500,232 @@ class PdfExportService {
       </body>
       </html>
     ''';
+  }
+
+  static Future<Uint8List> generateInventoryReportPdf({required List<dynamic> items}) async {
+    final pdf = pw.Document();
+
+    // Get shop profile
+    ShopProfileEntity shopProfile = const ShopProfileEntity(
+      id: 'default',
+      shopName: 'INVENTORY POS STORE',
+      phone: 'N/A',
+      currencySymbol: '৳',
+    );
+    try {
+      final settingsState = InjectionContainer.settingsBloc.state;
+      if (settingsState is SettingsLoadedState) {
+        shopProfile = settingsState.profile;
+      }
+    } catch (_) {}
+
+    final currency = (shopProfile.currencySymbol == '৳' || shopProfile.currencySymbol.isEmpty) ? 'Tk ' : '${shopProfile.currencySymbol} ';
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        build: (pw.Context context) {
+          return [
+            pw.Center(
+              child: pw.Column(
+                children: [
+                  pw.Text(shopProfile.shopName.toUpperCase(), style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+                  pw.SizedBox(height: 4),
+                  pw.Text('INVENTORY REPORT', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
+                  pw.SizedBox(height: 12),
+                ],
+              ),
+            ),
+            pw.TableHelper.fromTextArray(
+              headers: ['Item Name', 'SKU', 'Category', 'Stock Qty', 'Sell Price', 'Cost Price'],
+              data: items.map((item) {
+                return [
+                  item.name,
+                  item.sku,
+                  item.category,
+                  '${item.stockQuantity} ${item.unit}',
+                  '$currency${item.retailSellPrice.toStringAsFixed(2)}',
+                  '$currency${item.purchasePrice.toStringAsFixed(2)}',
+                ];
+              }).toList(),
+              border: const pw.TableBorder(
+                horizontalInside: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
+                bottom: pw.BorderSide(color: PdfColors.grey500, width: 1),
+              ),
+              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: PdfColors.white),
+              headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey800),
+              cellStyle: const pw.TextStyle(fontSize: 9),
+            ),
+          ];
+        },
+      ),
+    );
+    return pdf.save();
+  }
+
+  static Future<Uint8List> generateCustomersListPdf({required List<dynamic> customers}) async {
+    final pdf = pw.Document();
+
+    ShopProfileEntity shopProfile = const ShopProfileEntity(
+      id: 'default',
+      shopName: 'INVENTORY POS STORE',
+      phone: 'N/A',
+      currencySymbol: '৳',
+    );
+    try {
+      final settingsState = InjectionContainer.settingsBloc.state;
+      if (settingsState is SettingsLoadedState) {
+        shopProfile = settingsState.profile;
+      }
+    } catch (_) {}
+
+    final currency = (shopProfile.currencySymbol == '৳' || shopProfile.currencySymbol.isEmpty) ? 'Tk ' : '${shopProfile.currencySymbol} ';
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        build: (pw.Context context) {
+          return [
+            pw.Center(
+              child: pw.Column(
+                children: [
+                  pw.Text(shopProfile.shopName.toUpperCase(), style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+                  pw.SizedBox(height: 4),
+                  pw.Text('CUSTOMERS LIST REPORT', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
+                  pw.SizedBox(height: 12),
+                ],
+              ),
+            ),
+            pw.TableHelper.fromTextArray(
+              headers: ['Customer Name', 'Phone', 'Email', 'Address', 'Current Balance'],
+              data: customers.map((c) {
+                final double bal = c.rawBalance;
+                final balStr = bal < 0
+                    ? '$currency${bal.abs().toStringAsFixed(2)} (Due)'
+                    : (bal > 0 ? '$currency${bal.toStringAsFixed(2)} (Credit)' : '$currency 0.00');
+                return [
+                  c.name,
+                  c.phone,
+                  c.email ?? 'N/A',
+                  c.address ?? 'N/A',
+                  balStr,
+                ];
+              }).toList(),
+              border: const pw.TableBorder(
+                horizontalInside: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
+                bottom: pw.BorderSide(color: PdfColors.grey500, width: 1),
+              ),
+              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: PdfColors.white),
+              headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey800),
+              cellStyle: const pw.TextStyle(fontSize: 9),
+            ),
+          ];
+        },
+      ),
+    );
+    return pdf.save();
+  }
+
+  static Future<Uint8List> generateSalesReportPdf({
+    required List<dynamic> sales,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    final pdf = pw.Document();
+
+    ShopProfileEntity shopProfile = const ShopProfileEntity(
+      id: 'default',
+      shopName: 'INVENTORY POS STORE',
+      phone: 'N/A',
+      currencySymbol: '৳',
+    );
+    try {
+      final settingsState = InjectionContainer.settingsBloc.state;
+      if (settingsState is SettingsLoadedState) {
+        shopProfile = settingsState.profile;
+      }
+    } catch (_) {}
+
+    final currency = (shopProfile.currencySymbol == '৳' || shopProfile.currencySymbol.isEmpty) ? 'Tk ' : '${shopProfile.currencySymbol} ';
+
+    final dateRangeStr = 'Period: ${startDate.day}/${startDate.month}/${startDate.year} - ${endDate.day}/${endDate.month}/${endDate.year}';
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        build: (pw.Context context) {
+          return [
+            pw.Center(
+              child: pw.Column(
+                children: [
+                  pw.Text(shopProfile.shopName.toUpperCase(), style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+                  pw.SizedBox(height: 4),
+                  pw.Text('SALES REPORT', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
+                  pw.SizedBox(height: 2),
+                  pw.Text(dateRangeStr, style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+                  pw.SizedBox(height: 12),
+                ],
+              ),
+            ),
+            pw.TableHelper.fromTextArray(
+              headers: ['Invoice No', 'Date', 'Customer', 'Net Total', 'Paid', 'Due', 'Payment'],
+              data: sales.map((sale) {
+                final dateStr = '${sale.createdAt.day}/${sale.createdAt.month}/${sale.createdAt.year}';
+                return [
+                  sale.invoiceNo,
+                  dateStr,
+                  sale.customer?.name ?? 'Walk-in',
+                  '$currency${sale.netTotal.toStringAsFixed(2)}',
+                  '$currency${sale.paidAmount.toStringAsFixed(2)}',
+                  '$currency${sale.dueAmount.toStringAsFixed(2)}',
+                  sale.paymentMethod.toUpperCase(),
+                ];
+              }).toList(),
+              border: const pw.TableBorder(
+                horizontalInside: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
+                bottom: pw.BorderSide(color: PdfColors.grey500, width: 1),
+              ),
+              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: PdfColors.white),
+              headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey800),
+              cellStyle: const pw.TextStyle(fontSize: 9),
+            ),
+          ];
+        },
+      ),
+    );
+    return pdf.save();
+  }
+
+  static Future<Uint8List> generateCustomerStatementPdf({
+    required CustomerEntity customer,
+    required List<dynamic> transactions,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    // Get settings/shop profile
+    ShopProfileEntity shopProfile = const ShopProfileEntity(
+      id: 'default',
+      shopName: 'INVENTORY POS STORE',
+      phone: 'N/A',
+      currencySymbol: '৳',
+    );
+    try {
+      final settingsState = InjectionContainer.settingsBloc.state;
+      if (settingsState is SettingsLoadedState) {
+        shopProfile = settingsState.profile;
+      }
+    } catch (_) {}
+
+    // Map list of dynamic transactions to CustomerTransaction
+    final List<CustomerTransaction> castedTransactions = transactions.cast<CustomerTransaction>().toList();
+
+    return generateCustomerLedgerPdfBytes(
+      customer: customer,
+      transactions: castedTransactions,
+      shopProfile: shopProfile,
+    );
   }
 }
