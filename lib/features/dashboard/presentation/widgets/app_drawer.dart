@@ -5,6 +5,7 @@ import '../../../../core/di/injection_container.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../subscription/presentation/widget/free_tier_limit_dialog.dart';
 
 class AppDrawer extends StatelessWidget {
   final String currentRoute;
@@ -45,6 +46,8 @@ class AppDrawer extends StatelessWidget {
         final isSuperAdmin = role == 'superadmin' || role == 'super_admin';
         final isOwnerOrAdmin = role == 'owner' || role == 'admin' || isSuperAdmin;
         final isManager = role == 'manager';
+        final planName = user?.subscription?.planName.toLowerCase() ?? 'free';
+        final isPremiumUser = planName != 'free';
 
         return Drawer(
           width: MediaQuery.sizeOf(context).width * 0.82,
@@ -232,6 +235,8 @@ class AppDrawer extends StatelessWidget {
                           activeIcon: Icons.store_rounded,
                           route: '/branches',
                           currentRoute: currentRoute,
+                          isPremium: true,
+                          userIsPremium: isPremiumUser,
                         ),
                         _DrawerItem(
                           title: 'Expenses 💸',
@@ -239,6 +244,8 @@ class AppDrawer extends StatelessWidget {
                           activeIcon: Icons.receipt_long_rounded,
                           route: '/expenses',
                           currentRoute: currentRoute,
+                          isPremium: true,
+                          userIsPremium: isPremiumUser,
                         ),
                         _DrawerItem(
                           title: 'AI Insights 🤖',
@@ -246,6 +253,8 @@ class AppDrawer extends StatelessWidget {
                           activeIcon: Icons.auto_awesome_rounded,
                           route: '/ai-insights',
                           currentRoute: currentRoute,
+                          isPremium: true,
+                          userIsPremium: isPremiumUser,
                         ),
                         _DrawerItem(
                           title: 'Data Export 📥',
@@ -253,6 +262,8 @@ class AppDrawer extends StatelessWidget {
                           activeIcon: Icons.cloud_download_rounded,
                           route: '/export',
                           currentRoute: currentRoute,
+                          isPremium: true,
+                          userIsPremium: isPremiumUser,
                         ),
                         _DrawerItem(
                           title: 'Suppliers / মহাজন হিসাব 🚚',
@@ -260,6 +271,8 @@ class AppDrawer extends StatelessWidget {
                           activeIcon: Icons.local_shipping_rounded,
                           route: '/suppliers',
                           currentRoute: currentRoute,
+                          isPremium: true,
+                          userIsPremium: isPremiumUser,
                         ),
                         _DrawerItem(
                           title: 'Recycle Bin ♻️',
@@ -267,6 +280,8 @@ class AppDrawer extends StatelessWidget {
                           activeIcon: Icons.delete_sweep_rounded,
                           route: '/recycle-bin',
                           currentRoute: currentRoute,
+                          isPremium: true,
+                          userIsPremium: isPremiumUser,
                         ),
                         _DrawerItem(
                           title: 'My Profile / প্রোফাইল 👤',
@@ -358,6 +373,8 @@ class _DrawerItem extends StatelessWidget {
   final IconData activeIcon;
   final String route;
   final String currentRoute;
+  final bool isPremium;
+  final bool userIsPremium;
 
   const _DrawerItem({
     required this.title,
@@ -365,6 +382,8 @@ class _DrawerItem extends StatelessWidget {
     required this.activeIcon,
     required this.route,
     required this.currentRoute,
+    this.isPremium = false,
+    this.userIsPremium = true,
   });
 
   @override
@@ -372,14 +391,23 @@ class _DrawerItem extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isActive = currentRoute == route;
+    final isLocked = isPremium && !userIsPremium;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: ListTile(
         onTap: () {
           Navigator.pop(context);
-          if (!isActive) {
-            context.go(route);
+          if (isLocked) {
+            FreeTierLimitDialog.show(
+              context,
+              title: '$title Feature',
+              message: 'This feature is only available for Premium Shop plan subscribers. Upgrade to get access.',
+            );
+          } else {
+            if (!isActive) {
+              context.go(route);
+            }
           }
         },
         shape: RoundedRectangleBorder(
@@ -388,25 +416,31 @@ class _DrawerItem extends StatelessWidget {
         tileColor: isActive ? colorScheme.primary.withValues(alpha: 0.10) : null,
         leading: Icon(
           isActive ? activeIcon : icon,
-          color: isActive ? colorScheme.primary : theme.iconTheme.color,
+          color: isActive
+              ? colorScheme.primary
+              : (isLocked ? Colors.grey : theme.iconTheme.color),
         ),
         title: Text(
           title,
           style: theme.textTheme.bodyMedium?.copyWith(
             fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-            color: isActive ? colorScheme.primary : null,
+            color: isActive
+                ? colorScheme.primary
+                : (isLocked ? Colors.grey : null),
           ),
         ),
-        trailing: isActive
-            ? Container(
-          width: 6,
-          height: 6,
-          decoration: BoxDecoration(
-            color: colorScheme.primary,
-            shape: BoxShape.circle,
-          ),
-        )
-            : null,
+        trailing: isLocked
+            ? const Icon(Icons.workspace_premium_rounded, color: Colors.amber, size: 20)
+            : (isActive
+                ? Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary,
+                      shape: BoxShape.circle,
+                    ),
+                  )
+                : null),
       ),
     );
   }
