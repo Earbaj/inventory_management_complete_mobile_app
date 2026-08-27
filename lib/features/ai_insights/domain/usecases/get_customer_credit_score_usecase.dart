@@ -7,7 +7,7 @@ class GetCustomerCreditScoreUseCase {
 
   const GetCustomerCreditScoreUseCase(this.repository);
 
-  Future<CustomerCreditScoreEntity> call(String customerId) {
-    return repository.getCustomerCreditScore(customerId);
+  Future<CustomerCreditScoreEntity> call(String customerId, {bool forceGemini = false}) {
+    return repository.getCustomerCreditScore(customerId, forceGemini: forceGemini);
   }
 }

@@ -7,7 +7,7 @@ class GetPredictDemandUseCase {
 
   const GetPredictDemandUseCase(this.repository);
 
-  Future<DemandForecastEntity> call() {
-    return repository.getPredictDemand();
+  Future<DemandForecastEntity> call({bool forceGemini = false}) {
+    return repository.getPredictDemand(forceGemini: forceGemini);
   }
 }

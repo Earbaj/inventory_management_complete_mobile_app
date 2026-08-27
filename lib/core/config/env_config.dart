@@ -3,7 +3,8 @@
 /// Manages application-wide environment variables such as [apiBaseUrl].
 /// Supports loading custom base URLs from `.env` files or fallback defaults.
 class EnvConfig {
-  static String _baseUrl = 'http://192.168.0.102:3000';
+  static String _baseUrl = 'https://inventory-web-backend-c0fu.onrender.com';
+  // static String _baseUrl = 'http://192.168.0.102:3000';
 
   /// Returns the current active API base URL.
   static String get apiBaseUrl => _baseUrl;

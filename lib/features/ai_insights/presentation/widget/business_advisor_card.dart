@@ -11,8 +11,6 @@ class BusinessAdvisorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -26,13 +24,13 @@ class BusinessAdvisorCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.workspace_premium_rounded, color: Colors.purple, size: 24),
-                    SizedBox(width: 8),
+                    const Icon(Icons.workspace_premium_rounded, color: Colors.purple, size: 24),
+                    const SizedBox(width: 8),
                     Text(
-                      'AI Business Advisor',
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                      advisor.isAiPowered ? 'AI Business Advisor' : 'Business Advisor Insights',
+                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),

@@ -7,7 +7,7 @@ class GetBusinessAdvisorUseCase {
 
   const GetBusinessAdvisorUseCase(this.repository);
 
-  Future<BusinessAdvisorEntity> call() {
-    return repository.getBusinessAdvisor();
+  Future<BusinessAdvisorEntity> call({bool forceGemini = false}) {
+    return repository.getBusinessAdvisor(forceGemini: forceGemini);
   }
 }

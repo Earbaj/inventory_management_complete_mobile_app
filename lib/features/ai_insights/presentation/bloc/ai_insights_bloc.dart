@@ -52,7 +52,10 @@ class AiInsightsBloc extends Bloc<AiInsightsEvent, AiInsightsState> {
     emit(currentState.copyWith(isCustomerScoreLoading: true));
 
     try {
-      final creditScore = await getCustomerCreditScoreUseCase(event.customerId);
+      final creditScore = await getCustomerCreditScoreUseCase(
+        event.customerId,
+        forceGemini: event.forceGemini,
+      );
       emit(currentState.copyWith(
         customerCreditScore: creditScore,
         isCustomerScoreLoading: false,
@@ -88,8 +91,8 @@ class AiInsightsBloc extends Bloc<AiInsightsEvent, AiInsightsState> {
     emit(const AiInsightsLoadingState());
 
     try {
-      final forecastFuture = getPredictDemandUseCase();
-      final advisorFuture = getBusinessAdvisorUseCase();
+      final forecastFuture = getPredictDemandUseCase(forceGemini: event.forceGemini);
+      final advisorFuture = getBusinessAdvisorUseCase(forceGemini: event.forceGemini);
 
       final results = await Future.wait([forecastFuture, advisorFuture]);
 

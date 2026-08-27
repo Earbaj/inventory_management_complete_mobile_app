@@ -26,13 +26,13 @@ class DemandForecastCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.trending_up_rounded, color: Colors.deepOrange, size: 24),
-                    SizedBox(width: 8),
+                    const Icon(Icons.trending_up_rounded, color: Colors.deepOrange, size: 24),
+                    const SizedBox(width: 8),
                     Text(
-                      'AI Demand Forecast',
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                      forecast.isAiPowered ? 'AI Demand Forecast' : 'Heuristic Demand Forecast',
+                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),

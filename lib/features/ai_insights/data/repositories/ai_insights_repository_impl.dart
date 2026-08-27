@@ -11,9 +11,9 @@ class AiInsightsRepositoryImpl implements AiInsightsRepository {
   AiInsightsRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<DemandForecastEntity> getPredictDemand() async {
+  Future<DemandForecastEntity> getPredictDemand({bool forceGemini = false}) async {
     try {
-      final remoteModel = await remoteDataSource.getPredictDemand();
+      final remoteModel = await remoteDataSource.getPredictDemand(forceGemini: forceGemini);
       return remoteModel.toEntity();
     } catch (e) {
       throw ServerFailure(e is Failure ? e.message : e.toString());
@@ -21,9 +21,9 @@ class AiInsightsRepositoryImpl implements AiInsightsRepository {
   }
 
   @override
-  Future<CustomerCreditScoreEntity> getCustomerCreditScore(String customerId) async {
+  Future<CustomerCreditScoreEntity> getCustomerCreditScore(String customerId, {bool forceGemini = false}) async {
     try {
-      final remoteModel = await remoteDataSource.getCustomerCreditScore(customerId);
+      final remoteModel = await remoteDataSource.getCustomerCreditScore(customerId, forceGemini: forceGemini);
       return remoteModel.toEntity();
     } catch (e) {
       throw ServerFailure(e is Failure ? e.message : e.toString());
@@ -31,9 +31,9 @@ class AiInsightsRepositoryImpl implements AiInsightsRepository {
   }
 
   @override
-  Future<BusinessAdvisorEntity> getBusinessAdvisor() async {
+  Future<BusinessAdvisorEntity> getBusinessAdvisor({bool forceGemini = false}) async {
     try {
-      final remoteModel = await remoteDataSource.getBusinessAdvisor();
+      final remoteModel = await remoteDataSource.getBusinessAdvisor(forceGemini: forceGemini);
       return remoteModel.toEntity();
     } catch (e) {
       throw ServerFailure(e is Failure ? e.message : e.toString());

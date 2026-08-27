@@ -44,6 +44,7 @@ class AppDrawer extends StatelessWidget {
         // ২. রোল অনুযায়ী পারমিশন নির্ধারণ
         final isSuperAdmin = role == 'superadmin' || role == 'super_admin';
         final isOwnerOrAdmin = role == 'owner' || role == 'admin' || isSuperAdmin;
+        final isManager = role == 'manager';
 
         return Drawer(
           width: MediaQuery.sizeOf(context).width * 0.82,
@@ -198,8 +199,8 @@ class AppDrawer extends StatelessWidget {
                         currentRoute: currentRoute,
                       ),
 
-                      // 🔒 ৩. শুধুমাত্র Owner ও Admin-দের পেজ
-                      if (isOwnerOrAdmin) ...[
+                      // Customers (Visible to Owner, Admin & Manager)
+                      if (isOwnerOrAdmin || isManager) ...[
                         _DrawerItem(
                           title: 'Customers',
                           icon: Icons.people_outline,
@@ -207,6 +208,10 @@ class AppDrawer extends StatelessWidget {
                           route: '/customers',
                           currentRoute: currentRoute,
                         ),
+                      ],
+
+                      // 🔒 ৩. শুধুমাত্র Owner ও Admin-দের পেজ
+                      if (isOwnerOrAdmin) ...[
                         _DrawerItem(
                           title: 'Reports',
                           icon: Icons.bar_chart_outlined,
