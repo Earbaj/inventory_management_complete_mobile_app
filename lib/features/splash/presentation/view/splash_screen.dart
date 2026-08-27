@@ -134,17 +134,7 @@ class _SplashScreenState extends State<SplashScreen>
                       const SizedBox(height: 32),
 
                       const Text(
-                        'Inventory',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 38,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -1,
-                        ),
-                      ),
-
-                      const Text(
-                        'Management',
+                        'Inventarioya',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 38,

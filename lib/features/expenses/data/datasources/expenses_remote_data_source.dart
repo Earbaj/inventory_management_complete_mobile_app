@@ -1,4 +1,6 @@
 import 'dart:developer' as developer;
+import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
+
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../models/expense_model.dart';
@@ -11,6 +13,7 @@ abstract class ExpensesRemoteDataSource {
     String? category,
     DateTime? startDate,
     DateTime? endDate,
+    bool forceRefresh = false,
   });
 
   Future<ExpenseModel> getExpenseById(String id);
@@ -31,14 +34,17 @@ class ExpensesRemoteDataSourceImpl implements ExpensesRemoteDataSource {
     String? category,
     DateTime? startDate,
     DateTime? endDate,
+    bool forceRefresh = false,
   }) async {
     developer.log(
-      '💸 [ExpensesRemoteDataSource] getExpenses() page: $page, limit: $limit, category: "$category", startDate: $startDate, endDate: $endDate',
+      '💸 [ExpensesRemoteDataSource] getExpenses() page: $page, limit: $limit, category: "$category", startDate: $startDate, endDate: $endDate, forceRefresh: $forceRefresh',
       name: 'ExpensesRemoteDataSource',
     );
     try {
       final response = await apiClient.get(
         ApiEndpoints.expenses,
+        cache: !forceRefresh,
+        maxStale: const Duration(minutes: 10), // ক্যাশ ১০ মিনিট ফ্রেশ থাকবে
         queryParameters: {
           'page': page,
           'limit': limit,

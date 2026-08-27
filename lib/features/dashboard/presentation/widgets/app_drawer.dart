@@ -77,7 +77,7 @@ class AppDrawer extends StatelessWidget {
                       ),
                       const SizedBox(height: 15),
                       const Text(
-                        'Inventory Management',
+                        'Inventarioya',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 19,

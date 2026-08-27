@@ -13,6 +13,7 @@ class GetExpensesUseCase {
     String? category,
     DateTime? startDate,
     DateTime? endDate,
+    bool forceRefresh = false,
   }) {
     return repository.getExpenses(
       page: page,
@@ -20,6 +21,7 @@ class GetExpensesUseCase {
       category: category,
       startDate: startDate,
       endDate: endDate,
+      forceRefresh: forceRefresh,
     );
   }
 }

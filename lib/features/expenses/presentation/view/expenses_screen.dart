@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
 import '../../domain/entities/expense_entity.dart';
 import '../bloc/expenses_bloc.dart';
@@ -34,7 +33,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    context.read<ExpensesBloc>().add(const FetchExpensesEvent(isRefresh: true));
+    context.read<ExpensesBloc>().add(const FetchExpensesEvent());
   }
 
   @override
@@ -106,7 +105,6 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     return Scaffold(
       appBar: AppBar(

@@ -10,6 +10,7 @@ abstract class ExpensesRepository {
     String? category,
     DateTime? startDate,
     DateTime? endDate,
+    bool forceRefresh = false,
   });
 
   /// Fetches single expense record details (GET /api/expenses/:id).

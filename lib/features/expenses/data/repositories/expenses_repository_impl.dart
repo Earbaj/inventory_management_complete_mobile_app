@@ -17,6 +17,7 @@ class ExpensesRepositoryImpl implements ExpensesRepository {
     String? category,
     DateTime? startDate,
     DateTime? endDate,
+    bool forceRefresh = false,
   }) async {
     try {
       final remoteModel = await remoteDataSource.getExpenses(
@@ -25,6 +26,7 @@ class ExpensesRepositoryImpl implements ExpensesRepository {
         category: category,
         startDate: startDate,
         endDate: endDate,
+        forceRefresh: forceRefresh,
       );
       return remoteModel.toEntity();
     } catch (e) {

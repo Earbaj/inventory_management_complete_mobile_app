@@ -170,7 +170,7 @@ class ApiClient {
       if (cache) {
         final cacheOptions = CacheOptions(
           store: _cacheStore,
-          policy: cachePolicy ?? CachePolicy.request,
+          policy: cachePolicy ?? CachePolicy.forceCache,
           hitCacheOnErrorExcept: const [401, 403],
           maxStale: maxStale ?? const Duration(minutes: 30),
           priority: CachePriority.normal,

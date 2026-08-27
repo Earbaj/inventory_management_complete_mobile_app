@@ -52,6 +52,7 @@ class ExpensesBloc extends Bloc<ExpensesEvent, ExpensesState> {
         category: _currentCategory,
         startDate: _startDate,
         endDate: _endDate,
+        forceRefresh: event.isRefresh,
       );
 
       emit(ExpensesLoadedState(
