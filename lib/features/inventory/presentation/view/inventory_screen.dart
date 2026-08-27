@@ -8,7 +8,6 @@ import '../../../../core/route/app_route.dart';
 import '../../../auth/domain/entities/user_entity.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../domain/entities/inventory_item_entity.dart';
-import '../../inventory_item.dart';
 import '../bloc/inventory_event.dart';
 import '../bloc/inventory_state.dart';
 import '../widget/inventory_add_item_bottom_sheet.dart';
@@ -99,328 +98,386 @@ class _InventoryScreenState extends State<InventoryScreen> {
     final nameController = TextEditingController();
     final descController = TextEditingController();
     final formKey = GlobalKey<FormState>();
+    bool isSubmitting = false;
+    String? errorMessage;
 
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          child: Container(
-            width: MediaQuery.of(context).size.width * 0.9,
-            constraints: BoxConstraints(
-              maxWidth: 500,
-              maxHeight: MediaQuery.of(context).size.height * 0.85, // Increased from 0.8
-            ),
-            padding: const EdgeInsets.all(20), // Reduced padding
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
-                  blurRadius: 30,
-                  offset: const Offset(0, 10),
-                  spreadRadius: 5,
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              elevation: 0,
+              backgroundColor: Colors.transparent,
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.9,
+                constraints: BoxConstraints(
+                  maxWidth: 500,
+                  maxHeight: MediaQuery.of(context).size.height * 0.85,
                 ),
-              ],
-            ),
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Header with Icon
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 30,
+                      offset: const Offset(0, 10),
+                      spreadRadius: 5,
+                    ),
+                  ],
+                ),
+                child: Form(
+                  key: formKey,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Header with Icon
+                        Row(
                           children: [
-                            Text(
-                              'Create Category',
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                fontSize: MediaQuery.of(context).size.width > 600 ? 20 : 17, // Reduced
-                              ),
-                            ),
-                            Text(
-                              'Add a new category to organize your products',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.grey.shade600,
-                                fontSize: 12, // Reduced
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Create Category',
+                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: MediaQuery.of(context).size.width > 600 ? 20 : 17,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Add a new category to organize your products',
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ],
-                  ),
 
-                  const SizedBox(height: 16), // Reduced
-
-                  // Category Name Field
-                  TextFormField(
-                    controller: nameController,
-                    autofocus: true,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter category name';
-                      }
-                      if (value.trim().length < 2) {
-                        return 'Category name must be at least 2 characters';
-                      }
-                      return null;
-                    },
-                    decoration: InputDecoration(
-                      labelText: 'Category Name',
-                      hintText: 'e.g. Electronics, Grocery, Fashion',
-                      prefixIcon: Icon(
-                        Icons.label_rounded,
-                        color: Theme.of(context).primaryColor,
-                        size: 20, // Reduced
-                      ),
-                      filled: true,
-                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide.none,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(
-                          color: Colors.grey,
-                          width: 2,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(
-                          color: Theme.of(context).primaryColor,
-                          width: 2,
-                        ),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: Colors.red, width: 2),
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: Colors.red, width: 2),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14, // Reduced from 16
-                      ),
-                    ),
-                    style: const TextStyle(fontSize: 15), // Reduced
-                  ),
-
-                  const SizedBox(height: 12), // Reduced
-
-                  // Description Field
-                  TextFormField(
-                    controller: descController,
-                    maxLines: 2, // Reduced from 3
-                    decoration: InputDecoration(
-                      labelText: 'Description (Optional)',
-                      hintText: 'Brief description of this category...',
-                      prefixIcon: Icon(
-                        Icons.description_rounded,
-                        color: Theme.of(context).primaryColor,
-                        size: 20, // Reduced
-                      ),
-                      filled: true,
-                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide.none,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(
-                          color: Colors.grey,
-                          width: 2,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(
-                          color: Theme.of(context).primaryColor,
-                          width: 2,
-                        ),
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: Colors.red, width: 2),
-                      ),
-                      focusedErrorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: Colors.red, width: 2),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14, // Reduced from 16
-                      ),
-                    ),
-                    style: const TextStyle(fontSize: 15), // Reduced
-                  ),
-
-                  const SizedBox(height: 12), // Reduced
-
-                  // Character Counter
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.info_outline_rounded,
-                            size: 14, // Reduced
-                            color: Colors.grey.shade500,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'All fields are optional except name',
-                            style: TextStyle(
-                              fontSize: 11, // Reduced
-                              color: Colors.grey.shade500,
+                        if (errorMessage != null) ...[
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade50,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.red.shade200),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.error_outline_rounded, color: Colors.red.shade700, size: 18),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    errorMessage!,
+                                    style: TextStyle(color: Colors.red.shade800, fontSize: 12),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
-                      ),
-                      ValueListenableBuilder(
-                        valueListenable: nameController,
-                        builder: (context, value, child) {
-                          return Text(
-                            '${value.text.trim().length}/50',
-                            style: TextStyle(
-                              fontSize: 11, // Reduced
-                              color: value.text.trim().length > 45
-                                  ? Colors.orange
-                                  : Colors.grey.shade500,
-                              fontWeight: FontWeight.w500,
+
+                        const SizedBox(height: 16),
+
+                        // Category Name Field
+                        TextFormField(
+                          controller: nameController,
+                          autofocus: true,
+                          enabled: !isSubmitting,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Please enter category name';
+                            }
+                            if (value.trim().length < 2) {
+                              return 'Category name must be at least 2 characters';
+                            }
+                            return null;
+                          },
+                          decoration: InputDecoration(
+                            labelText: 'Category Name',
+                            hintText: 'e.g. Electronics, Grocery, Fashion',
+                            prefixIcon: Icon(
+                              Icons.label_rounded,
+                              color: Theme.of(context).primaryColor,
+                              size: 20,
                             ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16), // Reduced
-
-                  // Action Buttons - Fixed Overflow Issue
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      // Cancel Button - Flexible
-                      OutlinedButton(
-                        onPressed: () => Navigator.pop(dialogContext),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 12, // Reduced
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          side: BorderSide(
-                            color: Theme.of(context).colorScheme.outline,
-                          ),
-                          minimumSize: const Size(0, 0), // Allow smaller size
-                        ),
-                        child: Text(
-                          'Cancel',
-                          style: TextStyle(
-                            fontSize: 14, // Reduced
-                            fontWeight: FontWeight.w600,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                          overflow: TextOverflow.ellipsis, // Prevent overflow
-                        ),
-                      ),
-                      const SizedBox(width: 10), // Reduced
-                      // Create Button - Flexible
-                      FilledButton(
-                        onPressed: () {
-                          if (formKey.currentState!.validate()) {
-                            final categoryName = nameController.text.trim();
-                            final description = descController.text.trim();
-
-                            Navigator.pop(dialogContext);
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Row(
-                                  children: [
-                                    const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    const Text('Creating category...'),
-                                  ],
-                                ),
-                                backgroundColor: Theme.of(context).primaryColor,
-                                duration: const Duration(seconds: 2),
+                            filled: true,
+                            fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide.none,
+                            ),
+                            enabledBorder: const OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(14)),
+                              borderSide: BorderSide(
+                                color: Colors.grey,
+                                width: 1.5,
                               ),
-                            );
-
-                            InjectionContainer.inventoryBloc.add(
-                              CreateCategoryEvent(
-                                name: categoryName,
-                                description: description.isNotEmpty ? description : null,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: const BorderRadius.all(Radius.circular(14)),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).primaryColor,
+                                width: 2,
                               ),
-                            );
-                          }
-                        },
-                        style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 12, // Reduced
+                            ),
+                            errorBorder: const OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(14)),
+                              borderSide: BorderSide(color: Colors.red, width: 2),
+                            ),
+                            focusedErrorBorder: const OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(14)),
+                              borderSide: BorderSide(color: Colors.red, width: 2),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          backgroundColor: Theme.of(context).primaryColor,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(0, 0), // Allow smaller size
+                          style: const TextStyle(fontSize: 15),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min, // Important for preventing overflow
+
+                        const SizedBox(height: 12),
+
+                        // Description Field
+                        TextFormField(
+                          controller: descController,
+                          maxLines: 2,
+                          enabled: !isSubmitting,
+                          decoration: InputDecoration(
+                            labelText: 'Description (Optional)',
+                            hintText: 'Brief description of this category...',
+                            prefixIcon: Icon(
+                              Icons.description_rounded,
+                              color: Theme.of(context).primaryColor,
+                              size: 20,
+                            ),
+                            filled: true,
+                            fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide.none,
+                            ),
+                            enabledBorder: const OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(14)),
+                              borderSide: BorderSide(
+                                color: Colors.grey,
+                                width: 1.5,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: const BorderRadius.all(Radius.circular(14)),
+                              borderSide: BorderSide(
+                                color: Theme.of(context).primaryColor,
+                                width: 2,
+                              ),
+                            ),
+                            errorBorder: const OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(14)),
+                              borderSide: BorderSide(color: Colors.red, width: 2),
+                            ),
+                            focusedErrorBorder: const OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(14)),
+                              borderSide: BorderSide(color: Colors.red, width: 2),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                          ),
+                          style: const TextStyle(fontSize: 15),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // Character Counter
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Icon(
-                              Icons.add_rounded,
-                              size: 18, // Reduced
-                            ),
-                            const SizedBox(width: 6),
-                            Flexible(
-                              child: Text(
-                                'Create Category',
-                                style: TextStyle(
-                                  fontSize: 14, // Reduced
-                                  fontWeight: FontWeight.w600,
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.info_outline_rounded,
+                                  size: 14,
+                                  color: Colors.grey.shade500,
                                 ),
-                                overflow: TextOverflow.ellipsis, // Prevent overflow
-                              ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'All fields are optional except name',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            ValueListenableBuilder(
+                              valueListenable: nameController,
+                              builder: (context, value, child) {
+                                return Text(
+                                  '${value.text.trim().length}/50',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: value.text.trim().length > 45
+                                        ? Colors.orange
+                                        : Colors.grey.shade500,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),
-                      ),
-                    ],
+
+                        const SizedBox(height: 16),
+
+                        // Action Buttons
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            // Cancel Button
+                            OutlinedButton(
+                              onPressed: isSubmitting ? null : () => Navigator.pop(dialogContext),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                side: BorderSide(
+                                  color: Theme.of(context).colorScheme.outline,
+                                ),
+                                minimumSize: const Size(0, 0),
+                              ),
+                              child: Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            // Create Button with Button Loader
+                            FilledButton(
+                              onPressed: isSubmitting
+                                  ? null
+                                  : () async {
+                                      if (formKey.currentState!.validate()) {
+                                        final categoryName = nameController.text.trim();
+                                        final description = descController.text.trim();
+
+                                        setDialogState(() {
+                                          isSubmitting = true;
+                                          errorMessage = null;
+                                        });
+
+                                        try {
+                                          await InjectionContainer.inventoryRemoteDataSource.createCategory(
+                                            categoryName,
+                                            description: description.isNotEmpty ? description : null,
+                                          );
+
+                                          if (dialogContext.mounted) {
+                                            Navigator.pop(dialogContext, categoryName);
+                                          }
+
+                                          if (context.mounted) {
+                                            _onCategorySelected(categoryName);
+                                          }
+                                        } catch (e) {
+                                          final rawErr = e.toString();
+                                          if (rawErr.toLowerCase().contains('already exists') ||
+                                              rawErr.contains('409') ||
+                                              rawErr.toLowerCase().contains('conflict')) {
+                                            // Category already exists on server, treat as success!
+                                            if (dialogContext.mounted) {
+                                              Navigator.pop(dialogContext, categoryName);
+                                            }
+                                            if (context.mounted) {
+                                              _onCategorySelected(categoryName);
+                                            }
+                                          } else {
+                                            if (dialogContext.mounted) {
+                                              setDialogState(() {
+                                                isSubmitting = false;
+                                                errorMessage = rawErr
+                                                    .replaceAll('Exception: ', '')
+                                                    .replaceAll('ServerFailure: ', '')
+                                                    .replaceAll('NetworkFailure: ', '');
+                                              });
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
+                              style: FilledButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                backgroundColor: Theme.of(context).primaryColor,
+                                foregroundColor: Colors.white,
+                                minimumSize: const Size(0, 0),
+                              ),
+                              child: isSubmitting
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.add_rounded,
+                                          size: 18,
+                                        ),
+                                        SizedBox(width: 6),
+                                        Flexible(
+                                          child: Text(
+                                            'Create Category',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );
@@ -446,18 +503,25 @@ class _InventoryScreenState extends State<InventoryScreen> {
             onPressed: () => _showImportCsvDialog(context),
             icon: const Icon(Icons.upload_file_rounded),
           ),
-          IconButton(
-            tooltip: 'Refresh',
-            onPressed: () {
-              InjectionContainer.inventoryBloc.add(
-                FetchInventoryItemsEvent(
-                  searchQuery: searchController.text,
-                  category: selectedCategory,
-                  filter: selectedFilter,
-                ),
+          BlocBuilder<InventoryBloc, InventoryState>(
+            builder: (context, state) {
+              final isRefreshing = state is InventoryLoadedState && state.isListLoading;
+              return IconButton(
+                tooltip: 'Refresh',
+                onPressed: isRefreshing
+                    ? null
+                    : () {
+                        InjectionContainer.inventoryBloc.add(
+                          FetchInventoryItemsEvent(
+                            searchQuery: searchController.text,
+                            category: selectedCategory,
+                            filter: selectedFilter,
+                          ),
+                        );
+                      },
+                icon: const Icon(Icons.refresh_rounded),
               );
             },
-            icon: const Icon(Icons.refresh_rounded),
           ),
           IconButton(
             tooltip: 'Filter',
@@ -625,7 +689,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     scrollDirection: Axis.horizontal,
                     itemCount: categories.length + 1,
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    separatorBuilder: (_, _) => const SizedBox(width: 8),
                     itemBuilder: (context, index) {
                       if (index == 0) {
                         return ActionChip(
@@ -659,25 +723,32 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
               // ITEM LIST
               Expanded(
-                child: filteredItems.isEmpty
-                    ? const EmptyInventory()
-                    : ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
-                        itemCount: filteredItems.length,
-                        itemBuilder: (context, index) {
-                          final item = filteredItems[index];
+                child: (loadedState != null && loadedState.isListLoading)
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(32),
+                          child: CircularProgressIndicator(),
+                        ),
+                      )
+                    : filteredItems.isEmpty
+                        ? const EmptyInventory()
+                        : ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
+                            itemCount: filteredItems.length,
+                            itemBuilder: (context, index) {
+                              final item = filteredItems[index];
 
-                          return InventoryItemCard(
-                            item: item,
-                            onEdit: () {
-                              _openAddItemSheet(existingItem: item);
+                              return InventoryItemCard(
+                                item: item,
+                                onEdit: () {
+                                  _openAddItemSheet(existingItem: item);
+                                },
+                                onDelete: () {
+                                  _confirmDeleteItem(context, item);
+                                },
+                              );
                             },
-                            onDelete: () {
-                              _confirmDeleteItem(context, item);
-                            },
-                          );
-                        },
-                      ),
+                          ),
               ),
             ],
           );
@@ -744,6 +815,15 @@ class _InventoryScreenState extends State<InventoryScreen> {
               final updatedItem = await InjectionContainer.updateInventoryItemUseCase(item);
               InjectionContainer.inventoryBloc.add(UpdateInventoryItemEvent(updatedItem));
             }
+
+            // Immediately refresh inventory categories & items so the main screen updates
+            InjectionContainer.inventoryBloc.add(
+              FetchInventoryItemsEvent(
+                category: selectedCategory,
+                searchQuery: searchController.text,
+                filter: selectedFilter,
+              ),
+            );
 
             if (sheetContext.mounted) {
               Navigator.pop(sheetContext);

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:inventory_management_complete/features/auth/domain/entities/user_entity.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../inventory_item.dart';

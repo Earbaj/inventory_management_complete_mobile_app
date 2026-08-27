@@ -48,8 +48,10 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     _currentCategory = event.category ?? _currentCategory;
     _currentFilter = event.filter;
 
-    if (_allItems.isEmpty) {
+    if (_allItems.isEmpty && _fetchedCategories.isEmpty) {
       emit(const InventoryLoadingState());
+    } else {
+      _emitLoadedState(emit, isListLoading: true);
     }
 
     try {
@@ -64,13 +66,17 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
         category: apiCategory,
       ));
 
-      _fetchedCategories = await remoteDataSource.getCategories();
+      _fetchedCategories = await remoteDataSource.getCategories(forceRefresh: true);
       developer.log('✅ [InventoryBloc] Fetched ${_allItems.length} items & ${_fetchedCategories.length} categories from API', name: 'InventoryBloc');
 
-      _emitLoadedState(emit);
+      _emitLoadedState(emit, isListLoading: false);
     } catch (e, stackTrace) {
       developer.log('❌ [InventoryBloc] _onFetchItems error: $e', name: 'InventoryBloc', error: e, stackTrace: stackTrace);
-      emit(InventoryErrorState(e.toString()));
+      if (_allItems.isEmpty) {
+        emit(InventoryErrorState(e.toString()));
+      } else {
+        _emitLoadedState(emit, isListLoading: false);
+      }
     }
   }
 
@@ -139,14 +145,32 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
       await remoteDataSource.createCategory(event.name, description: event.description);
       developer.log('✅ [InventoryBloc] Category "${event.name}" created successfully on backend!', name: 'InventoryBloc');
 
+      final freshCategories = await remoteDataSource.getCategories(forceRefresh: true);
+      if (freshCategories.isNotEmpty) {
+        _fetchedCategories = freshCategories;
+      }
       if (!_fetchedCategories.contains(event.name)) {
         _fetchedCategories.add(event.name);
       }
       emit(InventoryOperationSuccessState('Category "${event.name}" created successfully!'));
       _emitLoadedState(emit);
     } catch (e, stackTrace) {
-      developer.log('❌ [InventoryBloc] _onCreateCategory Error: $e', name: 'InventoryBloc', error: e, stackTrace: stackTrace);
-      emit(InventoryErrorState('Failed to create category: $e'));
+      final errorMsg = e.toString().toLowerCase();
+      if (errorMsg.contains('already exists') || errorMsg.contains('409') || errorMsg.contains('conflict')) {
+        developer.log('ℹ️ [InventoryBloc] Category "${event.name}" already exists on server. Refreshing...', name: 'InventoryBloc');
+        final freshCategories = await remoteDataSource.getCategories(forceRefresh: true);
+        if (freshCategories.isNotEmpty) {
+          _fetchedCategories = freshCategories;
+        }
+        if (!_fetchedCategories.contains(event.name)) {
+          _fetchedCategories.add(event.name);
+        }
+        emit(InventoryOperationSuccessState('Category "${event.name}" is ready!'));
+        _emitLoadedState(emit);
+      } else {
+        developer.log('❌ [InventoryBloc] _onCreateCategory Error: $e', name: 'InventoryBloc', error: e, stackTrace: stackTrace);
+        emit(InventoryErrorState('Failed to create category: $e'));
+      }
     }
   }
 
@@ -178,7 +202,7 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     }
   }
 
-  void _emitLoadedState(Emitter<InventoryState> emit) {
+  void _emitLoadedState(Emitter<InventoryState> emit, {bool isListLoading = false}) {
     final categoriesSet = <String>{
       'All',
       ..._fetchedCategories,
@@ -210,6 +234,7 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
       selectedCategory: _currentCategory,
       selectedFilter: _currentFilter,
       searchQuery: _currentSearchQuery,
+      isListLoading: isListLoading,
     ));
   }
 }

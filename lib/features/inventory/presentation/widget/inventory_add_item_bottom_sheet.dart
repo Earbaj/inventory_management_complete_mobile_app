@@ -3,6 +3,8 @@ import '../../../../core/di/injection_container.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/services/barcode_scanner_service.dart';
 import '../../inventory_item.dart';
+import '../bloc/inventory_event.dart';
+import '../bloc/inventory_state.dart';
 import 'iinventory_add_item_sub_widget.dart';
 
 class AddItemSheet extends StatefulWidget {
@@ -58,9 +60,25 @@ class _AddItemSheetState extends State<AddItemSheet> {
     purchasePriceController = TextEditingController(text: item?.purchasePrice.toString() ?? '');
     stockController = TextEditingController(text: item?.stockQuantity.toString() ?? '');
 
-    if (item != null) {
-      category = item.category;
+    final Set<String> initialCategories = {'General'};
+    if (item != null && item.category.trim().isNotEmpty) {
+      initialCategories.add(item.category.trim());
+      category = item.category.trim();
       unit = item.unit;
+    }
+
+    // Pre-populate with all categories from loaded Bloc state
+    final blocState = InjectionContainer.inventoryBloc.state;
+    if (blocState is InventoryLoadedState) {
+      for (final cat in blocState.categories) {
+        if (cat.toLowerCase() != 'all' && cat.trim().isNotEmpty) {
+          initialCategories.add(cat.trim());
+        }
+      }
+    }
+    categoriesList = initialCategories.toList();
+    if (!categoriesList.contains(category)) {
+      category = categoriesList.first;
     }
 
     _fetchCategoriesFromApi();
@@ -68,12 +86,14 @@ class _AddItemSheetState extends State<AddItemSheet> {
 
   Future<void> _fetchCategoriesFromApi() async {
     try {
-      final apiCategories = await InjectionContainer.inventoryRemoteDataSource.getCategories();
+      final apiCategories = await InjectionContainer.inventoryRemoteDataSource.getCategories(forceRefresh: true);
       if (mounted) {
         setState(() {
           final set = <String>{
-            if (widget.existingItem != null) widget.existingItem!.category,
+            if (widget.existingItem != null && widget.existingItem!.category.trim().isNotEmpty)
+              widget.existingItem!.category.trim(),
             'General',
+            ...categoriesList,
             ...apiCategories,
           };
           categoriesList = set.toList();
@@ -210,6 +230,7 @@ class _AddItemSheetState extends State<AddItemSheet> {
                         Expanded(
                           child: DropdownButtonFormField<String>(
                             value: categoriesList.contains(category) ? category : categoriesList.first,
+                            isExpanded: true,
                             decoration: InputDecoration(
                               labelText: 'Category',
                               prefixIcon: const Icon(Icons.category_outlined),
@@ -222,18 +243,19 @@ class _AddItemSheetState extends State<AddItemSheet> {
                                         child: CircularProgressIndicator(strokeWidth: 2),
                                       ),
                                     )
-                                  : null,
+                                  : IconButton(
+                                      tooltip: 'Add New Category',
+                                      icon: const Icon(Icons.add_circle_outline_rounded, size: 20),
+                                      onPressed: _showQuickAddCategoryDialog,
+                                    ),
                             ),
                             items: categoriesList.map((value) {
                               return DropdownMenuItem(
                                 value: value,
-                                child: SizedBox(
-                                  width: 60,
-                                    child: Text(
-                                      value,
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
-                                    )
+                                child: Text(
+                                  value,
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
                                 ),
                               );
                             }).toList(),
@@ -519,6 +541,150 @@ class _AddItemSheetState extends State<AddItemSheet> {
               },
             ),
           ],
+        );
+      },
+    );
+  }
+
+  void _showQuickAddCategoryDialog() {
+    final nameController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    bool isSubmitting = false;
+    String? errorMessage;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Row(
+                children: [
+                  Icon(Icons.category_rounded, color: Colors.cyan),
+                  SizedBox(width: 10),
+                  Text('New Category', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              content: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (errorMessage != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        margin: const EdgeInsets.only(bottom: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.red.shade200),
+                        ),
+                        child: Text(
+                          errorMessage!,
+                          style: TextStyle(color: Colors.red.shade800, fontSize: 12),
+                        ),
+                      ),
+                    ],
+                    TextFormField(
+                      controller: nameController,
+                      autofocus: true,
+                      enabled: !isSubmitting,
+                      decoration: const InputDecoration(
+                        labelText: 'Category Name *',
+                        hintText: 'e.g. Beverages, Electronics',
+                        prefixIcon: Icon(Icons.label_outline_rounded),
+                      ),
+                      validator: (val) {
+                        if (val == null || val.trim().isEmpty) {
+                          return 'Category name is required';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSubmitting ? null : () => Navigator.pop(dialogContext),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: isSubmitting
+                      ? null
+                      : () async {
+                          if (formKey.currentState!.validate()) {
+                            final newCategoryName = nameController.text.trim();
+                            setDialogState(() {
+                              isSubmitting = true;
+                              errorMessage = null;
+                            });
+
+                            try {
+                              await InjectionContainer.inventoryRemoteDataSource.createCategory(newCategoryName);
+
+                              // Notify InventoryBloc to refresh categories so parent screen updates immediately
+                              InjectionContainer.inventoryBloc.add(
+                                const FetchInventoryItemsEvent(),
+                              );
+
+                              if (dialogContext.mounted) {
+                                Navigator.pop(dialogContext);
+                              }
+
+                              if (mounted) {
+                                setState(() {
+                                  if (!categoriesList.contains(newCategoryName)) {
+                                    categoriesList.add(newCategoryName);
+                                  }
+                                  category = newCategoryName;
+                                });
+                              }
+                            } catch (e) {
+                              final rawErr = e.toString();
+                              if (rawErr.toLowerCase().contains('already exists') ||
+                                  rawErr.contains('409') ||
+                                  rawErr.toLowerCase().contains('conflict')) {
+                                InjectionContainer.inventoryBloc.add(
+                                  const FetchInventoryItemsEvent(),
+                                );
+                                if (dialogContext.mounted) {
+                                  Navigator.pop(dialogContext);
+                                }
+                                if (mounted) {
+                                  setState(() {
+                                    if (!categoriesList.contains(newCategoryName)) {
+                                      categoriesList.add(newCategoryName);
+                                    }
+                                    category = newCategoryName;
+                                  });
+                                }
+                              } else {
+                                if (dialogContext.mounted) {
+                                  setDialogState(() {
+                                    isSubmitting = false;
+                                    errorMessage = rawErr
+                                        .replaceAll('Exception: ', '')
+                                        .replaceAll('ServerFailure: ', '');
+                                  });
+                                }
+                              }
+                            }
+                          }
+                        },
+                  child: isSubmitting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text('Create'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
