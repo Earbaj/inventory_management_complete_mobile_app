@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/route/app_route.dart';
 import '../../../inventory/data/models/inventory_item_model.dart';
 import '../../data/models/supplier_model.dart';
 import '../../data/models/purchase_order_model.dart';
@@ -38,47 +39,55 @@ class _SuppliersScreenState extends State<SuppliersScreen> with SingleTickerProv
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return BlocConsumer<SupplierBloc, SupplierState>(
-      bloc: InjectionContainer.supplierBloc,
-      listener: (context, state) {
-        if (state is SupplierLoadedState && state.successMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.successMessage!),
-              backgroundColor: Colors.green,
-            ),
-          );
-        } else if (state is SupplierErrorState) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      },
-      builder: (context, state) {
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Suppliers / মহাজন হিসাব'),
-            bottom: TabBar(
-              controller: _tabController,
-              tabs: const [
-                Tab(icon: Icon(Icons.people_alt_outlined), text: 'মহাজন তালিকা'),
-                Tab(icon: Icon(Icons.receipt_long_outlined), text: 'ক্রয়ের রসিদসমূহ'),
-              ],
-            ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.refresh),
-                tooltip: 'রিফ্রেশ',
-                onPressed: () {
-                  InjectionContainer.supplierBloc.add(const LoadSuppliersEvent());
-                },
-              ),
-            ],
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Suppliers / মহাজন হিসাব'),
+        leading: IconButton(
+          onPressed: () {
+            AppRoute.shellScaffoldKey.currentState?.openDrawer();
+          },
+          icon: const Icon(Icons.menu_rounded),
+        ),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(icon: Icon(Icons.people_alt_outlined), text: 'মহাজন তালিকা'),
+            Tab(icon: Icon(Icons.receipt_long_outlined), text: 'ক্রয়ের রসিদসমূহ'),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'রিফ্রেশ',
+            onPressed: () {
+              InjectionContainer.supplierBloc.add(const LoadSuppliersEvent());
+            },
           ),
-          body: Column(
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => _showAddSupplierDialog(context), label: Text("Add Suppliers")
+      ),
+      body: BlocConsumer<SupplierBloc, SupplierState>(
+          listener: (context, state) {
+            if (state is SupplierLoadedState && state.successMessage != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.successMessage!),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            } else if (state is SupplierErrorState) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          },
+        builder: (context, state) {
+          return Column(
             children: [
               // Action Buttons Header
               Padding(
@@ -99,15 +108,6 @@ class _SuppliersScreenState extends State<SuppliersScreen> with SingleTickerProv
                         onChanged: (val) {
                           InjectionContainer.supplierBloc.add(LoadSuppliersEvent(search: val));
                         },
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    FilledButton.icon(
-                      onPressed: () => _showAddSupplierDialog(context),
-                      icon: const Icon(Icons.person_add),
-                      label: const Text('নতুন মহাজন'),
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                       ),
                     ),
                   ],
@@ -156,6 +156,8 @@ class _SuppliersScreenState extends State<SuppliersScreen> with SingleTickerProv
                       style: ElevatedButton.styleFrom(
                         backgroundColor: colorScheme.primary,
                         foregroundColor: Colors.white,
+                        minimumSize: const Size(0, 0),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       ),
                     ),
                   ],
@@ -166,23 +168,51 @@ class _SuppliersScreenState extends State<SuppliersScreen> with SingleTickerProv
 
               // Main Tab Content
               Expanded(
-                child: state is SupplierLoadingState
-                    ? const Center(child: CircularProgressIndicator())
-                    : state is SupplierLoadedState
-                        ? TabBarView(
-                            controller: _tabController,
-                            children: [
-                              _buildSupplierList(context, state.suppliers),
-                              _buildPurchaseOrdersList(context, state.purchaseOrders),
-                            ],
-                          )
-                        : const Center(child: Text('কোন তথ্য পাওয়া যায়নি।')),
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildSupplierTabContent(context, state),
+                    _buildPurchaseOrdersTabContent(context, state),
+                  ],
+                ),
               ),
             ],
-          ),
-        );
-      },
+          );
+        }
+      ),
     );
+  }
+
+  Widget _buildSupplierTabContent(BuildContext context, SupplierState state) {
+    if (state is SupplierLoadingState) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (state is SupplierErrorState) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(state.message, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
+        ),
+      );
+    }
+    final List<SupplierModel> suppliers = state is SupplierLoadedState ? state.suppliers : [];
+    return _buildSupplierList(context, suppliers);
+  }
+
+  Widget _buildPurchaseOrdersTabContent(BuildContext context, SupplierState state) {
+    if (state is SupplierLoadingState) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (state is SupplierErrorState) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(state.message, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
+        ),
+      );
+    }
+    final List<PurchaseOrderModel> orders = state is SupplierLoadedState ? state.purchaseOrders : [];
+    return _buildPurchaseOrdersList(context, orders);
   }
 
   Widget _buildSupplierList(BuildContext context, List<SupplierModel> suppliers) {

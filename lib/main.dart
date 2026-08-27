@@ -28,6 +28,8 @@ import 'features/reports/presentation/bloc/reports_event.dart';
 import 'features/settings/presentation/bloc/settings_bloc.dart';
 import 'features/settings/presentation/bloc/settings_event.dart';
 import 'features/staff_managers/presentation/bloc/staff_event.dart';
+import 'features/suppliers/presentation/bloc/supplier_bloc.dart';
+import 'features/suppliers/presentation/bloc/supplier_event.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -78,6 +80,9 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider<ExportBloc>(
           create: (context) => InjectionContainer.exportBloc,
+        ),
+        BlocProvider<SupplierBloc>(
+          create: (context) => InjectionContainer.supplierBloc,
         ),
       ],
       child: MaterialApp.router(
