@@ -324,7 +324,6 @@ class ApiClient {
     throw ServerFailure('Server error ($statusCode)', statusCode: statusCode);
   }
 
-  /// Maps [DioException] instances to domain [Failure] objects.
   Failure _handleDioError(DioException e) {
     if (e.type == DioExceptionType.connectionError) {
       return NetworkFailure(
@@ -339,15 +338,36 @@ class ApiClient {
     }
 
     final statusCode = e.response?.statusCode;
-    if (statusCode == 401) {
-      return const UnauthorizedFailure('Session expired or invalid credentials.');
-    }
-
-    String errorMessage = 'Server error (${statusCode ?? 'Unknown'})';
+    
+    // Extract custom message from response data if available
+    String? customMessage;
     final responseData = e.response?.data;
     if (responseData is Map && responseData.containsKey('message')) {
-      errorMessage = responseData['message'].toString();
-    } else if (e.message != null && e.message!.isNotEmpty) {
+      customMessage = responseData['message'].toString();
+    }
+
+    if (statusCode == 401) {
+      return UnauthorizedFailure(customMessage ?? 'Session expired or invalid credentials.');
+    }
+
+    // Handle truncated JSON or FormatException gracefully
+    if (e.error is FormatException || e.message?.contains('FormatException') == true) {
+      developer.log('⚠️ [ApiClient] JSON parsing FormatException caught in error response. Checking raw response data...', name: 'ApiClient');
+      final rawData = e.response?.toString() ?? '';
+      if (rawData.contains('Invalid email or password')) {
+        return const UnauthorizedFailure('Invalid email or password');
+      }
+      if (rawData.contains('Unauthorized') || rawData.contains('401')) {
+        return const UnauthorizedFailure('Session expired or invalid credentials.');
+      }
+      return ServerFailure(
+        'Received an invalid or truncated response from the server. (Details: ${e.error ?? e.message})',
+        statusCode: statusCode,
+      );
+    }
+
+    String errorMessage = customMessage ?? 'Server error (${statusCode ?? 'Unknown'})';
+    if (customMessage == null && e.message != null && e.message!.isNotEmpty) {
       errorMessage = e.message!;
     }
 
