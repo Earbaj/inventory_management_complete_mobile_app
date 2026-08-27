@@ -1,19 +1,12 @@
 import 'dart:developer' as developer;
+import '../../domain/repositories/supplier_repository.dart';
+import '../../domain/entities/supplier_entity.dart';
+import '../../domain/entities/purchase_order_entity.dart';
 import '../datasources/supplier_remote_data_source.dart';
 import '../datasources/supplier_local_data_source.dart';
-import '../models/supplier_model.dart';
 import '../models/purchase_order_model.dart';
+import '../mappers/supplier_mapper.dart';
 import '../../../inventory/data/datasources/inventory_local_data_source.dart';
-
-abstract class SupplierRepository {
-  Future<List<SupplierModel>> getSuppliers({String? search});
-  Future<SupplierModel> getSupplierById(String id);
-  Future<SupplierModel> createSupplier(SupplierModel supplier);
-  Future<SupplierModel> updateSupplier(SupplierModel supplier);
-  Future<void> deleteSupplier(String id);
-  Future<PurchaseOrderModel> createPurchaseOrder(PurchaseOrderModel order);
-  Future<List<PurchaseOrderModel>> getPurchaseOrders({String? supplierId});
-}
 
 class SupplierRepositoryImpl implements SupplierRepository {
   final SupplierRemoteDataSource remoteDataSource;
@@ -27,57 +20,60 @@ class SupplierRepositoryImpl implements SupplierRepository {
   });
 
   @override
-  Future<List<SupplierModel>> getSuppliers({String? search}) async {
+  Future<List<SupplierEntity>> getSuppliers({String? search}) async {
     try {
       final remoteList = await remoteDataSource.getSuppliers(search: search);
       for (final s in remoteList) {
         await localDataSource.saveSupplier(s);
       }
-      return remoteList;
+      return remoteList.map(SupplierMapper.supplierToEntity).toList();
     } catch (e) {
       developer.log('⚠️ Network failed, fallback to local suppliers: $e', name: 'SupplierRepository');
-      return localDataSource.getSuppliers(search: search);
+      final localList = await localDataSource.getSuppliers(search: search);
+      return localList.map(SupplierMapper.supplierToEntity).toList();
     }
   }
 
   @override
-  Future<SupplierModel> getSupplierById(String id) async {
+  Future<SupplierEntity> getSupplierById(String id) async {
     try {
       final remote = await remoteDataSource.getSupplierById(id);
       await localDataSource.saveSupplier(remote);
-      return remote;
+      return SupplierMapper.supplierToEntity(remote);
     } catch (e) {
       final local = await localDataSource.getSupplierById(id);
-      if (local != null) return local;
+      if (local != null) return SupplierMapper.supplierToEntity(local);
       throw Exception('Supplier not found.');
     }
   }
 
   @override
-  Future<SupplierModel> createSupplier(SupplierModel supplier) async {
+  Future<SupplierEntity> createSupplier(SupplierEntity supplier) async {
+    final model = SupplierMapper.supplierToModel(supplier);
     try {
-      final created = await remoteDataSource.createSupplier(supplier);
+      final created = await remoteDataSource.createSupplier(model);
       await localDataSource.saveSupplier(created);
-      return created;
+      return SupplierMapper.supplierToEntity(created);
     } catch (e) {
       developer.log('⚠️ Network failed creating supplier, saving locally: $e', name: 'SupplierRepository');
       final newId = 'sup_${DateTime.now().millisecondsSinceEpoch}';
-      final localSup = supplier.copyWith(id: newId);
+      final localSup = model.copyWith(id: newId);
       await localDataSource.saveSupplier(localSup);
-      return localSup;
+      return SupplierMapper.supplierToEntity(localSup);
     }
   }
 
   @override
-  Future<SupplierModel> updateSupplier(SupplierModel supplier) async {
+  Future<SupplierEntity> updateSupplier(SupplierEntity supplier) async {
+    final model = SupplierMapper.supplierToModel(supplier);
     try {
-      final updated = await remoteDataSource.updateSupplier(supplier);
+      final updated = await remoteDataSource.updateSupplier(model);
       await localDataSource.saveSupplier(updated);
-      return updated;
+      return SupplierMapper.supplierToEntity(updated);
     } catch (e) {
       developer.log('⚠️ Network failed updating supplier, updating locally: $e', name: 'SupplierRepository');
-      await localDataSource.saveSupplier(supplier);
-      return supplier;
+      await localDataSource.saveSupplier(model);
+      return SupplierMapper.supplierToEntity(model);
     }
   }
 
@@ -93,23 +89,24 @@ class SupplierRepositoryImpl implements SupplierRepository {
   }
 
   @override
-  Future<PurchaseOrderModel> createPurchaseOrder(PurchaseOrderModel order) async {
+  Future<PurchaseOrderEntity> createPurchaseOrder(PurchaseOrderEntity order) async {
+    final model = SupplierMapper.orderToModel(order);
     PurchaseOrderModel finalOrder;
     try {
-      finalOrder = await remoteDataSource.createPurchaseOrder(order);
+      finalOrder = await remoteDataSource.createPurchaseOrder(model);
       await localDataSource.savePurchaseOrder(finalOrder);
     } catch (e) {
       developer.log('⚠️ Network failed creating purchase order, saving locally: $e', name: 'SupplierRepository');
       final newId = 'po_${DateTime.now().millisecondsSinceEpoch}';
       finalOrder = PurchaseOrderModel(
         id: newId,
-        supplierId: order.supplierId,
-        supplierName: order.supplierName,
-        items: order.items,
-        totalAmount: order.totalAmount,
-        paidAmount: order.paidAmount,
-        dueAmount: order.dueAmount,
-        note: order.note,
+        supplierId: model.supplierId,
+        supplierName: model.supplierName,
+        items: model.items,
+        totalAmount: model.totalAmount,
+        paidAmount: model.paidAmount,
+        dueAmount: model.dueAmount,
+        note: model.note,
         createdAt: DateTime.now(),
       );
       await localDataSource.savePurchaseOrder(finalOrder);
@@ -132,19 +129,20 @@ class SupplierRepositoryImpl implements SupplierRepository {
       }
     }
 
-    return finalOrder;
+    return SupplierMapper.orderToEntity(finalOrder);
   }
 
   @override
-  Future<List<PurchaseOrderModel>> getPurchaseOrders({String? supplierId}) async {
+  Future<List<PurchaseOrderEntity>> getPurchaseOrders({String? supplierId}) async {
     try {
       final remoteList = await remoteDataSource.getPurchaseOrders(supplierId: supplierId);
       for (final po in remoteList) {
         await localDataSource.savePurchaseOrder(po);
       }
-      return remoteList;
+      return remoteList.map(SupplierMapper.orderToEntity).toList();
     } catch (e) {
-      return localDataSource.getPurchaseOrders(supplierId: supplierId);
+      final localList = await localDataSource.getPurchaseOrders(supplierId: supplierId);
+      return localList.map(SupplierMapper.orderToEntity).toList();
     }
   }
 }

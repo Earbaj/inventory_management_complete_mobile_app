@@ -3,8 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../inventory/data/models/inventory_item_model.dart';
-import '../../data/models/supplier_model.dart';
-import '../../data/models/purchase_order_model.dart';
+import '../../domain/entities/supplier_entity.dart';
+import '../../domain/entities/purchase_order_entity.dart';
 import '../bloc/supplier_bloc.dart';
 import '../bloc/supplier_event.dart';
 import '../bloc/supplier_state.dart';
@@ -24,7 +24,10 @@ class _SuppliersScreenState extends State<SuppliersScreen> with SingleTickerProv
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    InjectionContainer.supplierBloc.add(const LoadSuppliersEvent());
+    // Initialize loading suppliers
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<SupplierBloc>().add(const LoadSuppliersEvent());
+    });
   }
 
   @override
@@ -51,22 +54,23 @@ class _SuppliersScreenState extends State<SuppliersScreen> with SingleTickerProv
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
-            Tab(icon: Icon(Icons.people_alt_outlined), text: 'মহাজন তালিকা'),
-            Tab(icon: Icon(Icons.receipt_long_outlined), text: 'ক্রয়ের রসিদসমূহ'),
+            Tab(icon: Icon(Icons.people_alt_outlined), text: 'Suppliers List'),
+            Tab(icon: Icon(Icons.receipt_long_outlined), text: 'Suppliers Recipe'),
           ],
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'রিফ্রেশ',
+            tooltip: 'Refresh',
             onPressed: () {
-              InjectionContainer.supplierBloc.add(const LoadSuppliersEvent());
+              context.read<SupplierBloc>().add(const LoadSuppliersEvent());
             },
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => _showAddSupplierDialog(context), label: Text("Add Suppliers")
+          onPressed: () => _showAddSupplierDialog(context),
+          label: Text("Add Supplier")
       ),
       body: BlocConsumer<SupplierBloc, SupplierState>(
           listener: (context, state) {
@@ -86,99 +90,99 @@ class _SuppliersScreenState extends State<SuppliersScreen> with SingleTickerProv
               );
             }
           },
-        builder: (context, state) {
-          return Column(
-            children: [
-              // Action Buttons Header
-              Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText: 'মহাজন বা কোম্পানির নাম খুঁজুন...',
-                          prefixIcon: const Icon(Icons.search),
-                          isDense: true,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
+          builder: (context, state) {
+            return Column(
+              children: [
+                // Action Buttons Header
+                Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            hintText: 'মহাজন বা কোম্পানির নাম খুঁজুন...',
+                            prefixIcon: const Icon(Icons.search),
+                            isDense: true,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
+                          onChanged: (val) {
+                            context.read<SupplierBloc>().add(LoadSuppliersEvent(search: val));
+                          },
                         ),
-                        onChanged: (val) {
-                          InjectionContainer.supplierBloc.add(LoadSuppliersEvent(search: val));
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Action Banner for Purchase
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: colorScheme.primary.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.local_shipping_outlined, color: colorScheme.primary, size: 28),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              'পাইকারি মালামাল ক্রয় মেমো',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                            Text(
+                              'মহাজনের কাছ থেকে ক্রয়কৃত মালামাল যুক্ত করলে ইনভেন্টরি স্টক অটো-রিস্টক হবে।',
+                              style: TextStyle(fontSize: 11, color: Colors.black87),
+                            ),
+                          ],
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: state is SupplierLoadedState && state.suppliers.isNotEmpty
+                            ? () => _showNewPurchaseOrderDialog(context, state.suppliers)
+                            : () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('প্রথমে একজন মহাজন যুক্ত করুন!')),
+                          );
                         },
+                        icon: const Icon(Icons.add_shopping_cart, size: 18),
+                        label: const Text('মালামাল ক্রয়'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: colorScheme.primary,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(0, 0),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
 
-              // Action Banner for Purchase
-              Container(
-                width: double.infinity,
-                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: colorScheme.primary.withValues(alpha: 0.3)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.local_shipping_outlined, color: colorScheme.primary, size: 28),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            'পাইকারি মালামাল ক্রয় মেমো',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                          ),
-                          Text(
-                            'মহাজনের কাছ থেকে ক্রয়কৃত মালামাল যুক্ত করলে ইনভেন্টরি স্টক অটো-রিস্টক হবে।',
-                            style: TextStyle(fontSize: 11, color: Colors.black87),
-                          ),
-                        ],
-                      ),
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: state is SupplierLoadedState && state.suppliers.isNotEmpty
-                          ? () => _showNewPurchaseOrderDialog(context, state.suppliers)
-                          : () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('প্রথমে একজন মহাজন যুক্ত করুন!')),
-                              );
-                            },
-                      icon: const Icon(Icons.add_shopping_cart, size: 18),
-                      label: const Text('মালামাল ক্রয়'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: colorScheme.primary,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(0, 0),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                const SizedBox(height: 8),
 
-              const SizedBox(height: 8),
-
-              // Main Tab Content
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildSupplierTabContent(context, state),
-                    _buildPurchaseOrdersTabContent(context, state),
-                  ],
+                // Main Tab Content
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildSupplierTabContent(context, state),
+                      _buildPurchaseOrdersTabContent(context, state),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          );
-        }
+              ],
+            );
+          }
       ),
     );
   }
@@ -195,7 +199,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> with SingleTickerProv
         ),
       );
     }
-    final List<SupplierModel> suppliers = state is SupplierLoadedState ? state.suppliers : [];
+    final List<SupplierEntity> suppliers = state is SupplierLoadedState ? state.suppliers : [];
     return _buildSupplierList(context, suppliers);
   }
 
@@ -211,11 +215,11 @@ class _SuppliersScreenState extends State<SuppliersScreen> with SingleTickerProv
         ),
       );
     }
-    final List<PurchaseOrderModel> orders = state is SupplierLoadedState ? state.purchaseOrders : [];
+    final List<PurchaseOrderEntity> orders = state is SupplierLoadedState ? state.purchaseOrders : [];
     return _buildPurchaseOrdersList(context, orders);
   }
 
-  Widget _buildSupplierList(BuildContext context, List<SupplierModel> suppliers) {
+  Widget _buildSupplierList(BuildContext context, List<SupplierEntity> suppliers) {
     if (suppliers.isEmpty) {
       return const Center(
         child: Text('কোন মহাজন পাওয়া যায়নি। "নতুন মহাজন" বাটনে ক্লিক করে যোগ করুন।'),
@@ -291,7 +295,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> with SingleTickerProv
     );
   }
 
-  Widget _buildPurchaseOrdersList(BuildContext context, List<PurchaseOrderModel> orders) {
+  Widget _buildPurchaseOrdersList(BuildContext context, List<PurchaseOrderEntity> orders) {
     if (orders.isEmpty) {
       return const Center(
         child: Text('এখনও কোন কেনাকাটার মেমো তৈরি হয়নি। "মালামাল ক্রয়" বাটনে চাপুন।'),
@@ -356,31 +360,35 @@ class _SuppliersScreenState extends State<SuppliersScreen> with SingleTickerProv
     showDialog(
       context: context,
       builder: (dialogCtx) => AlertDialog(
-        title: const Text('নতুন মহাজন প্রোফাইল তৈরি'),
+        title: const Text('Create New Suppliers Profile'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'মহাজনের নাম *')),
-              TextField(controller: companyCtrl, decoration: const InputDecoration(labelText: 'কোম্পানির নাম / ব্যবসা *')),
-              TextField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'মোবাইল নম্বর *'), keyboardType: TextInputType.phone),
-              TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'ইমেইল (ঐচ্ছিক)'), keyboardType: TextInputType.emailAddress),
-              TextField(controller: addressCtrl, decoration: const InputDecoration(labelText: 'ঠিকানা (ঐচ্ছিক)')),
+              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Suppliers Name *')),
+              const SizedBox(height: 4,),
+              TextField(controller: companyCtrl, decoration: const InputDecoration(labelText: 'Suppliers Name / Business *')),
+              const SizedBox(height: 4,),
+              TextField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Mobile Number *'), keyboardType: TextInputType.phone),
+              const SizedBox(height: 4,),
+              TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email (Optional)'), keyboardType: TextInputType.emailAddress),
+              const SizedBox(height: 4,),
+              TextField(controller: addressCtrl, decoration: const InputDecoration(labelText: 'Address (Optional)')),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('বাতিল')),
+          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Reject')),
           FilledButton(
             onPressed: () {
               if (nameCtrl.text.trim().isEmpty || phoneCtrl.text.trim().isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('নাম এবং ফোন নম্বর পূরণ করা আবশ্যক!')),
+                  const SnackBar(content: Text('Name and Phone Number mandatory!')),
                 );
                 return;
               }
 
-              final supplier = SupplierModel(
+              final supplier = SupplierEntity(
                 id: 'sup_${DateTime.now().millisecondsSinceEpoch}',
                 name: nameCtrl.text.trim(),
                 companyName: companyCtrl.text.trim(),
@@ -390,17 +398,17 @@ class _SuppliersScreenState extends State<SuppliersScreen> with SingleTickerProv
                 createdAt: DateTime.now(),
               );
 
-              InjectionContainer.supplierBloc.add(CreateSupplierEvent(supplier));
+              context.read<SupplierBloc>().add(CreateSupplierEvent(supplier));
               Navigator.pop(dialogCtx);
             },
-            child: const Text('সংরক্ষণ করুন'),
+            child: const Text('Save'),
           ),
         ],
       ),
     );
   }
 
-  void _showEditSupplierDialog(BuildContext context, SupplierModel supplier) {
+  void _showEditSupplierDialog(BuildContext context, SupplierEntity supplier) {
     final nameCtrl = TextEditingController(text: supplier.name);
     final companyCtrl = TextEditingController(text: supplier.companyName);
     final phoneCtrl = TextEditingController(text: supplier.phone);
@@ -434,7 +442,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> with SingleTickerProv
                 email: emailCtrl.text.trim(),
                 address: addressCtrl.text.trim(),
               );
-              InjectionContainer.supplierBloc.add(UpdateSupplierEvent(updated));
+              context.read<SupplierBloc>().add(UpdateSupplierEvent(updated));
               Navigator.pop(dialogCtx);
             },
             child: const Text('আপডেট করুন'),
@@ -444,7 +452,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> with SingleTickerProv
     );
   }
 
-  void _confirmDeleteSupplier(BuildContext context, SupplierModel supplier) {
+  void _confirmDeleteSupplier(BuildContext context, SupplierEntity supplier) {
     showDialog(
       context: context,
       builder: (dialogCtx) => AlertDialog(
@@ -455,7 +463,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> with SingleTickerProv
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () {
-              InjectionContainer.supplierBloc.add(DeleteSupplierEvent(supplier.id));
+              context.read<SupplierBloc>().add(DeleteSupplierEvent(supplier.id));
               Navigator.pop(dialogCtx);
             },
             child: const Text('ডিলিট করুন'),
@@ -465,7 +473,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> with SingleTickerProv
     );
   }
 
-  void _showSupplierDetailsDialog(BuildContext context, SupplierModel supplier) {
+  void _showSupplierDetailsDialog(BuildContext context, SupplierEntity supplier) {
     showDialog(
       context: context,
       builder: (dialogCtx) => AlertDialog(
@@ -498,8 +506,8 @@ class _SuppliersScreenState extends State<SuppliersScreen> with SingleTickerProv
     );
   }
 
-  void _showNewPurchaseOrderDialog(BuildContext context, List<SupplierModel> suppliers) async {
-    SupplierModel selectedSupplier = suppliers.first;
+  void _showNewPurchaseOrderDialog(BuildContext context, List<SupplierEntity> suppliers) async {
+    SupplierEntity selectedSupplier = suppliers.first;
     final qtyCtrl = TextEditingController(text: '10');
     final costCtrl = TextEditingController(text: '100');
     final paidCtrl = TextEditingController(text: '1000');
@@ -534,7 +542,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> with SingleTickerProv
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text('মহাজন নির্বাচন করুন:', style: TextStyle(fontWeight: FontWeight.bold)),
-                  DropdownButton<SupplierModel>(
+                  DropdownButton<SupplierEntity>(
                     isExpanded: true,
                     value: selectedSupplier,
                     items: suppliers.map((sup) {
@@ -625,7 +633,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> with SingleTickerProv
                 icon: const Icon(Icons.check),
                 label: const Text('মেমো সেভ & স্টক আপডেট'),
                 onPressed: () {
-                  final orderItem = PurchaseOrderItemModel(
+                  final orderItem = PurchaseOrderItemEntity(
                     itemId: selectedItemId,
                     itemName: selectedItemName,
                     quantity: qty,
@@ -633,7 +641,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> with SingleTickerProv
                     totalPrice: total,
                   );
 
-                  final order = PurchaseOrderModel(
+                  final order = PurchaseOrderEntity(
                     id: 'PO_${DateTime.now().millisecondsSinceEpoch}',
                     supplierId: selectedSupplier.id,
                     supplierName: selectedSupplier.name,
@@ -645,7 +653,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> with SingleTickerProv
                     createdAt: DateTime.now(),
                   );
 
-                  InjectionContainer.supplierBloc.add(CreatePurchaseOrderEvent(order));
+                  context.read<SupplierBloc>().add(CreatePurchaseOrderEvent(order));
                   Navigator.pop(dialogCtx);
                 },
               ),

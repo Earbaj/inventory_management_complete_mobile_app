@@ -1,13 +1,30 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../data/repositories/supplier_repository_impl.dart';
+import '../../domain/usecases/get_suppliers_usecase.dart';
+import '../../domain/usecases/create_supplier_usecase.dart';
+import '../../domain/usecases/update_supplier_usecase.dart';
+import '../../domain/usecases/delete_supplier_usecase.dart';
+import '../../domain/usecases/create_purchase_order_usecase.dart';
+import '../../domain/usecases/get_purchase_orders_usecase.dart';
 import 'supplier_event.dart';
 import 'supplier_state.dart';
 
 class SupplierBloc extends Bloc<SupplierEvent, SupplierState> {
-  final SupplierRepository repository;
+  final GetSuppliersUseCase getSuppliersUseCase;
+  final CreateSupplierUseCase createSupplierUseCase;
+  final UpdateSupplierUseCase updateSupplierUseCase;
+  final DeleteSupplierUseCase deleteSupplierUseCase;
+  final CreatePurchaseOrderUseCase createPurchaseOrderUseCase;
+  final GetPurchaseOrdersUseCase getPurchaseOrdersUseCase;
 
-  SupplierBloc({required this.repository}) : super(const SupplierInitialState()) {
+  SupplierBloc({
+    required this.getSuppliersUseCase,
+    required this.createSupplierUseCase,
+    required this.updateSupplierUseCase,
+    required this.deleteSupplierUseCase,
+    required this.createPurchaseOrderUseCase,
+    required this.getPurchaseOrdersUseCase,
+  }) : super(const SupplierInitialState()) {
     on<LoadSuppliersEvent>(_onLoadSuppliers);
     on<CreateSupplierEvent>(_onCreateSupplier);
     on<UpdateSupplierEvent>(_onUpdateSupplier);
@@ -22,8 +39,8 @@ class SupplierBloc extends Bloc<SupplierEvent, SupplierState> {
   ) async {
     emit(const SupplierLoadingState());
     try {
-      final suppliers = await repository.getSuppliers(search: event.search);
-      final orders = await repository.getPurchaseOrders();
+      final suppliers = await getSuppliersUseCase(search: event.search);
+      final orders = await getPurchaseOrdersUseCase();
       emit(SupplierLoadedState(
         suppliers: suppliers,
         purchaseOrders: orders,
@@ -38,9 +55,9 @@ class SupplierBloc extends Bloc<SupplierEvent, SupplierState> {
     Emitter<SupplierState> emit,
   ) async {
     try {
-      await repository.createSupplier(event.supplier);
-      final suppliers = await repository.getSuppliers();
-      final orders = await repository.getPurchaseOrders();
+      await createSupplierUseCase(event.supplier);
+      final suppliers = await getSuppliersUseCase();
+      final orders = await getPurchaseOrdersUseCase();
       emit(SupplierLoadedState(
         suppliers: suppliers,
         purchaseOrders: orders,
@@ -56,9 +73,9 @@ class SupplierBloc extends Bloc<SupplierEvent, SupplierState> {
     Emitter<SupplierState> emit,
   ) async {
     try {
-      await repository.updateSupplier(event.supplier);
-      final suppliers = await repository.getSuppliers();
-      final orders = await repository.getPurchaseOrders();
+      await updateSupplierUseCase(event.supplier);
+      final suppliers = await getSuppliersUseCase();
+      final orders = await getPurchaseOrdersUseCase();
       emit(SupplierLoadedState(
         suppliers: suppliers,
         purchaseOrders: orders,
@@ -74,9 +91,9 @@ class SupplierBloc extends Bloc<SupplierEvent, SupplierState> {
     Emitter<SupplierState> emit,
   ) async {
     try {
-      await repository.deleteSupplier(event.id);
-      final suppliers = await repository.getSuppliers();
-      final orders = await repository.getPurchaseOrders();
+      await deleteSupplierUseCase(event.id);
+      final suppliers = await getSuppliersUseCase();
+      final orders = await getPurchaseOrdersUseCase();
       emit(SupplierLoadedState(
         suppliers: suppliers,
         purchaseOrders: orders,
@@ -92,9 +109,9 @@ class SupplierBloc extends Bloc<SupplierEvent, SupplierState> {
     Emitter<SupplierState> emit,
   ) async {
     try {
-      await repository.createPurchaseOrder(event.order);
-      final suppliers = await repository.getSuppliers();
-      final orders = await repository.getPurchaseOrders();
+      await createPurchaseOrderUseCase(event.order);
+      final suppliers = await getSuppliersUseCase();
+      final orders = await getPurchaseOrdersUseCase();
       emit(SupplierLoadedState(
         suppliers: suppliers,
         purchaseOrders: orders,
@@ -112,7 +129,7 @@ class SupplierBloc extends Bloc<SupplierEvent, SupplierState> {
     if (state is SupplierLoadedState) {
       final currentState = state as SupplierLoadedState;
       try {
-        final orders = await repository.getPurchaseOrders(supplierId: event.supplierId);
+        final orders = await getPurchaseOrdersUseCase(supplierId: event.supplierId);
         emit(currentState.copyWith(purchaseOrders: orders));
       } catch (e) {
         emit(SupplierErrorState('ক্রয়ের ইতিহাস লোড করা যায়নি: ${e.toString()}'));

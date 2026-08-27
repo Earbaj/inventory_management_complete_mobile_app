@@ -1,5 +1,5 @@
-import '../../data/models/supplier_model.dart';
-import '../../data/models/purchase_order_model.dart';
+import '../../domain/entities/supplier_entity.dart';
+import '../../domain/entities/purchase_order_entity.dart';
 
 abstract class SupplierEvent {
   const SupplierEvent();
@@ -11,12 +11,12 @@ class LoadSuppliersEvent extends SupplierEvent {
 }
 
 class CreateSupplierEvent extends SupplierEvent {
-  final SupplierModel supplier;
+  final SupplierEntity supplier;
   const CreateSupplierEvent(this.supplier);
 }
 
 class UpdateSupplierEvent extends SupplierEvent {
-  final SupplierModel supplier;
+  final SupplierEntity supplier;
   const UpdateSupplierEvent(this.supplier);
 }
 
@@ -26,7 +26,7 @@ class DeleteSupplierEvent extends SupplierEvent {
 }
 
 class CreatePurchaseOrderEvent extends SupplierEvent {
-  final PurchaseOrderModel order;
+  final PurchaseOrderEntity order;
   const CreatePurchaseOrderEvent(this.order);
 }
 

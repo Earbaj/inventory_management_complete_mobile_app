@@ -1,5 +1,5 @@
-import '../../data/models/supplier_model.dart';
-import '../../data/models/purchase_order_model.dart';
+import '../../domain/entities/supplier_entity.dart';
+import '../../domain/entities/purchase_order_entity.dart';
 
 abstract class SupplierState {
   const SupplierState();
@@ -14,8 +14,8 @@ class SupplierLoadingState extends SupplierState {
 }
 
 class SupplierLoadedState extends SupplierState {
-  final List<SupplierModel> suppliers;
-  final List<PurchaseOrderModel> purchaseOrders;
+  final List<SupplierEntity> suppliers;
+  final List<PurchaseOrderEntity> purchaseOrders;
   final String? successMessage;
 
   const SupplierLoadedState({
@@ -25,8 +25,8 @@ class SupplierLoadedState extends SupplierState {
   });
 
   SupplierLoadedState copyWith({
-    List<SupplierModel>? suppliers,
-    List<PurchaseOrderModel>? purchaseOrders,
+    List<SupplierEntity>? suppliers,
+    List<PurchaseOrderEntity>? purchaseOrders,
     String? successMessage,
   }) {
     return SupplierLoadedState(

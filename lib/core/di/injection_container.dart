@@ -119,6 +119,14 @@ import '../../features/super_admin/presentation/bloc/super_admin_bloc.dart';
 import '../../features/suppliers/data/datasources/supplier_local_data_source.dart';
 import '../../features/suppliers/data/datasources/supplier_remote_data_source.dart';
 import '../../features/suppliers/data/repositories/supplier_repository_impl.dart';
+import '../../features/suppliers/domain/repositories/supplier_repository.dart';
+import '../../features/suppliers/domain/usecases/get_suppliers_usecase.dart';
+import '../../features/suppliers/domain/usecases/get_supplier_by_id_usecase.dart';
+import '../../features/suppliers/domain/usecases/create_supplier_usecase.dart';
+import '../../features/suppliers/domain/usecases/update_supplier_usecase.dart';
+import '../../features/suppliers/domain/usecases/delete_supplier_usecase.dart';
+import '../../features/suppliers/domain/usecases/create_purchase_order_usecase.dart';
+import '../../features/suppliers/domain/usecases/get_purchase_orders_usecase.dart';
 import '../../features/suppliers/presentation/bloc/supplier_bloc.dart';
 import '../network/api_client.dart';
 
@@ -235,6 +243,14 @@ class InjectionContainer {
   static late final ExportCustomersUseCase exportCustomersUseCase;
   static late final ExportSalesUseCase exportSalesUseCase;
   static late final ExportCustomerLedgerUseCase exportCustomerLedgerUseCase;
+
+  static late final GetSuppliersUseCase getSuppliersUseCase;
+  static late final GetSupplierByIdUseCase getSupplierByIdUseCase;
+  static late final CreateSupplierUseCase createSupplierUseCase;
+  static late final UpdateSupplierUseCase updateSupplierUseCase;
+  static late final DeleteSupplierUseCase deleteSupplierUseCase;
+  static late final CreatePurchaseOrderUseCase createPurchaseOrderUseCase;
+  static late final GetPurchaseOrdersUseCase getPurchaseOrdersUseCase;
 
   // BLoC State Controllers
   static late final AuthBloc authBloc;
@@ -430,6 +446,14 @@ class InjectionContainer {
     exportSalesUseCase = ExportSalesUseCase(exportRepository);
     exportCustomerLedgerUseCase = ExportCustomerLedgerUseCase(exportRepository);
 
+    getSuppliersUseCase = GetSuppliersUseCase(supplierRepository);
+    getSupplierByIdUseCase = GetSupplierByIdUseCase(supplierRepository);
+    createSupplierUseCase = CreateSupplierUseCase(supplierRepository);
+    updateSupplierUseCase = UpdateSupplierUseCase(supplierRepository);
+    deleteSupplierUseCase = DeleteSupplierUseCase(supplierRepository);
+    createPurchaseOrderUseCase = CreatePurchaseOrderUseCase(supplierRepository);
+    getPurchaseOrdersUseCase = GetPurchaseOrdersUseCase(supplierRepository);
+
     // 4. BLoC State Management Instances
     authBloc = AuthBloc(
       loginUseCase: loginUseCase,
@@ -504,7 +528,12 @@ class InjectionContainer {
     );
 
     supplierBloc = SupplierBloc(
-      repository: supplierRepository,
+      getSuppliersUseCase: getSuppliersUseCase,
+      createSupplierUseCase: createSupplierUseCase,
+      updateSupplierUseCase: updateSupplierUseCase,
+      deleteSupplierUseCase: deleteSupplierUseCase,
+      createPurchaseOrderUseCase: createPurchaseOrderUseCase,
+      getPurchaseOrdersUseCase: getPurchaseOrdersUseCase,
     );
 
     branchBloc = BranchBloc(
