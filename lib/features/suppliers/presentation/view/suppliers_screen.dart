@@ -16,14 +16,30 @@ class SuppliersScreen extends StatefulWidget {
   State<SuppliersScreen> createState() => _SuppliersScreenState();
 }
 
-class _SuppliersScreenState extends State<SuppliersScreen> with SingleTickerProviderStateMixin {
+class _SuppliersScreenState extends State<SuppliersScreen> with TickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
+  late AnimationController _fabAnimationController;
+  late Animation<double> _expandAnimation;
+  bool _isFabOpen = false;
+  bool _isSearchOpen = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+
+    // FAB Animation Controller
+    _fabAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    );
+    _expandAnimation = CurvedAnimation(
+      curve: Curves.fastOutSlowIn,
+      reverseCurve: Curves.easeOutQuad,
+      parent: _fabAnimationController,
+    );
+
     // Initialize loading suppliers
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<SupplierBloc>().add(const LoadSuppliersEvent());
@@ -34,7 +50,30 @@ class _SuppliersScreenState extends State<SuppliersScreen> with SingleTickerProv
   void dispose() {
     _tabController.dispose();
     _searchController.dispose();
+    _fabAnimationController.dispose();
+    _searchController.dispose();
     super.dispose();
+  }
+
+
+  void _toggleFab() {
+    setState(() {
+      _isFabOpen = !_isFabOpen;
+      if (_isFabOpen) {
+        _fabAnimationController.forward();
+      } else {
+        _fabAnimationController.reverse();
+      }
+    });
+  }
+
+  void _closeFab() {
+    if (_isFabOpen) {
+      setState(() {
+        _isFabOpen = false;
+        _fabAnimationController.reverse();
+      });
+    }
   }
 
   @override
@@ -66,12 +105,18 @@ class _SuppliersScreenState extends State<SuppliersScreen> with SingleTickerProv
               context.read<SupplierBloc>().add(const LoadSuppliersEvent());
             },
           ),
+          IconButton(
+            icon: Icon(_isSearchOpen ? Icons.filter_alt_off:Icons.filter_alt),
+            tooltip: 'IsSearchTogle',
+            onPressed: () {
+              setState(() {
+                _isSearchOpen = !_isSearchOpen;
+              });
+            },
+          ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => _showAddSupplierDialog(context),
-          label: Text("Add Supplier")
-      ),
+      floatingActionButton: _buildExpandableFab(context, colorScheme),
       body: BlocConsumer<SupplierBloc, SupplierState>(
           listener: (context, state) {
             if (state is SupplierLoadedState && state.successMessage != null) {
@@ -94,81 +139,31 @@ class _SuppliersScreenState extends State<SuppliersScreen> with SingleTickerProv
             return Column(
               children: [
                 // Action Buttons Header
-                Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _searchController,
-                          decoration: InputDecoration(
-                            hintText: 'মহাজন বা কোম্পানির নাম খুঁজুন...',
-                            prefixIcon: const Icon(Icons.search),
-                            isDense: true,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
+                if(_isSearchOpen)...[
+                  Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _searchController,
+                            decoration: InputDecoration(
+                              hintText: 'Search Suppliers ...',
+                              prefixIcon: const Icon(Icons.search),
+                              isDense: true,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                             ),
+                            onChanged: (val) {
+                              context.read<SupplierBloc>().add(LoadSuppliersEvent(search: val));
+                            },
                           ),
-                          onChanged: (val) {
-                            context.read<SupplierBloc>().add(LoadSuppliersEvent(search: val));
-                          },
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-
-                // Action Banner for Purchase
-                Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer.withValues(alpha: 0.4),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: colorScheme.primary.withValues(alpha: 0.3)),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.local_shipping_outlined, color: colorScheme.primary, size: 28),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text(
-                              'পাইকারি মালামাল ক্রয় মেমো',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                            ),
-                            Text(
-                              'মহাজনের কাছ থেকে ক্রয়কৃত মালামাল যুক্ত করলে ইনভেন্টরি স্টক অটো-রিস্টক হবে।',
-                              style: TextStyle(fontSize: 11, color: Colors.black87),
-                            ),
-                          ],
-                        ),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: state is SupplierLoadedState && state.suppliers.isNotEmpty
-                            ? () => _showNewPurchaseOrderDialog(context, state.suppliers)
-                            : () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('প্রথমে একজন মহাজন যুক্ত করুন!')),
-                          );
-                        },
-                        icon: const Icon(Icons.add_shopping_cart, size: 18),
-                        label: const Text('মালামাল ক্রয়'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colorScheme.primary,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(0, 0),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 8),
+                ],
 
                 // Main Tab Content
                 Expanded(
@@ -184,6 +179,111 @@ class _SuppliersScreenState extends State<SuppliersScreen> with SingleTickerProv
             );
           }
       ),
+    );
+  }
+
+  Widget _buildExpandableFab(BuildContext context, ColorScheme colorScheme) {
+    return BlocBuilder<SupplierBloc, SupplierState>(
+      builder: (context, state) {
+        final hasSuppliers = state is SupplierLoadedState && state.suppliers.isNotEmpty;
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            // বাটন ১: মালামাল ক্রয় (Purchase Order)
+            ScaleTransition(
+              scale: _expandAnimation,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Material(
+                    elevation: 4,
+                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.black87,
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      child: Text(
+                        'মালামাল ক্রয়',
+                        style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  FloatingActionButton.small(
+                    heroTag: 'fab_purchase',
+                    backgroundColor: colorScheme.secondary,
+                    foregroundColor: Colors.white,
+                    onPressed: () {
+                      _toggleFab();
+                      if (hasSuppliers) {
+                        _showNewPurchaseOrderDialog(context, state.suppliers);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('প্রথমে একজন মহাজন যুক্ত করুন!'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    },
+                    child: const Icon(Icons.add_shopping_cart_rounded),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // বাটন ২: নতুন মহাজন (Add Supplier)
+            ScaleTransition(
+              scale: _expandAnimation,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Material(
+                    elevation: 4,
+                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.black87,
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      child: Text(
+                        'নতুন মহাজন',
+                        style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  FloatingActionButton.small(
+                    heroTag: 'fab_supplier',
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    onPressed: () {
+                      _toggleFab();
+                      _showAddSupplierDialog(context);
+                    },
+                    child: const Icon(Icons.person_add_alt_1_rounded),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // মূল ট্রিগার FAB (প্লাস / ক্রস বাটন)
+            FloatingActionButton(
+              heroTag: 'fab_main_toggle',
+              backgroundColor: colorScheme.primary,
+              foregroundColor: Colors.white,
+              elevation: 4,
+              onPressed: _toggleFab,
+              child: AnimatedRotation(
+                turns: _isFabOpen ? 0.125 : 0, // ট্যাপ করলে 45 ডিগ্রি ঘুরে Close (X) আইকন হবে
+                duration: const Duration(milliseconds: 250),
+                child: const Icon(Icons.add_rounded, size: 28),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
