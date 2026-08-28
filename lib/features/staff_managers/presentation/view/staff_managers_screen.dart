@@ -12,6 +12,7 @@ import '../../staff_manager_model.dart';
 import '../widget/add_staff_dialog.dart';
 import '../widget/manage_permissions_sheet.dart';
 import '../widget/staff_card.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
 
 class StaffManagersScreen extends StatefulWidget {
   const StaffManagersScreen({super.key});
@@ -214,12 +215,21 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
           }
 
           final loadedState = state is StaffLoadedState ? state : null;
-          // Filter out Admin/SuperAdmin accounts so only Managers appear
-          final staffEntities = (loadedState?.filteredStaff ?? [])
-              .where((e) => e.role.toLowerCase() != 'admin' && e.role.toLowerCase() != 'superadmin')
+          final authState = InjectionContainer.authBloc.state;
+          final String? currentUserId = authState is AuthenticatedState ? authState.user?.id : null;
+
+          // 1. Get raw entities excluding the logged-in user (primary owner) and superadmin
+          final rawEntities = (loadedState?.filteredStaff ?? [])
+              .where((e) {
+                if (currentUserId != null) {
+                  return e.id != currentUserId && e.role.toLowerCase() != 'superadmin';
+                }
+                return e.role.toLowerCase() != 'admin' && e.role.toLowerCase() != 'superadmin';
+              })
               .toList();
 
-          final List<StaffMember> staffList = staffEntities.map((e) {
+          // 2. Map all raw entities to StaffMembers
+          final List<StaffMember> allStaffList = rawEntities.map((e) {
             return StaffMember(
               id: e.id,
               name: e.name,
@@ -237,6 +247,19 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
               salesServedCount: 12,
             );
           }).toList();
+
+          // 3. Filter both lists based on the selected role filter to keep indexes aligned
+          final List<StaffEntity> staffEntities = [];
+          final List<StaffMember> staffList = [];
+
+          for (int i = 0; i < rawEntities.length; i++) {
+            final entity = rawEntities[i];
+            final staff = allStaffList[i];
+            if (_selectedRoleFilter == null || staff.role == _selectedRoleFilter) {
+              staffEntities.add(entity);
+              staffList.add(staff);
+            }
+          }
 
           return Column(
             children: [

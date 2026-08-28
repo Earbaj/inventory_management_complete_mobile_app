@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 import '../../domain/entities/shop_profile_entity.dart';
 import '../../domain/entities/subscription_entity.dart';
 import '../../domain/usecases/get_shop_profile_usecase.dart';
@@ -35,6 +36,7 @@ class SettingsBloc {
   }
 
   void _emit(SettingsState newState) {
+    developer.log('📣 [SettingsBloc] Emitting state: $newState', name: 'SettingsBloc');
     _state = newState;
     if (!_stateController.isClosed) {
       _stateController.add(_state);
@@ -42,6 +44,7 @@ class SettingsBloc {
   }
 
   Future<void> _handleEvent(SettingsEvent event) async {
+    developer.log('📥 [SettingsBloc] Handling event: $event', name: 'SettingsBloc');
     if (event is FetchSettingsEvent) {
       await _onFetchSettings(event);
     } else if (event is UpdateShopProfileEvent) {
@@ -52,20 +55,27 @@ class SettingsBloc {
   }
 
   Future<void> _onFetchSettings(FetchSettingsEvent event) async {
+    developer.log('⚙️ [SettingsBloc] _onFetchSettings called', name: 'SettingsBloc');
     if (_currentProfile == null) {
       _emit(const SettingsLoadingState());
     }
 
     try {
+      developer.log('⚙️ [SettingsBloc] Fetching shop profile...', name: 'SettingsBloc');
       final profile = await getShopProfileUseCase();
       _currentProfile = profile;
+      developer.log('✅ [SettingsBloc] Shop profile fetched successfully: ${profile.shopName}', name: 'SettingsBloc');
+
+      developer.log('⚙️ [SettingsBloc] Fetching subscription status...', name: 'SettingsBloc');
       _currentSubscription = await getSubscriptionStatusUseCase();
+      developer.log('✅ [SettingsBloc] Subscription status fetched successfully: tier=${_currentSubscription?.tier}, expiresAt=${_currentSubscription?.expiresAt}', name: 'SettingsBloc');
 
       _emit(SettingsLoadedState(
         profile: _currentProfile!,
         subscription: _currentSubscription!,
       ));
     } catch (e) {
+      developer.log('❌ [SettingsBloc] Error in _onFetchSettings: $e', name: 'SettingsBloc');
       _emit(SettingsErrorState(e.toString()));
     }
   }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 
 import '../../../../core/di/injection_container.dart';
@@ -57,6 +58,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _fetchPaymentHistory();
 
     _settingsSubscription = InjectionContainer.settingsBloc.stream.listen((state) {
+      developer.log('🔔 [SettingsScreen] Stream Listener received state: $state', name: 'SettingsScreen');
       if (!mounted) return;
       if (state is SettingsOperationSuccessState) {
         setState(() => _isSaving = false);
@@ -476,12 +478,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
         initialData: InjectionContainer.settingsBloc.state,
         builder: (context, snapshot) {
           final state = snapshot.data;
+          developer.log('🔄 [SettingsScreen] StreamBuilder Rebuilding. State: $state', name: 'SettingsScreen');
 
           if (state is SettingsLoadingState && state is! SettingsLoadedState) {
             return const Center(child: CircularProgressIndicator());
           }
 
           final loadedState = state is SettingsLoadedState ? state : null;
+          if (loadedState != null) {
+            final sub = loadedState.subscription;
+            developer.log('📈 [SettingsScreen] SettingsLoadedState details: profile=${loadedState.profile.shopName}, subscriptionTier=${sub.tier}, isPremium=${sub.isPremium}, expiresAt=${sub.expiresAt}', name: 'SettingsScreen');
+          }
           final profile = loadedState?.profile ??
               const ShopProfileEntity(
                 id: '1',

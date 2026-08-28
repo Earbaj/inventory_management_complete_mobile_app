@@ -13,6 +13,8 @@ abstract class SettingsRemoteDataSource {
 
 class SettingsRemoteDataSourceImpl implements SettingsRemoteDataSource {
   final ApiClient apiClient;
+  String? _cachedTier;
+  String? _cachedExpiresAt;
 
   SettingsRemoteDataSourceImpl(this.apiClient);
 
@@ -31,11 +33,17 @@ class SettingsRemoteDataSourceImpl implements SettingsRemoteDataSource {
         }
       }
 
-      developer.log('✅ [SettingsRemoteDataSource] getShopProfile() success.', name: 'SettingsRemoteDataSource');
+      developer.log('✅ [SettingsRemoteDataSource] getShopProfile() success. Response: $response', name: 'SettingsRemoteDataSource');
       if (response is Map<String, dynamic>) {
         final Map<String, dynamic> dataMap = response['data'] is Map<String, dynamic>
             ? response['data']
             : (response['user'] is Map<String, dynamic> ? response['user'] : response);
+        
+        // Cache subscription details from profile API response
+        _cachedTier = dataMap['subscriptionTier']?.toString();
+        _cachedExpiresAt = dataMap['subscriptionExpiresAt']?.toString();
+        developer.log('📦 [SettingsRemoteDataSource] Cached subscription from profile: tier=$_cachedTier, expiresAt=$_cachedExpiresAt', name: 'SettingsRemoteDataSource');
+
         return ShopProfileModel.fromJson(dataMap);
       }
     } catch (e) {
@@ -114,16 +122,18 @@ class SettingsRemoteDataSourceImpl implements SettingsRemoteDataSource {
         '${EnvConfig.apiBaseUrl}/api/subscription/status',
       );
 
-      developer.log('✅ [SettingsRemoteDataSource] getSubscriptionStatus() success.', name: 'SettingsRemoteDataSource');
+      developer.log('✅ [SettingsRemoteDataSource] getSubscriptionStatus() success. Response: $response', name: 'SettingsRemoteDataSource');
       return SubscriptionModel.fromJson(response is Map<String, dynamic> ? response : {});
     } catch (e) {
-      developer.log('⚠️ [SettingsRemoteDataSource] getSubscriptionStatus() API unavailable: $e. Returning default subscription.', name: 'SettingsRemoteDataSource');
-      return const SubscriptionModel(
-        tier: 'free',
-        maxCustomers: -1,
-        maxSales: -1,
+      developer.log('⚠️ [SettingsRemoteDataSource] getSubscriptionStatus() API error/unavailable: $e. Using cached profile subscription fallback.', name: 'SettingsRemoteDataSource');
+      final isPremium = _cachedTier == 'premium' || _cachedTier == 'enterprise';
+      return SubscriptionModel(
+        tier: _cachedTier ?? 'free',
+        maxCustomers: isPremium ? -1 : 1,
+        maxSales: isPremium ? -1 : 5,
         customerCount: 0,
         salesCount: 0,
+        expiresAt: _cachedExpiresAt,
       );
     }
   }
