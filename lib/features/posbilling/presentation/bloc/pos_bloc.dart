@@ -1,64 +1,37 @@
-import 'dart:async';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../domain/entities/cart_item_entity.dart';
-import '../../domain/entities/sale_entity.dart';
-import '../../domain/usecases/create_sale_usecase.dart';
-import '../../domain/usecases/get_sales_logs_usecase.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../customers/presentation/bloc/customer_event.dart';
 import '../../../inventory/presentation/bloc/inventory_event.dart';
 import '../../../reports/presentation/bloc/reports_event.dart';
+import '../../domain/entities/cart_item_entity.dart';
+import '../../domain/entities/sale_entity.dart';
+import '../../domain/usecases/create_sale_usecase.dart';
+import '../../domain/usecases/get_sales_logs_usecase.dart';
 import 'pos_event.dart';
 import 'pos_state.dart';
 
-class PosBloc {
+class PosBloc extends Bloc<PosEvent, PosState> {
   final CreateSaleUseCase createSaleUseCase;
   final GetSalesLogsUseCase getSalesLogsUseCase;
-
-  PosState _state = const PosCartState(cartItems: []);
-  final _stateController = StreamController<PosState>.broadcast();
-
-  PosState get state => _state;
-  Stream<PosState> get stream => _stateController.stream;
 
   PosBloc({
     required this.createSaleUseCase,
     required this.getSalesLogsUseCase,
-  });
-
-  void add(PosEvent event) {
-    _handleEvent(event);
+  }) : super(const PosCartState(cartItems: [])) {
+    // 🎯 ইভেন্ট হ্যান্ডলার রেজিস্টার
+    on<AddToCartEvent>(_onAddToCart);
+    on<RemoveFromCartEvent>(_onRemoveFromCart);
+    on<UpdateCartQuantityEvent>(_onUpdateCartQuantity);
+    on<UpdateCartItemDiscountEvent>(_onUpdateCartItemDiscount);
+    on<SelectPosCustomerEvent>(_onSelectCustomer);
+    on<ApplyDiscountEvent>(_onApplyDiscount);
+    on<ClearCartEvent>(_onClearCart);
+    on<SubmitCheckoutEvent>(_onSubmitCheckout);
   }
 
-  void _emit(PosState newState) {
-    _state = newState;
-    if (!_stateController.isClosed) {
-      _stateController.add(_state);
-    }
-  }
-
-  Future<void> _handleEvent(PosEvent event) async {
-    if (event is AddToCartEvent) {
-      _onAddToCart(event);
-    } else if (event is RemoveFromCartEvent) {
-      _onRemoveFromCart(event);
-    } else if (event is UpdateCartQuantityEvent) {
-      _onUpdateCartQuantity(event);
-    } else if (event is UpdateCartItemDiscountEvent) {
-      _onUpdateCartItemDiscount(event);
-    } else if (event is SelectPosCustomerEvent) {
-      _onSelectCustomer(event);
-    } else if (event is ApplyDiscountEvent) {
-      _onApplyDiscount(event);
-    } else if (event is ClearCartEvent) {
-      _onClearCart();
-    } else if (event is SubmitCheckoutEvent) {
-      await _onSubmitCheckout(event);
-    }
-  }
-
-  void _onAddToCart(AddToCartEvent event) {
-    final currentState = _state is PosCartState ? _state as PosCartState : const PosCartState(cartItems: []);
+  void _onAddToCart(AddToCartEvent event, Emitter<PosState> emit) {
+    final currentState = state is PosCartState ? state as PosCartState : const PosCartState(cartItems: []);
     final items = List<CartItemEntity>.from(currentState.cartItems);
 
     final index = items.indexWhere((element) => element.item.id == event.item.id);
@@ -68,18 +41,19 @@ class PosBloc {
       items.add(CartItemEntity(item: event.item, quantity: 1));
     }
 
-    _emit(currentState.copyWith(cartItems: items));
+    emit(currentState.copyWith(cartItems: items));
   }
 
-  void _onRemoveFromCart(RemoveFromCartEvent event) {
-    final currentState = _state is PosCartState ? _state as PosCartState : const PosCartState(cartItems: []);
+  void _onRemoveFromCart(RemoveFromCartEvent event, Emitter<PosState> emit) {
+    final currentState = state is PosCartState ? state as PosCartState : const PosCartState(cartItems: []);
     final items = List<CartItemEntity>.from(currentState.cartItems);
     items.removeWhere((element) => element.item.id == event.itemId);
-    _emit(currentState.copyWith(cartItems: items));
+
+    emit(currentState.copyWith(cartItems: items));
   }
 
-  void _onUpdateCartQuantity(UpdateCartQuantityEvent event) {
-    final currentState = _state is PosCartState ? _state as PosCartState : const PosCartState(cartItems: []);
+  void _onUpdateCartQuantity(UpdateCartQuantityEvent event, Emitter<PosState> emit) {
+    final currentState = state is PosCartState ? state as PosCartState : const PosCartState(cartItems: []);
     final items = List<CartItemEntity>.from(currentState.cartItems);
 
     final index = items.indexWhere((element) => element.item.id == event.itemId);
@@ -91,11 +65,11 @@ class PosBloc {
       }
     }
 
-    _emit(currentState.copyWith(cartItems: items));
+    emit(currentState.copyWith(cartItems: items));
   }
 
-  void _onUpdateCartItemDiscount(UpdateCartItemDiscountEvent event) {
-    final currentState = _state is PosCartState ? _state as PosCartState : const PosCartState(cartItems: []);
+  void _onUpdateCartItemDiscount(UpdateCartItemDiscountEvent event, Emitter<PosState> emit) {
+    final currentState = state is PosCartState ? state as PosCartState : const PosCartState(cartItems: []);
     final items = List<CartItemEntity>.from(currentState.cartItems);
 
     final index = items.indexWhere((element) => element.item.id == event.itemId);
@@ -103,35 +77,35 @@ class PosBloc {
       items[index] = items[index].copyWith(discount: event.discount);
     }
 
-    _emit(currentState.copyWith(cartItems: items));
+    emit(currentState.copyWith(cartItems: items));
   }
 
-  void _onSelectCustomer(SelectPosCustomerEvent event) {
-    final currentState = _state is PosCartState ? _state as PosCartState : const PosCartState(cartItems: []);
+  void _onSelectCustomer(SelectPosCustomerEvent event, Emitter<PosState> emit) {
+    final currentState = state is PosCartState ? state as PosCartState : const PosCartState(cartItems: []);
     if (event.customer == null) {
-      _emit(currentState.copyWith(clearCustomer: true));
+      emit(currentState.copyWith(clearCustomer: true));
     } else {
-      _emit(currentState.copyWith(selectedCustomer: event.customer));
+      emit(currentState.copyWith(selectedCustomer: event.customer));
     }
   }
 
-  void _onApplyDiscount(ApplyDiscountEvent event) {
-    final currentState = _state is PosCartState ? _state as PosCartState : const PosCartState(cartItems: []);
-    _emit(currentState.copyWith(discountAmount: event.discountAmount));
+  void _onApplyDiscount(ApplyDiscountEvent event, Emitter<PosState> emit) {
+    final currentState = state is PosCartState ? state as PosCartState : const PosCartState(cartItems: []);
+    emit(currentState.copyWith(discountAmount: event.discountAmount));
   }
 
-  void _onClearCart() {
-    _emit(const PosCartState(cartItems: []));
+  void _onClearCart(ClearCartEvent event, Emitter<PosState> emit) {
+    emit(const PosCartState(cartItems: []));
   }
 
-  Future<void> _onSubmitCheckout(SubmitCheckoutEvent event) async {
-    final currentState = _state is PosCartState ? _state as PosCartState : null;
+  Future<void> _onSubmitCheckout(SubmitCheckoutEvent event, Emitter<PosState> emit) async {
+    final currentState = state is PosCartState ? state as PosCartState : null;
     if (currentState == null || currentState.cartItems.isEmpty) {
-      _emit(const PosCheckoutErrorState('Cart is empty! Please add items before checkout.'));
+      emit(const PosCheckoutErrorState('Cart is empty! Please add items before checkout.'));
       return;
     }
 
-    _emit(const PosCheckoutLoadingState());
+    emit(const PosCheckoutLoadingState());
 
     try {
       final generatedInvoiceNo = 'INV-${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
@@ -157,21 +131,17 @@ class PosBloc {
       );
 
       final completedSale = await createSaleUseCase(saleToSubmit);
-      _emit(PosCheckoutSuccessState(completedSale));
-      _emit(const PosCartState(cartItems: []));
+      emit(PosCheckoutSuccessState(completedSale));
+      emit(const PosCartState(cartItems: []));
 
-      // Refresh ReportsBloc, CustomerBloc, and InventoryBloc so Dashboard updates immediately
+      // Refresh other blocs immediately
       try {
         InjectionContainer.reportsBloc.add(const FetchReportsEvent());
         InjectionContainer.customerBloc.add(const FetchCustomersEvent());
         InjectionContainer.inventoryBloc.add(const FetchInventoryItemsEvent());
       } catch (_) {}
     } catch (e) {
-      _emit(PosCheckoutErrorState(e.toString()));
+      emit(PosCheckoutErrorState(e.toString()));
     }
-  }
-
-  void dispose() {
-    _stateController.close();
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:inventory_management_complete/features/posbilling/presentation/bloc/pos_bloc.dart';
 import 'package:inventory_management_complete/features/reports/presentation/bloc/reports_bloc.dart';
 import 'package:inventory_management_complete/features/staff_managers/presentation/bloc/staff_bloc.dart';
 
@@ -44,6 +45,9 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider<StaffBloc>(
           create: (context) => InjectionContainer.staffBloc..add(const FetchStaffEvent()),
+        ),
+        BlocProvider<PosBloc>(
+          create: (context) => InjectionContainer.posBloc,
         ),
       ],
       child: MaterialApp.router(

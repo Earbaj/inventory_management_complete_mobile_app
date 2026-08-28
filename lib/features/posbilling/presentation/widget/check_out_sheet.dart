@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:inventory_management_complete/features/posbilling/presentation/bloc/pos_bloc.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../customers/domain/entities/customer_entity.dart';
@@ -176,12 +178,10 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return StreamBuilder<PosState>(
-      stream: InjectionContainer.posBloc.stream,
-      initialData: InjectionContainer.posBloc.state,
+    return BlocBuilder<PosBloc, PosState>(
       builder: (context, snapshot) {
-        final posState = snapshot.data is PosCartState
-            ? snapshot.data as PosCartState
+        final posState = snapshot is PosCartState
+            ? snapshot
             : PosCartState(cartItems: widget.cartItems ?? []);
 
         final cartItemsList = posState.cartItems.isNotEmpty ? posState.cartItems : (widget.cartItems ?? []);
