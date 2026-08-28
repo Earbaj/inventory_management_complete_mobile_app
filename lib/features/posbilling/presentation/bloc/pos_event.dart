@@ -34,10 +34,12 @@ class UpdateCartQuantityEvent extends PosEvent {
 class UpdateCartItemDiscountEvent extends PosEvent {
   final String itemId;
   final double discount;
+  final String discountType;
 
   const UpdateCartItemDiscountEvent({
     required this.itemId,
     required this.discount,
+    required this.discountType,
   });
 }
 

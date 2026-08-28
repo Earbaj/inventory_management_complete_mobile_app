@@ -15,6 +15,8 @@ import 'features/customers/presentation/bloc/customer_event.dart';
 import 'features/inventory/presentation/bloc/inventory_bloc.dart';
 import 'features/inventory/presentation/bloc/inventory_event.dart';
 import 'features/reports/presentation/bloc/reports_event.dart';
+import 'features/settings/presentation/bloc/settings_bloc.dart';
+import 'features/settings/presentation/bloc/settings_event.dart';
 import 'features/staff_managers/presentation/bloc/staff_event.dart';
 
 void main() {
@@ -48,6 +50,9 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider<PosBloc>(
           create: (context) => InjectionContainer.posBloc,
+        ),
+        BlocProvider<SettingsBloc>(
+          create: (context) => InjectionContainer.settingsBloc..add(const FetchSettingsEvent()),
         ),
       ],
       child: MaterialApp.router(

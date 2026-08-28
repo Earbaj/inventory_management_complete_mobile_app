@@ -1,15 +1,16 @@
-import 'dart:async';
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
+import '../bloc/settings_bloc.dart';
 import '../bloc/settings_event.dart';
 import '../bloc/settings_state.dart';
 import '../../domain/entities/shop_profile_entity.dart';
-import '../../domain/entities/subscription_entity.dart';
-import '../../../subscription/presentation/widget/payment_checkout_modal.dart';
 import '../../../subscription/data/models/payment_model.dart';
+import '../widgets/subscription_card.dart';
+import '../widgets/payment_history_section.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -40,8 +41,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ];
   String _selectedCurrencySymbol = '৳';
 
-  StreamSubscription<SettingsState>? _settingsSubscription;
-
   @override
   void initState() {
     super.initState();
@@ -53,24 +52,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _vatRateController = TextEditingController(text: '0.0');
     _logoUrlController = TextEditingController();
 
-    // Fetch Initial Settings and Payment History
-    InjectionContainer.settingsBloc.add(const FetchSettingsEvent());
-    _fetchPaymentHistory();
-
-    _settingsSubscription = InjectionContainer.settingsBloc.stream.listen((state) {
-      developer.log('🔔 [SettingsScreen] Stream Listener received state: $state', name: 'SettingsScreen');
-      if (!mounted) return;
-      if (state is SettingsOperationSuccessState) {
-        setState(() => _isSaving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(state.message), backgroundColor: Colors.green),
-        );
-      } else if (state is SettingsErrorState) {
-        setState(() => _isSaving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(state.message), backgroundColor: Colors.red),
-        );
-      }
+    // Fetch Initial Settings and Payment History using Bloc context and local load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<SettingsBloc>().add(const FetchSettingsEvent());
+      _fetchPaymentHistory();
     });
   }
 
@@ -91,7 +76,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   void dispose() {
-    _settingsSubscription?.cancel();
     _shopNameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
@@ -130,329 +114,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         logoUrl: _logoUrlController.text.trim().isEmpty ? null : _logoUrlController.text.trim(),
       );
 
-      InjectionContainer.settingsBloc.add(UpdateShopProfileEvent(updated));
+      context.read<SettingsBloc>().add(UpdateShopProfileEvent(updated));
     }
-  }
-
-  void _openCheckoutModal(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => const PaymentCheckoutModal(),
-    ).then((res) {
-      if (res == true) {
-        InjectionContainer.settingsBloc.add(const FetchSettingsEvent());
-        _fetchPaymentHistory();
-      }
-    });
-  }
-
-  String _getSubscriptionStatus(SubscriptionEntity subscription) {
-    if (subscription.expiresAt == null) {
-      return 'Unlimited lifetime access';
-    }
-    final now = DateTime.now();
-    final difference = subscription.expiresAt!.difference(now);
-    if (difference.isNegative) {
-      return 'Expired';
-    }
-    final days = difference.inDays;
-    if (days == 0) {
-      final hours = difference.inHours;
-      if (hours > 0) {
-        return 'Expires in $hours hours';
-      } else {
-        final minutes = difference.inMinutes;
-        return 'Expires in $minutes minutes';
-      }
-    }
-    return '$days days remaining';
-  }
-
-  String _formatDate(DateTime date) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    final day = date.day;
-    final month = months[date.month - 1];
-    final year = date.year;
-    return '$day $month $year';
-  }
-
-  Widget _buildFreeTierCard(BuildContext context, SubscriptionEntity subscription, ColorScheme colorScheme, ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [colorScheme.primary, colorScheme.tertiary],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.star_rounded,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        '${subscription.tier.toUpperCase()} TIER',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          letterSpacing: 1.2,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 130, minWidth: 80),
-                child: ElevatedButton(
-                  onPressed: () => _openCheckoutModal(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: colorScheme.primary,
-                    minimumSize: const Size(80, 36),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  child: const Text(
-                    'UPGRADE',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Divider(color: Colors.white24),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  'Customers Limit: ${subscription.customerCount} / ${subscription.maxCustomers == -1 ? "Unlimited" : subscription.maxCustomers}',
-                  style: const TextStyle(color: Colors.white70, fontSize: 13),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Sales Limit: ${subscription.salesCount} / ${subscription.maxSales == -1 ? "Unlimited" : subscription.maxSales}',
-                  style: const TextStyle(color: Colors.white70, fontSize: 13),
-                  textAlign: TextAlign.end,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPremiumTierCard(BuildContext context, SubscriptionEntity subscription, ColorScheme colorScheme, ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.amber.shade800, Colors.orange.shade900],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.amber.shade900.withValues(alpha: 0.2),
-            blurRadius: 12,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: const BoxDecoration(
-                      color: Colors.white24,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.workspace_premium_rounded,
-                      color: Colors.white,
-                      size: 26,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'PREMIUM ACTIVE',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 16,
-                          letterSpacing: 1.1,
-                        ),
-                      ),
-                      Text(
-                        'Premium Tier Account',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              ElevatedButton(
-                onPressed: () => _openCheckoutModal(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.orange.shade900,
-                  elevation: 0,
-                  minimumSize: const Size(80, 34),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                child: const Text(
-                  'EXTEND',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Divider(color: Colors.white24, height: 1),
-          const SizedBox(height: 14),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    const Icon(Icons.timer_outlined, color: Colors.white70, size: 18),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        _getSubscriptionStatus(subscription),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (subscription.expiresAt != null)
-                Text(
-                  'Expiry: ${_formatDate(subscription.expiresAt!.toLocal())}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 13,
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Customers Added',
-                        style: TextStyle(color: Colors.white70, fontSize: 11),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${subscription.customerCount} / Unlimited',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: 1,
-                  height: 30,
-                  color: Colors.white24,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      const Text(
-                        'Sales Invoices Created',
-                        style: TextStyle(color: Colors.white70, fontSize: 11),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${subscription.salesCount} / Unlimited',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -466,29 +134,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           IconButton(
             onPressed: () {
-              InjectionContainer.settingsBloc.add(const FetchSettingsEvent());
+              context.read<SettingsBloc>().add(const FetchSettingsEvent());
               _fetchPaymentHistory();
             },
             icon: const Icon(Icons.refresh_rounded),
           ),
         ],
       ),
-      body: StreamBuilder<SettingsState>(
-        stream: InjectionContainer.settingsBloc.stream,
-        initialData: InjectionContainer.settingsBloc.state,
-        builder: (context, snapshot) {
-          final state = snapshot.data;
-          developer.log('🔄 [SettingsScreen] StreamBuilder Rebuilding. State: $state', name: 'SettingsScreen');
+      body: BlocConsumer<SettingsBloc, SettingsState>(
+        listener: (context, state) {
+          developer.log('🔔 [SettingsScreen] BlocConsumer received state: $state', name: 'SettingsScreen');
+          if (state is SettingsLoadedState) {
+            _populateControllers(state.profile);
+          } else if (state is SettingsOperationSuccessState) {
+            setState(() => _isSaving = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message), backgroundColor: Colors.green),
+            );
+          } else if (state is SettingsErrorState) {
+            setState(() => _isSaving = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+            );
+          }
+        },
+        builder: (context, state) {
+          developer.log('🔄 [SettingsScreen] BlocConsumer Builder Rebuilding. State: $state', name: 'SettingsScreen');
 
-          if (state is SettingsLoadingState && state is! SettingsLoadedState) {
+          if (state is SettingsLoadingState) {
             return const Center(child: CircularProgressIndicator());
           }
 
           final loadedState = state is SettingsLoadedState ? state : null;
-          if (loadedState != null) {
-            final sub = loadedState.subscription;
-            developer.log('📈 [SettingsScreen] SettingsLoadedState details: profile=${loadedState.profile.shopName}, subscriptionTier=${sub.tier}, isPremium=${sub.isPremium}, expiresAt=${sub.expiresAt}', name: 'SettingsScreen');
-          }
           final profile = loadedState?.profile ??
               const ShopProfileEntity(
                 id: '1',
@@ -500,7 +177,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
           final subscription = loadedState?.subscription;
 
-          _populateControllers(profile);
+          // Double check population in builder in case it's built initially with loaded state
+          if (loadedState != null) {
+            _populateControllers(loadedState.profile);
+          }
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -511,139 +191,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   // SUBSCRIPTION TIER BANNER CARD
                   if (subscription != null) ...[
-                    subscription.isPremium
-                        ? _buildPremiumTierCard(context, subscription, colorScheme, theme)
-                        : _buildFreeTierCard(context, subscription, colorScheme, theme),
+                    SubscriptionCard(
+                      subscription: subscription,
+                      onCheckoutSuccess: () {
+                        context.read<SettingsBloc>().add(const FetchSettingsEvent());
+                        _fetchPaymentHistory();
+                      },
+                    ),
                     const SizedBox(height: 24),
                   ],
 
                   // PAYMENT REQUEST HISTORY SECTION
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Payment Request History',
-                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      IconButton(
-                        onPressed: _fetchPaymentHistory,
-                        icon: const Icon(Icons.refresh_rounded, size: 20),
-                        tooltip: 'Refresh Payment History',
-                      ),
-                    ],
+                  PaymentHistorySection(
+                    payments: _myPayments,
+                    isLoading: _isLoadingPayments,
+                    onRefresh: _fetchPaymentHistory,
                   ),
-                  const SizedBox(height: 8),
-
-                  if (_isLoadingPayments) ...[
-                    const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator())),
-                  ] else if (_myPayments.isEmpty) ...[
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.info_outline_rounded, color: Colors.grey, size: 20),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'No manual bKash/Nagad payment requests submitted yet.',
-                              style: TextStyle(color: Colors.grey, fontSize: 13),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ] else ...[
-                    Column(
-                      children: _myPayments.map((payment) {
-                        final isApproved = payment.status.toLowerCase() == 'approved';
-                        final isRejected = payment.status.toLowerCase() == 'rejected';
-
-                        final Color statusColor = isApproved
-                            ? Colors.green[700]!
-                            : (isRejected ? Colors.red[700]! : Colors.orange[800]!);
-
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'TrxID: ${payment.transactionId}',
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                      decoration: BoxDecoration(
-                                        color: statusColor.withValues(alpha: 0.12),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(
-                                        payment.status.toUpperCase(),
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 11,
-                                          color: statusColor,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Method: ${payment.method.toUpperCase()} | Tier: ${payment.targetTier.toUpperCase()}',
-                                      style: theme.textTheme.bodySmall,
-                                    ),
-                                    Text(
-                                      '৳${payment.amount.toStringAsFixed(0)}',
-                                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green[700]),
-                                    ),
-                                  ],
-                                ),
-                                if (isRejected && payment.rejectionReason != null && payment.rejectionReason!.isNotEmpty) ...[
-                                  const SizedBox(height: 6),
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.red.withValues(alpha: 0.08),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.error_outline_rounded, color: Colors.red, size: 16),
-                                        const SizedBox(width: 6),
-                                        Expanded(
-                                          child: Text(
-                                            'Reason: ${payment.rejectionReason}',
-                                            style: const TextStyle(color: Colors.red, fontSize: 12),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-
                   const SizedBox(height: 24),
 
                   // SHOP PROFILE EDIT FORM

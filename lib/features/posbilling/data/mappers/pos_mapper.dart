@@ -12,6 +12,8 @@ class PosMapper {
     return CartItemEntity(
       item: InventoryMapper.modelToEntity(model.item),
       quantity: model.quantity,
+      discount: model.discount,
+      discountType: model.discountType,
     );
   }
 
@@ -19,6 +21,8 @@ class PosMapper {
     return CartItemModel(
       item: InventoryMapper.entityToModel(entity.item),
       quantity: entity.quantity,
+      discount: entity.discount,
+      discountType: entity.discountType,
     );
   }
 

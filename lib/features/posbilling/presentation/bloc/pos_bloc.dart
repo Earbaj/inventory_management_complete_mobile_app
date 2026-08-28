@@ -74,7 +74,10 @@ class PosBloc extends Bloc<PosEvent, PosState> {
 
     final index = items.indexWhere((element) => element.item.id == event.itemId);
     if (index != -1) {
-      items[index] = items[index].copyWith(discount: event.discount);
+      items[index] = items[index].copyWith(
+        discount: event.discount,
+        discountType: event.discountType,
+      );
     }
 
     emit(currentState.copyWith(cartItems: items));

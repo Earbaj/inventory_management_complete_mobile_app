@@ -28,7 +28,7 @@ class PosCartState extends PosState {
   double get rawSubtotal => cartItems.fold(0.0, (sum, item) => sum + item.rawSubtotal);
   
   /// Sum of all product-level discounts
-  double get productDiscounts => cartItems.fold(0.0, (sum, item) => sum + item.discount);
+  double get productDiscounts => cartItems.fold(0.0, (sum, item) => sum + item.discountAmount);
   
   /// Subtotal after item-level discounts but before overall discount
   double get subtotal => cartItems.fold(0.0, (sum, item) => sum + item.totalPrice);

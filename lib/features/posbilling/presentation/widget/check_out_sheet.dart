@@ -77,7 +77,7 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
   void _updateDefaultPaidAmount([List<CartItemEntity>? currentItems]) {
     final cartList = currentItems ?? widget.cartItems ?? [];
     final double rawSub = cartList.fold<double>(0.0, (sum, i) => sum + i.rawSubtotal);
-    final double itemDisc = cartList.fold<double>(0.0, (sum, i) => sum + i.discount);
+    final double itemDisc = cartList.fold<double>(0.0, (sum, i) => sum + i.discountAmount);
     final double subAfterItemDisc = (rawSub - itemDisc).clamp(0.0, double.infinity);
 
     final double overallDisc = double.tryParse(_overallDiscountCtrl.text) ?? widget.discount ?? 0.0;
@@ -101,22 +101,28 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
     super.dispose();
   }
 
-  double _parseDiscountInput(String input, double baseAmount) {
+  _ParsedDiscount _parseDiscount(String input) {
     final text = input.trim();
-    if (text.isEmpty) return 0.0;
+    if (text.isEmpty) return const _ParsedDiscount(0.0, 'amount');
     if (text.endsWith('%')) {
       final pctText = text.replaceAll('%', '').trim();
       final pct = double.tryParse(pctText) ?? 0.0;
-      return (baseAmount * (pct / 100.0)).clamp(0.0, baseAmount);
+      return _ParsedDiscount(pct, 'percent');
     }
     final val = double.tryParse(text) ?? 0.0;
-    return val.clamp(0.0, baseAmount);
+    return _ParsedDiscount(val, 'amount');
   }
 
   void _showProductDiscountDialog(BuildContext context, CartItemEntity cartItem) {
-    final discCtrl = TextEditingController(
-      text: cartItem.discount > 0 ? cartItem.discount.toStringAsFixed(0) : '',
-    );
+    final String initialText;
+    if (cartItem.discount > 0) {
+      initialText = cartItem.discountType == 'percent'
+          ? '${cartItem.discount.toStringAsFixed(0)}%'
+          : cartItem.discount.toStringAsFixed(0);
+    } else {
+      initialText = '';
+    }
+    final discCtrl = TextEditingController(text: initialText);
 
     showDialog(
       context: context,
@@ -159,10 +165,11 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
           ),
           FilledButton(
             onPressed: () {
-              final newDisc = _parseDiscountInput(discCtrl.text, cartItem.rawSubtotal);
+              final parsed = _parseDiscount(discCtrl.text);
               InjectionContainer.posBloc.add(UpdateCartItemDiscountEvent(
                 itemId: cartItem.item.id,
-                discount: newDisc,
+                discount: parsed.value,
+                discountType: parsed.type,
               ));
               Navigator.pop(ctx);
             },
@@ -273,7 +280,7 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                                 ),
                                 subtitle: Text(
                                   'Qty: ${cItem.quantity} x ৳${cItem.item.retailSellPrice.toStringAsFixed(0)}'
-                                  '${cItem.discount > 0 ? " | Item Disc: ৳${cItem.discount.toStringAsFixed(0)}" : ""}',
+                                  '${cItem.discount > 0 ? " | Item Disc: ${cItem.discountType == 'percent' ? '${cItem.discount.toStringAsFixed(0)}%' : '৳${cItem.discount.toStringAsFixed(0)}'}" : ""}',
                                   style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
                                 ),
                                 trailing: Row(
@@ -493,4 +500,11 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
       },
     );
   }
+}
+
+class _ParsedDiscount {
+  final double value;
+  final String type;
+
+  const _ParsedDiscount(this.value, this.type);
 }
