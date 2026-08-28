@@ -22,7 +22,7 @@ class TransactionDetailsSheet extends StatelessWidget {
   }) {
     // Attempt to match sale entity by reference or invoice number
     SaleEntity? matchedSale;
-    if (customerSales != null && customerSales.isNotEmpty) {
+    if (transaction.type == TransactionType.sale && customerSales != null && customerSales.isNotEmpty) {
       final ref = transaction.reference.trim().toLowerCase();
       matchedSale = customerSales.firstWhere(
         (s) => s.invoiceNo.trim().toLowerCase() == ref || s.id.trim().toLowerCase() == ref,
@@ -217,10 +217,23 @@ class TransactionDetailsSheet extends StatelessWidget {
   ) {
     final isSale = tx.type == TransactionType.sale;
     final isPayment = tx.type == TransactionType.payment;
+    final isOpening = tx.type == TransactionType.opening;
 
-    final title = isSale ? 'Sale Invoice Details' : (isPayment ? 'Payment Receipt Details' : 'Return Log Details');
-    final iconColor = isSale ? Colors.orange[800]! : (isPayment ? Colors.green[700]! : Colors.red[700]!);
-    final icon = isSale ? Icons.receipt_long_rounded : (isPayment ? Icons.payments_rounded : Icons.replay_rounded);
+    final title = isOpening
+        ? 'Opening Balance Details'
+        : (isSale
+            ? 'Sale Invoice Details'
+            : (isPayment ? 'Payment Receipt Details' : 'Return Log Details'));
+    final iconColor = isOpening
+        ? Colors.blue[800]!
+        : (isSale
+            ? Colors.orange[800]!
+            : (isPayment ? Colors.green[700]! : Colors.red[700]!));
+    final icon = isOpening
+        ? Icons.info_outline_rounded
+        : (isSale
+            ? Icons.receipt_long_rounded
+            : (isPayment ? Icons.payments_rounded : Icons.replay_rounded));
 
     final dateStr = '${tx.date.day.toString().padLeft(2, '0')}/'
         '${tx.date.month.toString().padLeft(2, '0')}/'
@@ -305,7 +318,9 @@ class TransactionDetailsSheet extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      isSale ? 'SALE' : (isPayment ? 'RECEIVED' : 'RETURN'),
+                      isOpening
+                          ? 'OPENING'
+                          : (isSale ? 'SALE' : (isPayment ? 'RECEIVED' : 'RETURN')),
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
                     ),
                   ),
@@ -316,7 +331,7 @@ class TransactionDetailsSheet extends StatelessWidget {
             const SizedBox(height: 16),
 
             // ITEMS BREAKDOWN IF AVAILABLE
-            if (saleInvoice != null && saleInvoice!.items.isNotEmpty) ...[
+            if (saleInvoice != null && saleInvoice!.items.isNotEmpty && !isOpening) ...[
               const Text('Purchased Items Breakdown', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
               const SizedBox(height: 8),
               Container(
@@ -355,7 +370,18 @@ class TransactionDetailsSheet extends StatelessWidget {
             _buildDetailRow('Transaction Date', dateStr),
             const SizedBox(height: 8),
             _buildDetailRow('Description / Note', tx.note.isNotEmpty ? tx.note : 'No notes available'),
-            if (saleInvoice != null) ...[
+            const SizedBox(height: 8),
+            _buildDetailRow(
+              'Running Balance',
+              tx.runningBalance < 0
+                  ? '৳ ${tx.runningBalance.abs().toStringAsFixed(2)} (Due)'
+                  : (tx.runningBalance > 0
+                      ? '৳ ${tx.runningBalance.toStringAsFixed(2)} (Credit)'
+                      : '৳ 0.00'),
+              isBold: true,
+              valueColor: tx.runningBalance < 0 ? Colors.orange[800] : Colors.green[700],
+            ),
+            if (saleInvoice != null && !isOpening) ...[
               const SizedBox(height: 8),
               _buildDetailRow('Net Total', '৳ ${saleInvoice!.netTotal.toStringAsFixed(2)}'),
               const SizedBox(height: 8),

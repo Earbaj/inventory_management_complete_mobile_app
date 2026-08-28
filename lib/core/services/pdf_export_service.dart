@@ -6,6 +6,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 import '../../features/customers/domain/entities/customer_entity.dart';
+import '../../features/customers/customer_transaction.dart';
 import '../../features/posbilling/domain/entities/sale_entity.dart';
 import '../../features/settings/domain/entities/shop_profile_entity.dart';
 
@@ -31,7 +32,7 @@ class PdfExportService {
   static Future<void> printOrSaveCustomerLedgerPdf(
     BuildContext context, {
     required CustomerEntity customer,
-    required List<SaleEntity> customerSales,
+    required List<CustomerTransaction> transactions,
     required ShopProfileEntity shopProfile,
   }) async {
     developer.log('📄 [PdfExportService] Opening PDF Print Preview for Customer ${customer.name}', name: 'PdfExportService');
@@ -40,7 +41,7 @@ class PdfExportService {
       onLayout: (PdfPageFormat format) async {
         return generateCustomerLedgerPdfBytes(
           customer: customer,
-          customerSales: customerSales,
+          transactions: transactions,
           shopProfile: shopProfile,
         );
       },
@@ -234,7 +235,7 @@ class PdfExportService {
   /// Generates Uint8List PDF Bytes for Customer Ledger Statement.
   static Future<Uint8List> generateCustomerLedgerPdfBytes({
     required CustomerEntity customer,
-    required List<SaleEntity> customerSales,
+    required List<CustomerTransaction> transactions,
     required ShopProfileEntity shopProfile,
   }) async {
     final pdf = pw.Document();
@@ -243,6 +244,60 @@ class PdfExportService {
     final shopName = shopProfile.shopName.isNotEmpty ? shopProfile.shopName : 'INVENTORY POS STORE';
     final shopPhone = shopProfile.phone.isNotEmpty ? shopProfile.phone : 'N/A';
     final shopAddress = shopProfile.address?.isNotEmpty == true ? shopProfile.address! : '';
+
+    final sortedTxs = List<CustomerTransaction>.from(transactions)
+      ..sort((a, b) => a.date.compareTo(b.date));
+
+    final tableData = sortedTxs.map((tx) {
+      final dateStr = '${tx.date.day.toString().padLeft(2, '0')}/'
+          '${tx.date.month.toString().padLeft(2, '0')}/'
+          '${tx.date.year}';
+
+      final String desc;
+      final double debit;
+      final double credit;
+
+      switch (tx.type) {
+        case TransactionType.opening:
+          desc = 'Opening Balance';
+          debit = tx.amount;
+          credit = 0.0;
+          break;
+        case TransactionType.sale:
+          desc = 'Sale Invoice';
+          debit = tx.amount;
+          credit = 0.0;
+          break;
+        case TransactionType.payment:
+          desc = tx.note.isNotEmpty ? 'Payment (${tx.note})' : 'Payment Received';
+          debit = 0.0;
+          credit = tx.amount;
+          break;
+        case TransactionType.returnInvoice:
+          desc = tx.note.isNotEmpty ? 'Return (${tx.note})' : 'Product Return';
+          debit = 0.0;
+          credit = tx.amount;
+          break;
+      }
+
+      final debitStr = debit > 0 ? '$currency${debit.toStringAsFixed(2)}' : '-';
+      final creditStr = credit > 0 ? '$currency${credit.toStringAsFixed(2)}' : '-';
+
+      final balStr = tx.runningBalance < 0
+          ? '$currency${tx.runningBalance.abs().toStringAsFixed(2)} (Due)'
+          : (tx.runningBalance > 0
+              ? '$currency${tx.runningBalance.toStringAsFixed(2)} (Credit)'
+              : '$currency');
+
+      return [
+        dateStr,
+        tx.reference,
+        desc,
+        debitStr,
+        creditStr,
+        balStr,
+      ];
+    }).toList();
 
     pdf.addPage(
       pw.Page(
@@ -314,17 +369,24 @@ class PdfExportService {
                 headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10, color: PdfColors.white),
                 headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey800),
                 cellStyle: const pw.TextStyle(fontSize: 10),
-                headers: ['Date', 'Invoice No', 'Net Total', 'Paid Amount', 'Due Amount'],
-                data: customerSales.map((sale) {
-                  final dateStr = '${sale.createdAt.day}/${sale.createdAt.month}/${sale.createdAt.year}';
-                  return [
-                    dateStr,
-                    sale.invoiceNo,
-                    '$currency${sale.netTotal.toStringAsFixed(2)}',
-                    '$currency${sale.paidAmount.toStringAsFixed(2)}',
-                    '$currency${sale.dueAmount.toStringAsFixed(2)}',
-                  ];
-                }).toList(),
+                headerAlignments: {
+                  0: pw.Alignment.center,
+                  1: pw.Alignment.center,
+                  2: pw.Alignment.centerLeft,
+                  3: pw.Alignment.centerRight,
+                  4: pw.Alignment.centerRight,
+                  5: pw.Alignment.centerRight,
+                },
+                cellAlignments: {
+                  0: pw.Alignment.center,
+                  1: pw.Alignment.center,
+                  2: pw.Alignment.centerLeft,
+                  3: pw.Alignment.centerRight,
+                  4: pw.Alignment.centerRight,
+                  5: pw.Alignment.centerRight,
+                },
+                headers: ['Date', 'Reference', 'Description', 'Debit (+)', 'Credit (-)', 'Balance'],
+                data: tableData,
               ),
             ],
           );

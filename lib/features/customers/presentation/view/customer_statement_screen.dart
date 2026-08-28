@@ -142,9 +142,11 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
             computedPaid += amountAbs;
           }
 
-          final TransactionType type = (typeStr == 'payment' || typeStr == 'due_payment')
-              ? TransactionType.payment
-              : (typeStr == 'return' ? TransactionType.returnInvoice : TransactionType.sale);
+          final TransactionType type = typeStr == 'opening'
+              ? TransactionType.opening
+              : (typeStr == 'payment' || typeStr == 'due_payment')
+                  ? TransactionType.payment
+                  : (typeStr == 'return' ? TransactionType.returnInvoice : TransactionType.sale);
 
           parsedTransactions.add(CustomerTransaction(
             id: idStr,
@@ -152,6 +154,7 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
             reference: _extractRef(typeStr, desc, idStr),
             type: type,
             amount: typeStr == 'sale' ? _parseTotalFromDescription(desc, amountAbs) : amountAbs,
+            runningBalance: newBal,
             note: desc,
           ));
         }
@@ -222,7 +225,7 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
     PdfExportService.printOrSaveCustomerLedgerPdf(
       context,
       customer: customerEntity,
-      customerSales: widget.customerSales,
+      transactions: _ledgerTransactions,
       shopProfile: dynamicShopProfile,
     );
   }
@@ -239,7 +242,7 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
 
     final csvContent = ExcelExportService.generateCustomerLedgerCsv(
       customer: customerEntity,
-      customerSales: widget.customerSales,
+      transactions: _ledgerTransactions,
     );
 
     showDialog(

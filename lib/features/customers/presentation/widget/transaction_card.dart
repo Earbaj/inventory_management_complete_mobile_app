@@ -17,12 +17,15 @@ class TransactionCard extends StatelessWidget {
 
     final isSale = transaction.type == TransactionType.sale;
     final isPayment = transaction.type == TransactionType.payment;
+    final isOpening = transaction.type == TransactionType.opening;
 
     final Color iconColor;
     if (isSale) {
       iconColor = Colors.orange[800]!;
     } else if (isPayment) {
       iconColor = Colors.green[700]!;
+    } else if (isOpening) {
+      iconColor = Colors.blue[800]!;
     } else {
       iconColor = Colors.red[700]!;
     }
@@ -32,6 +35,8 @@ class TransactionCard extends StatelessWidget {
       icon = Icons.shopping_cart_outlined;
     } else if (isPayment) {
       icon = Icons.payments_outlined;
+    } else if (isOpening) {
+      icon = Icons.info_outline_rounded;
     } else {
       icon = Icons.assignment_return_outlined;
     }
@@ -41,6 +46,8 @@ class TransactionCard extends StatelessWidget {
       title = 'Sale Invoice';
     } else if (isPayment) {
       title = 'Payment Received';
+    } else if (isOpening) {
+      title = 'Opening Balance';
     } else {
       title = 'Product Return';
     }

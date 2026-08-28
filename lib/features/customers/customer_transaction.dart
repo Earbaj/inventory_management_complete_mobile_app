@@ -2,6 +2,7 @@ enum TransactionType {
   sale,
   payment,
   returnInvoice,
+  opening,
 }
 
 class CustomerTransaction {
@@ -10,6 +11,7 @@ class CustomerTransaction {
   final String reference;
   final TransactionType type;
   final double amount;
+  final double runningBalance;
   final String note;
 
   const CustomerTransaction({
@@ -18,6 +20,7 @@ class CustomerTransaction {
     required this.reference,
     required this.type,
     required this.amount,
+    required this.runningBalance,
     this.note = '',
   });
 }
