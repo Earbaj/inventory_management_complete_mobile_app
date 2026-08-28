@@ -6,6 +6,7 @@ import '../../../../core/services/pdf_export_service.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../../posbilling/domain/entities/sale_entity.dart';
 import '../../../settings/domain/entities/shop_profile_entity.dart';
+import '../../../settings/presentation/bloc/settings_event.dart';
 import '../../../settings/presentation/bloc/settings_state.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../../customer.dart';
@@ -46,6 +47,10 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
   void initState() {
     super.initState();
     _fetchLedgerFromApi();
+    // Pre-fetch settings to ensure shop details are available for PDF/Excel exports
+    if (InjectionContainer.settingsBloc.state is! SettingsLoadedState) {
+      InjectionContainer.settingsBloc.add(const FetchSettingsEvent());
+    }
   }
 
   static double _parseDouble(dynamic val) {
@@ -186,7 +191,7 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
       phone: widget.customer.phone,
       address: widget.customer.address,
       openingBalance: _openingBalance,
-      totalDue: _currentDue,
+      rawBalance: _rawBalance,
     );
 
     final authState = InjectionContainer.authBloc.state;
@@ -195,12 +200,12 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
     final settingsState = InjectionContainer.settingsBloc.state;
     final profile = settingsState is SettingsLoadedState ? settingsState.profile : null;
 
-    final shopName = (user?.shopName?.isNotEmpty == true ? user!.shopName : null) ??
-        (profile?.shopName.isNotEmpty == true ? profile!.shopName : null) ??
+    final shopName = (profile?.shopName.isNotEmpty == true ? profile!.shopName : null) ??
+        (user?.shopName?.isNotEmpty == true ? user!.shopName : null) ??
         'INVENTORY POS STORE';
 
-    final shopPhone = (user?.phone?.isNotEmpty == true ? user!.phone : null) ??
-        (profile?.phone.isNotEmpty == true ? profile!.phone : null) ??
+    final shopPhone = (profile?.phone.isNotEmpty == true ? profile!.phone : null) ??
+        (user?.phone?.isNotEmpty == true ? user!.phone : null) ??
         'N/A';
 
     final shopAddress = profile?.address?.isNotEmpty == true ? profile!.address! : '';
@@ -229,7 +234,7 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
       phone: widget.customer.phone,
       address: widget.customer.address,
       openingBalance: _openingBalance,
-      totalDue: _currentDue,
+      rawBalance: _rawBalance,
     );
 
     final csvContent = ExcelExportService.generateCustomerLedgerCsv(

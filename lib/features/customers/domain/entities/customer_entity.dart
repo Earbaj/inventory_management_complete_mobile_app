@@ -3,25 +3,17 @@ class CustomerEntity {
   final String id;
   final String name;
   final String phone;
-  final String? email;
   final String? address;
   final double rawBalance; // signed balance from API: negative = Due, positive = Credit
   final double openingBalance;
-  final String? notes;
-  final DateTime? createdAt;
-  final DateTime? updatedAt;
 
   const CustomerEntity({
     required this.id,
     required this.name,
     required this.phone,
-    this.email,
     this.address,
     this.rawBalance = 0.0,
     double totalDue = 0.0,
-    this.notes,
-    this.createdAt,
-    this.updatedAt,
     required this.openingBalance,
   });
 
@@ -49,26 +41,18 @@ class CustomerEntity {
     String? id,
     String? name,
     String? phone,
-    String? email,
     String? address,
     double? rawBalance,
     double? totalDue,
     double? openingBalance,
-    String? notes,
-    DateTime? createdAt,
-    DateTime? updatedAt,
   }) {
     return CustomerEntity(
       id: id ?? this.id,
       name: name ?? this.name,
-      email: email ?? this.email,
       phone: phone ?? this.phone,
       address: address ?? this.address,
       rawBalance: rawBalance ?? (totalDue != null ? (totalDue > 0 ? -totalDue : 0.0) : this.rawBalance),
       totalDue: totalDue ?? this.totalDue,
-      notes: notes ?? this.notes,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
       openingBalance: openingBalance ?? this.openingBalance,
     );
   }
