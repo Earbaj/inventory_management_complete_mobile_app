@@ -32,10 +32,23 @@ class CustomerEntity {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is CustomerEntity && runtimeType == other.runtimeType && id == other.id;
+      other is CustomerEntity &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          name == other.name &&
+          phone == other.phone &&
+          address == other.address &&
+          rawBalance == other.rawBalance &&
+          openingBalance == other.openingBalance;
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode =>
+      id.hashCode ^
+      name.hashCode ^
+      phone.hashCode ^
+      address.hashCode ^
+      rawBalance.hashCode ^
+      openingBalance.hashCode;
 
   CustomerEntity copyWith({
     String? id,
