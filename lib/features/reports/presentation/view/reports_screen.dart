@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:inventory_management_complete/features/reports/presentation/bloc/reports_bloc.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
@@ -27,7 +29,11 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     // Dispatch initial fetch to ReportsBloc
-    InjectionContainer.reportsBloc.add(const FetchReportsEvent());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<ReportsBloc>().add(const FetchReportsEvent());
+      }
+    });
   }
 
   @override
@@ -37,11 +43,11 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
     super.dispose();
   }
 
-  void _onSearchChanged(String query) {
-    InjectionContainer.reportsBloc.add(FetchReportsEvent(searchQuery: query));
+  void _onSearchChanged(BuildContext context, String query) {
+    context.read<ReportsBloc>().add(FetchReportsEvent(searchQuery: query));
   }
 
-  void _applyDateFilter(DateFilterType filter) {
+  void _applyDateFilter(BuildContext context, DateFilterType filter) {
     final now = DateTime.now();
     DateTime? start;
     DateTime? end;
@@ -62,7 +68,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
       _customDateRange = null;
     });
 
-    InjectionContainer.reportsBloc.add(FilterReportsByDateRangeEvent(
+    context.read<ReportsBloc>().add(FilterReportsByDateRangeEvent(
       startDate: start,
       endDate: end,
     ));
@@ -85,7 +91,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
         actions: [
           IconButton(
             onPressed: () {
-              InjectionContainer.reportsBloc.add(FetchReportsEvent(searchQuery: _searchController.text));
+              context.read<ReportsBloc>().add(FetchReportsEvent(searchQuery: _searchController.text));
             },
             icon: const Icon(Icons.refresh_rounded),
           ),
@@ -98,11 +104,9 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
           ],
         ),
       ),
-      body: StreamBuilder<ReportsState>(
-        stream: InjectionContainer.reportsBloc.stream,
-        initialData: InjectionContainer.reportsBloc.state,
+      body: BlocBuilder<ReportsBloc,ReportsState>(
         builder: (context, snapshot) {
-          final state = snapshot.data;
+          final state = snapshot;
 
           if (state is ReportsLoadingState && state is! ReportsLoadedState) {
             return const Center(child: CircularProgressIndicator());
@@ -119,7 +123,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
-                      InjectionContainer.reportsBloc.add(FetchReportsEvent(searchQuery: _searchController.text));
+                      context.read<ReportsBloc>().add(FetchReportsEvent(searchQuery: _searchController.text));
                     },
                     child: const Text('Retry'),
                   ),
@@ -146,7 +150,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                       child: ChoiceChip(
                         label: Text(filter.label),
                         selected: isSelected,
-                        onSelected: (_) => _applyDateFilter(filter),
+                        onSelected: (_) => _applyDateFilter(context, filter),
                       ),
                     );
                   }).toList(),
@@ -188,7 +192,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                 child: TextField(
                   controller: _searchController,
-                  onChanged: _onSearchChanged,
+                  onChanged: (val) => _onSearchChanged(context, val),
                   decoration: InputDecoration(
                     hintText: 'Search invoice no or customer name',
                     prefixIcon: const Icon(Icons.search_rounded),
@@ -196,7 +200,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                         ? IconButton(
                             onPressed: () {
                               _searchController.clear();
-                              _onSearchChanged('');
+                              _onSearchChanged(context, '');
                             },
                             icon: const Icon(Icons.close_rounded),
                           )
