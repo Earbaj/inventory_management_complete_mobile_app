@@ -1,7 +1,11 @@
+import 'package:equatable/equatable.dart';
+
 import '../../domain/entities/customer_entity.dart';
 
-abstract class CustomerState {
+abstract class CustomerState extends Equatable{
   const CustomerState();
+  @override
+  List<Object?> get props => [];
 }
 
 class CustomerInitialState extends CustomerState {
@@ -25,11 +29,15 @@ class CustomerLoadedState extends CustomerState {
 
   double get totalDues => customers.fold(0.0, (sum, customer) => sum + customer.totalDue);
   int get dueCustomersCount => customers.where((customer) => customer.hasDue).length;
+  @override
+  List<Object?> get props => [customers,filteredCustomers,searchQuery];
 }
 
 class CustomerOperationSuccessState extends CustomerState {
   final String message;
   const CustomerOperationSuccessState(this.message);
+  @override
+  List<Object?> get props => [message];
 }
 
 class DueReminderLinkLoadedState extends CustomerState {
@@ -44,9 +52,14 @@ class DueReminderLinkLoadedState extends CustomerState {
     required this.dueAmount,
     required this.whatsappUrl,
   });
+  @override
+  List<Object?> get props => [customerId, customerName, dueAmount, whatsappUrl];
 }
 
 class CustomerErrorState extends CustomerState {
   final String message;
-  const CustomerErrorState(this.message);
+  final List<CustomerEntity> previousCustomers; // 🔥 to keep previous customer
+  const CustomerErrorState(this.message, {this.previousCustomers = const []});
+  @override
+  List<Object?> get props => [message, previousCustomers];
 }
