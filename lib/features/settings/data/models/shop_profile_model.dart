@@ -22,7 +22,11 @@ class ShopProfileModel {
 
   factory ShopProfileModel.fromJson(Map<String, dynamic> json) {
     return ShopProfileModel(
-      id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
+      id: json['id']?.toString() ??
+          json['_id']?.toString() ??
+          json['uid']?.toString() ??
+          json['shopId']?.toString() ??
+          '',
       shopName: json['shopName'] ?? json['shop_name'] ?? json['name'] ?? '',
       phone: json['phone'] ?? '',
       email: json['email'],

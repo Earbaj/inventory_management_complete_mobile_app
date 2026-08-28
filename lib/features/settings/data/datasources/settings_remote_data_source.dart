@@ -56,28 +56,50 @@ class SettingsRemoteDataSourceImpl implements SettingsRemoteDataSource {
   Future<ShopProfileModel> updateShopProfile(ShopProfileModel profile) async {
     developer.log('⚙️ [SettingsRemoteDataSource] updateShopProfile() called for shopName: "${profile.shopName}"', name: 'SettingsRemoteDataSource');
     try {
+      final body = {
+        'name': profile.shopName,
+        'shopName': profile.shopName,
+        'phone': profile.phone,
+        if (profile.address != null) 'address': profile.address,
+        if (profile.logoUrl != null) 'logoUrl': profile.logoUrl,
+        'currencySymbol': profile.currencySymbol,
+        'defaultVatRate': profile.defaultVatRate,
+      };
+
       dynamic response;
       try {
         response = await apiClient.put(
-          '${EnvConfig.apiBaseUrl}/api/shop/profile',
-          body: profile.toJson(),
+          '${EnvConfig.apiBaseUrl}/api/auth/profile',
+          body: body,
         );
       } catch (_) {
         try {
-          response = await apiClient.post(
+          response = await apiClient.put(
             '${EnvConfig.apiBaseUrl}/api/shop/profile',
-            body: profile.toJson(),
+            body: body,
           );
         } catch (_) {
-          response = await apiClient.put(
-            '${EnvConfig.apiBaseUrl}/api/users/profile',
-            body: profile.toJson(),
-          );
+          try {
+            response = await apiClient.post(
+              '${EnvConfig.apiBaseUrl}/api/shop/profile',
+              body: body,
+            );
+          } catch (_) {
+            response = await apiClient.put(
+              '${EnvConfig.apiBaseUrl}/api/users/profile',
+              body: body,
+            );
+          }
         }
       }
 
       developer.log('✅ [SettingsRemoteDataSource] updateShopProfile() success.', name: 'SettingsRemoteDataSource');
-      return ShopProfileModel.fromJson(response is Map<String, dynamic> ? response : profile.toJson());
+      final Map<String, dynamic> responseMap = response is Map<String, dynamic> ? response : {};
+      final Map<String, dynamic> dataMap = responseMap['data'] is Map<String, dynamic>
+          ? responseMap['data']
+          : (responseMap['user'] is Map<String, dynamic> ? responseMap['user'] : responseMap);
+
+      return ShopProfileModel.fromJson(dataMap.isEmpty ? profile.toJson() : dataMap);
     } catch (e) {
       developer.log('⚠️ [SettingsRemoteDataSource] updateShopProfile() API unavailable: $e. Returning updated profile.', name: 'SettingsRemoteDataSource');
       return profile;
