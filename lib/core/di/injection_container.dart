@@ -65,6 +65,7 @@ import '../../features/settings/data/datasources/settings_remote_data_source.dar
 import '../../features/settings/data/repositories/settings_repository_impl.dart';
 import '../../features/settings/domain/repositories/settings_repository.dart';
 import '../../features/settings/domain/usecases/get_shop_profile_usecase.dart';
+import '../../features/settings/domain/usecases/get_subscription_status_usecase.dart';
 import '../../features/settings/domain/usecases/update_shop_profile_usecase.dart';
 import '../../features/settings/domain/usecases/upgrade_subscription_usecase.dart';
 import '../../features/settings/presentation/bloc/settings_bloc.dart';
@@ -159,6 +160,7 @@ class InjectionContainer {
   static late final GetReturnLogsUseCase getReturnLogsUseCase;
 
   static late final GetShopProfileUseCase getShopProfileUseCase;
+  static late final GetSubscriptionStatusUseCase getSubscriptionStatusUseCase;
   static late final UpdateShopProfileUseCase updateShopProfileUseCase;
   static late final UpgradeSubscriptionUseCase upgradeSubscriptionUseCase;
 
@@ -302,6 +304,7 @@ class InjectionContainer {
     getReturnLogsUseCase = GetReturnLogsUseCase(returnsRepository);
 
     getShopProfileUseCase = GetShopProfileUseCase(settingsRepository);
+    getSubscriptionStatusUseCase = GetSubscriptionStatusUseCase(settingsRepository);
     updateShopProfileUseCase = UpdateShopProfileUseCase(settingsRepository);
     upgradeSubscriptionUseCase = UpgradeSubscriptionUseCase(settingsRepository);
 
@@ -362,6 +365,7 @@ class InjectionContainer {
 
     settingsBloc = SettingsBloc(
       getShopProfileUseCase: getShopProfileUseCase,
+      getSubscriptionStatusUseCase: getSubscriptionStatusUseCase,
       updateShopProfileUseCase: updateShopProfileUseCase,
       upgradeSubscriptionUseCase: upgradeSubscriptionUseCase,
     );

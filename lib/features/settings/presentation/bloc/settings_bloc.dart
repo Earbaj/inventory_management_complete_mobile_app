@@ -2,6 +2,7 @@ import 'dart:async';
 import '../../domain/entities/shop_profile_entity.dart';
 import '../../domain/entities/subscription_entity.dart';
 import '../../domain/usecases/get_shop_profile_usecase.dart';
+import '../../domain/usecases/get_subscription_status_usecase.dart';
 import '../../domain/usecases/update_shop_profile_usecase.dart';
 import '../../domain/usecases/upgrade_subscription_usecase.dart';
 import 'settings_event.dart';
@@ -9,6 +10,7 @@ import 'settings_state.dart';
 
 class SettingsBloc {
   final GetShopProfileUseCase getShopProfileUseCase;
+  final GetSubscriptionStatusUseCase getSubscriptionStatusUseCase;
   final UpdateShopProfileUseCase updateShopProfileUseCase;
   final UpgradeSubscriptionUseCase upgradeSubscriptionUseCase;
 
@@ -23,6 +25,7 @@ class SettingsBloc {
 
   SettingsBloc({
     required this.getShopProfileUseCase,
+    required this.getSubscriptionStatusUseCase,
     required this.updateShopProfileUseCase,
     required this.upgradeSubscriptionUseCase,
   });
@@ -56,13 +59,7 @@ class SettingsBloc {
     try {
       final profile = await getShopProfileUseCase();
       _currentProfile = profile;
-      _currentSubscription = const SubscriptionEntity(
-        tier: 'free',
-        customerCount: 1,
-        maxCustomers: 1,
-        salesCount: 3,
-        maxSales: 5,
-      );
+      _currentSubscription = await getSubscriptionStatusUseCase();
 
       _emit(SettingsLoadedState(
         profile: _currentProfile!,
