@@ -303,7 +303,7 @@ class PdfExportService {
         ? '$currency${customer.rawBalance.abs().toStringAsFixed(2)} (Due)'
         : (customer.rawBalance > 0
             ? '$currency${customer.rawBalance.toStringAsFixed(2)} (Credit)'
-            : '$currency0.00');
+            : '$currency');
 
     pdf.addPage(
       pw.Page(
