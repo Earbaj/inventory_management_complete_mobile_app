@@ -304,10 +304,11 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                       // PAYMENT METHOD SELECTOR
                       const SectionTitle(title: 'Payment Method'),
                       const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: PaymentOption(
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            PaymentOption(
                               title: 'Cash',
                               icon: Icons.payments_outlined,
                               selected: _paymentMethod.toLowerCase() == 'cash',
@@ -319,10 +320,8 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                                 widget.onPaymentChanged?.call('cash');
                               },
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: PaymentOption(
+                            const SizedBox(width: 10),
+                            PaymentOption(
                               title: 'bKash / Card',
                               icon: Icons.account_balance_wallet_outlined,
                               selected: _paymentMethod.toLowerCase() == 'bkash' || _paymentMethod.toLowerCase() == 'card',
@@ -334,10 +333,8 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                                 widget.onPaymentChanged?.call('bkash');
                               },
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: PaymentOption(
+                            const SizedBox(width: 10),
+                            PaymentOption(
                               title: 'Due',
                               icon: Icons.money_off_rounded,
                               selected: _paymentMethod.toLowerCase() == 'due',
@@ -350,8 +347,8 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                                 widget.onPaymentChanged?.call('due');
                               },
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 18),
 

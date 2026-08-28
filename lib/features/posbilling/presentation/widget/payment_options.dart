@@ -27,7 +27,7 @@ class PaymentOption
       child: Container(
         padding:
         const EdgeInsets.symmetric(
-          vertical: 13,
+          vertical: 13,horizontal: 13
         ),
         decoration: BoxDecoration(
           color: selected

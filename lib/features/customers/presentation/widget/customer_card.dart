@@ -279,11 +279,6 @@ class CustomerCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
               ],
-              OutlinedButton.icon(
-                onPressed: onStatement,
-                icon: const Icon(Icons.receipt_long_outlined, size: 17),
-                label: const Text('Statement'),
-              ),
             ],
           ),
         ],
