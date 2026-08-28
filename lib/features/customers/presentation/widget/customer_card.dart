@@ -260,25 +260,6 @@ class CustomerCard extends StatelessWidget {
                       : (customer.hasDue ? Colors.orange[900] : Colors.grey),
                 ),
               ),
-              if (customer.hasDue) ...[
-                IconButton(
-                  onPressed: () => _launchWhatsAppReminder(context),
-                  icon: const Icon(Icons.chat_outlined, color: Colors.teal, size: 22),
-                  tooltip: 'WhatsApp Due Reminder',
-                ),
-              ],
-              if (onCollectPayment != null && customer.hasDue) ...[
-                FilledButton.icon(
-                  onPressed: onCollectPayment,
-                  icon: const Icon(Icons.payments_outlined, size: 16),
-                  label: const Text('Pay'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.green[700],
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                  ),
-                ),
-                const SizedBox(width: 6),
-              ],
             ],
           ),
         ],
