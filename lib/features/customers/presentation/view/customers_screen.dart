@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../customers/domain/entities/customer_entity.dart';
@@ -8,6 +9,7 @@ import '../../../posbilling/domain/entities/sale_entity.dart';
 import '../../../reports/presentation/bloc/reports_state.dart';
 import '../../customer.dart';
 import '../../customer_transaction.dart';
+import '../bloc/customer_bloc.dart';
 import '../widget/add_customer_sheet.dart';
 import '../widget/collect_payment_sheet.dart';
 import '../widget/customer_card.dart';
@@ -26,12 +28,13 @@ class _CustomersScreenState extends State<CustomersScreen> {
   final TextEditingController searchController = TextEditingController();
 
   final Map<String, List<CustomerTransaction>> transactions = {};
+  bool isSearch = false;
 
   @override
   void initState() {
     super.initState();
     // Dispatch initial fetch to CustomerBloc
-    InjectionContainer.customerBloc.add(const FetchCustomersEvent());
+    context.read<CustomerBloc>().add(FetchCustomersEvent());
   }
 
   @override
@@ -41,7 +44,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
   }
 
   void _onSearchChanged(String query) {
-    InjectionContainer.customerBloc.add(FetchCustomersEvent(searchQuery: query));
+    context.read<CustomerBloc>().add(FetchCustomersEvent(searchQuery: query));
   }
 
   @override
@@ -71,8 +74,12 @@ class _CustomersScreenState extends State<CustomersScreen> {
             icon: const Icon(Icons.refresh_rounded),
           ),
           IconButton(
-            onPressed: _openAddCustomerSheet,
-            icon: const Icon(Icons.person_add_alt_1_rounded),
+            onPressed: (){
+              setState(() {
+                isSearch = !isSearch;
+              });
+            },
+            icon: Icon(isSearch ? Icons.filter_alt_off:Icons.filter_alt),
           ),
         ],
       ),
@@ -81,11 +88,9 @@ class _CustomersScreenState extends State<CustomersScreen> {
         icon: const Icon(Icons.person_add_alt_1_rounded),
         label: const Text('Add Customer'),
       ),
-      body: StreamBuilder<CustomerState>(
-        stream: InjectionContainer.customerBloc.stream,
-        initialData: InjectionContainer.customerBloc.state,
+      body: BlocBuilder<CustomerBloc,CustomerState>(
         builder: (context, snapshot) {
-          final state = snapshot.data;
+          final state = snapshot;
 
           if (state is CustomerLoadingState && state is! CustomerLoadedState) {
             return const Center(child: CircularProgressIndicator());
@@ -154,37 +159,38 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
           return Column(
             children: [
-              // SUMMARY
+              /*// SUMMARY
               CustomerSummary(totalCustomers: totalCustomers),
-
+*/
               // SEARCH
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                child: TextField(
-                  controller: searchController,
-                  onChanged: _onSearchChanged,
-                  decoration: InputDecoration(
-                    hintText: 'Search customer by name or phone',
-                    prefixIcon: const Icon(Icons.search_rounded),
-                    suffixIcon: searchController.text.isNotEmpty
-                        ? IconButton(
-                            onPressed: () {
-                              searchController.clear();
-                              _onSearchChanged('');
-                            },
-                            icon: const Icon(Icons.close_rounded),
-                          )
-                        : null,
-                    filled: true,
-                    fillColor: colorScheme.surfaceContainerHighest,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
+              if(isSearch)...[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                  child: TextField(
+                    controller: searchController,
+                    onChanged: _onSearchChanged,
+                    decoration: InputDecoration(
+                      hintText: 'Search customer by name or phone',
+                      prefixIcon: const Icon(Icons.search_rounded),
+                      suffixIcon: searchController.text.isNotEmpty
+                          ? IconButton(
+                        onPressed: () {
+                          searchController.clear();
+                          _onSearchChanged('');
+                        },
+                        icon: const Icon(Icons.close_rounded),
+                      )
+                          : null,
+                      filled: true,
+                      fillColor: colorScheme.surfaceContainerHighest,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                   ),
                 ),
-              ),
-
+              ],
               // LIST
               Expanded(
                 child: filteredCustomers.isEmpty
