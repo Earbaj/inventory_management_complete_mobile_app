@@ -299,6 +299,12 @@ class PdfExportService {
       ];
     }).toList();
 
+    final closingBalanceStr = customer.rawBalance < 0
+        ? '$currency${customer.rawBalance.abs().toStringAsFixed(2)} (Due)'
+        : (customer.rawBalance > 0
+            ? '$currency${customer.rawBalance.toStringAsFixed(2)} (Credit)'
+            : '$currency0.00');
+
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
@@ -347,9 +353,16 @@ class PdfExportService {
                       crossAxisAlignment: pw.CrossAxisAlignment.end,
                       children: [
                         pw.Text('Opening Balance: $currency${customer.openingBalance.toStringAsFixed(2)}', style: const pw.TextStyle(fontSize: 10)),
+                        pw.SizedBox(height: 2),
+                        pw.Text('Total Due: $currency${customer.totalDue.toStringAsFixed(2)}', style: const pw.TextStyle(fontSize: 10)),
+                        pw.SizedBox(height: 2),
                         pw.Text(
-                          'Total Due: $currency${customer.totalDue.toStringAsFixed(2)}',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: PdfColors.red800),
+                          'Closing Balance: $closingBalanceStr',
+                          style: pw.TextStyle(
+                            fontWeight: pw.FontWeight.bold,
+                            fontSize: 11,
+                            color: customer.rawBalance < 0 ? PdfColors.red800 : PdfColors.green800,
+                          ),
                         ),
                       ],
                     ),
