@@ -84,13 +84,14 @@ class _PaymentCheckoutModalState extends State<PaymentCheckoutModal> {
     if (_formKey.currentState?.validate() ?? false) {
       final amount = double.tryParse(_amountController.text.trim()) ?? _selectedPackage?.price ?? 999.0;
       final trxId = _trxController.text.trim();
-      final targetTier = _selectedPackage?.tier ?? 'premium';
+      final targetTier = _selectedPackage?.id ?? 'premium';
 
       InjectionContainer.subscriptionBloc.add(SubmitSubscriptionPaymentEvent(
-        method: _selectedMethod,
+        method: _selectedMethod.toLowerCase() == "bkash" ? "manual_bkash":"",
         transactionId: trxId,
         amount: amount,
         targetTier: targetTier,
+        accountNumber: "8546214521"
       ));
     }
   }

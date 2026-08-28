@@ -13,6 +13,7 @@ abstract class SubscriptionRemoteDataSource {
     required String transactionId,
     required double amount,
     required String targetTier,
+    required String accountNumber
   });
   Future<List<PaymentModel>> getPaymentLogs({int page = 1, int limit = 20});
 }
@@ -102,18 +103,17 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
     required String transactionId,
     required double amount,
     required String targetTier,
+    required String accountNumber
   }) async {
     developer.log('💳 [SubscriptionRemoteDataSource] Calling POST ${ApiEndpoints.submitManualPayment} with method="$method", trxId="$transactionId", amount=$amount', name: 'SubscriptionRemoteDataSource');
     try {
       dynamic response;
       final payload = {
-        'method': method,
         'paymentMethod': method,
-        'transactionId': transactionId,
         'trxId': transactionId,
         'amount': amount,
-        'targetTier': targetTier,
         'packageId': targetTier,
+        "accountNo": accountNumber
       };
 
       try {
@@ -123,7 +123,7 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
         );
       } catch (_) {
         response = await apiClient.post(
-          '${ApiEndpoints.baseUrl}/api/subscription/pay',
+          '${ApiEndpoints.baseUrl}/api/subscriptions/payments/manual',
           body: payload,
         );
       }

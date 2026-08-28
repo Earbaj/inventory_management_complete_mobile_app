@@ -7,6 +7,7 @@ abstract class SubscriptionRepository {
     required String transactionId,
     required double amount,
     required String targetTier,
+    required String accountNumber,
   });
 
   /// Fetches payment history logs for shop.

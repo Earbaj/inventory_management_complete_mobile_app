@@ -16,6 +16,7 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
     required String transactionId,
     required double amount,
     required String targetTier,
+    required String accountNumber
   }) async {
     developer.log('🏛️ [SubscriptionRepository] Processing submitPayment for method: $method, trxId: $transactionId', name: 'SubscriptionRepository');
     try {
@@ -24,6 +25,7 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
         transactionId: transactionId,
         amount: amount,
         targetTier: targetTier,
+        accountNumber: accountNumber
       );
       final entity = SubscriptionMapper.paymentModelToEntity(model);
       developer.log('✅ [SubscriptionRepository] Mapped PaymentEntity: ID=${entity.id}, Status=${entity.status}', name: 'SubscriptionRepository');

@@ -34,6 +34,7 @@ class SubscriptionBloc {
           transactionId: event.transactionId,
           amount: event.amount,
           targetTier: event.targetTier,
+          accountNumber: event.accountNumber
         );
 
         _emit(PaymentSubmittedSuccessState(payment: payment));

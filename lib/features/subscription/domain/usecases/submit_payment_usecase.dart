@@ -11,12 +11,14 @@ class SubmitPaymentUseCase {
     required String transactionId,
     required double amount,
     required String targetTier,
+    required String accountNumber
   }) {
     return repository.submitPayment(
       method: method,
       transactionId: transactionId,
       amount: amount,
       targetTier: targetTier,
+      accountNumber: accountNumber
     );
   }
 }

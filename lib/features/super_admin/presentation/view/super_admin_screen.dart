@@ -757,21 +757,25 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> with SingleTickerPr
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    OutlinedButton.icon(
-                      onPressed: () => _showRejectDialog(context, payment.id),
-                      icon: const Icon(Icons.close_rounded, color: Colors.red),
-                      label: const Text('Reject', style: TextStyle(color: Colors.red)),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _showRejectDialog(context, payment.id),
+                        icon: const Icon(Icons.close_rounded, color: Colors.red),
+                        label: const Text('Reject', style: TextStyle(color: Colors.red)),
+                      ),
                     ),
                     const SizedBox(width: 8),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        InjectionContainer.superAdminBloc.add(ApprovePaymentEvent(payment.id));
-                      },
-                      icon: const Icon(Icons.check_circle_rounded),
-                      label: const Text('Approve Upgrade', style: TextStyle(fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green.shade700,
-                        foregroundColor: Colors.white,
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          InjectionContainer.superAdminBloc.add(ApprovePaymentEvent(payment.id));
+                        },
+                        icon: const Icon(Icons.check_circle_rounded),
+                        label: const Text('Approve Upgrade', style: TextStyle(fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green.shade700,
+                          foregroundColor: Colors.white,
+                        ),
                       ),
                     ),
                   ],
