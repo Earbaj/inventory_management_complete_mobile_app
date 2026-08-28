@@ -16,6 +16,7 @@ class SaleModel {
   final String paymentMethod;
   final String isReturned;
   final String? createdAt;
+  final String servedBy;
 
   const SaleModel({
     required this.id,
@@ -31,6 +32,7 @@ class SaleModel {
     required this.paymentMethod,
     this.isReturned = 'none',
     this.createdAt,
+    this.servedBy = 'Cashier',
   });
 
   static double _parseDouble(dynamic val) {
@@ -81,6 +83,14 @@ class SaleModel {
         ? rawDue
         : (calcNet - calcPaid).clamp(0.0, double.infinity);
 
+    String servedByName = '';
+    if (json['servedBy'] is Map) {
+      servedByName = json['servedBy']['name']?.toString() ?? '';
+    }
+    if (servedByName.isEmpty) {
+      servedByName = json['createdByName']?.toString() ?? json['createdByRole']?.toString() ?? 'Cashier';
+    }
+
     return SaleModel(
       id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
       invoiceNo: invNo.isNotEmpty
@@ -99,6 +109,7 @@ class SaleModel {
       paymentMethod: json['paymentMethod']?.toString() ?? json['payment_method']?.toString() ?? (calcDue > 0 ? 'due' : 'cash'),
       isReturned: json['isReturned']?.toString() ?? json['is_returned']?.toString() ?? 'none',
       createdAt: json['date']?.toString() ?? json['createdAt']?.toString() ?? json['created_at']?.toString(),
+      servedBy: servedByName,
     );
   }
 

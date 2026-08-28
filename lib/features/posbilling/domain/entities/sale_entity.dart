@@ -16,6 +16,7 @@ class SaleEntity {
   final String paymentMethod; // 'cash', 'bkash', 'card', 'due'
   final String isReturned; // 'none', 'partially_returned', 'full' / 'returned'
   final DateTime createdAt;
+  final String servedBy;
 
   const SaleEntity({
     required this.id,
@@ -31,6 +32,7 @@ class SaleEntity {
     required this.paymentMethod,
     this.isReturned = 'none',
     required this.createdAt,
+    this.servedBy = 'Cashier',
   });
 
   /// Computed property: true if sale has an associated customer.

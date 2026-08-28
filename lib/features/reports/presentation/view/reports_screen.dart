@@ -232,13 +232,13 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                           paidAmount: sale.paidAmount,
                           dueAmount: sale.dueAmount,
                           paymentStatus: sale.dueAmount > 0 ? PaymentStatus.partial : PaymentStatus.paid,
-                          servedBy: 'Cashier',
+                          servedBy: sale.servedBy,
                           items: sale.items.map((cartItem) {
                             return ReportItemSold(
                               itemId: cartItem.item.id,
                               name: cartItem.item.name,
                               category: cartItem.item.category,
-                              soldBy: 'Cashier',
+                              soldBy: sale.servedBy,
                               unitPrice: cartItem.item.retailSellPrice,
                               quantity: cartItem.quantity,
                             );
@@ -258,13 +258,13 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                           paidAmount: sale.paidAmount,
                           dueAmount: sale.dueAmount,
                           paymentStatus: sale.dueAmount > 0 ? PaymentStatus.partial : PaymentStatus.paid,
-                          servedBy: 'Cashier',
+                          servedBy: sale.servedBy,
                           items: sale.items.map((cartItem) {
                             return ReportItemSold(
                               itemId: cartItem.item.id,
                               name: cartItem.item.name,
                               category: cartItem.item.category,
-                              soldBy: 'Cashier',
+                              soldBy: sale.servedBy,
                               unitPrice: cartItem.item.retailSellPrice,
                               quantity: cartItem.quantity,
                             );

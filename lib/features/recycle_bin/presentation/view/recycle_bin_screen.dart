@@ -1,5 +1,5 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
@@ -18,7 +18,6 @@ class RecycleBinScreen extends StatefulWidget {
 class _RecycleBinScreenState extends State<RecycleBinScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedFilter = 'all';
-  StreamSubscription<RecycleBinState>? _blocSubscription;
 
   final List<(String, String)> _filterOptions = [
     ('all', 'All Records'),
@@ -29,65 +28,23 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
   ];
 
   @override
-  void initState() {
-    super.initState();
-    _blocSubscription = InjectionContainer.recycleBinBloc.stream.listen((state) {
-      if (!mounted) return;
-      if (state is RecycleBinOperationSuccessState) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle_outline_rounded, color: Colors.white),
-                const SizedBox(width: 10),
-                Expanded(child: Text(state.message)),
-              ],
-            ),
-            backgroundColor: Colors.green.shade700,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
-      } else if (state is RecycleBinErrorState) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error_outline_rounded, color: Colors.white),
-                const SizedBox(width: 10),
-                Expanded(child: Text(state.message)),
-              ],
-            ),
-            backgroundColor: Colors.red.shade700,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
-      }
-    });
-
-    InjectionContainer.recycleBinBloc.add(const FetchTrashItemsEvent());
-  }
-
-  @override
   void dispose() {
-    _blocSubscription?.cancel();
     _searchController.dispose();
     super.dispose();
   }
 
-  void _onSearchChanged(String query) {
-    InjectionContainer.recycleBinBloc.add(FetchTrashItemsEvent(
+  void _onSearchChanged(BuildContext context, String query) {
+    context.read<RecycleBinBloc>().add(FetchTrashItemsEvent(
       entityType: _selectedFilter,
       search: query,
     ));
   }
 
-  void _onFilterSelected(String filterKey) {
+  void _onFilterSelected(BuildContext context, String filterKey) {
     setState(() {
       _selectedFilter = filterKey;
     });
-    InjectionContainer.recycleBinBloc.add(FetchTrashItemsEvent(
+    context.read<RecycleBinBloc>().add(FetchTrashItemsEvent(
       entityType: filterKey,
       search: _searchController.text,
     ));
@@ -116,7 +73,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
         actions: [
           IconButton(
             onPressed: () {
-              InjectionContainer.recycleBinBloc.add(FetchTrashItemsEvent(
+              context.read<RecycleBinBloc>().add(FetchTrashItemsEvent(
                 entityType: _selectedFilter,
                 search: _searchController.text,
               ));
@@ -126,12 +83,41 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
           ),
         ],
       ),
-      body: StreamBuilder<RecycleBinState>(
-        stream: InjectionContainer.recycleBinBloc.stream,
-        initialData: InjectionContainer.recycleBinBloc.state,
-        builder: (context, snapshot) {
-          final state = snapshot.data;
-
+      body: BlocConsumer<RecycleBinBloc, RecycleBinState>(
+        listener: (context, state) {
+          if (state is RecycleBinOperationSuccessState) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.check_circle_outline_rounded, color: Colors.white),
+                    const SizedBox(width: 10),
+                    Expanded(child: Text(state.message)),
+                  ],
+                ),
+                backgroundColor: Colors.green.shade700,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            );
+          } else if (state is RecycleBinErrorState) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.error_outline_rounded, color: Colors.white),
+                    const SizedBox(width: 10),
+                    Expanded(child: Text(state.message)),
+                  ],
+                ),
+                backgroundColor: Colors.red.shade700,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            );
+          }
+        },
+        builder: (context, state) {
           if (state is RecycleBinLoadingState && state is! RecycleBinLoadedState) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -176,7 +162,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                     const SizedBox(height: 24),
                     ElevatedButton.icon(
                       onPressed: () {
-                        InjectionContainer.recycleBinBloc.add(FetchTrashItemsEvent(
+                        context.read<RecycleBinBloc>().add(FetchTrashItemsEvent(
                           entityType: _selectedFilter,
                           search: _searchController.text,
                         ));
@@ -206,7 +192,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                 child: TextField(
                   controller: _searchController,
-                  onChanged: _onSearchChanged,
+                  onChanged: (val) => _onSearchChanged(context, val),
                   decoration: InputDecoration(
                     hintText: 'Search deleted items, customers or invoices',
                     prefixIcon: const Icon(Icons.search_rounded),
@@ -214,7 +200,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                         ? IconButton(
                             onPressed: () {
                               _searchController.clear();
-                              _onSearchChanged('');
+                              _onSearchChanged(context, '');
                             },
                             icon: const Icon(Icons.close_rounded),
                           )
@@ -242,7 +228,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                       child: FilterChip(
                         label: Text(label),
                         selected: isSelected,
-                        onSelected: (_) => _onFilterSelected(key),
+                        onSelected: (_) => _onFilterSelected(context, key),
                       ),
                     );
                   }).toList(),
@@ -287,7 +273,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                           return TrashItemCard(
                             item: item,
                             onRestore: () {
-                              InjectionContainer.recycleBinBloc.add(
+                              context.read<RecycleBinBloc>().add(
                                 RestoreTrashItemEvent(
                                   entityType: item.entityType,
                                   id: item.id,
@@ -296,7 +282,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                               );
                             },
                             onPermanentDelete: () {
-                              InjectionContainer.recycleBinBloc.add(
+                              context.read<RecycleBinBloc>().add(
                                 PermanentDeleteTrashItemEvent(
                                   entityType: item.entityType,
                                   id: item.id,
