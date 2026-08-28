@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../../core/di/injection_container.dart';
@@ -23,9 +24,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late TextEditingController _addressController;
   late TextEditingController _currencyController;
   late TextEditingController _vatRateController;
+  late TextEditingController _logoUrlController;
 
   List<PaymentModel> _myPayments = [];
   bool _isLoadingPayments = false;
+  bool _isSaving = false;
+
+  final List<Map<String, String>> _currencies = [
+    {'symbol': '৳', 'name': 'BDT (৳)'},
+    {'symbol': '\$', 'name': 'USD (\$)'},
+    {'symbol': '€', 'name': 'EUR (€)'},
+    {'symbol': '£', 'name': 'GBP (£)'},
+  ];
+  String _selectedCurrencySymbol = '৳';
+
+  StreamSubscription<SettingsState>? _settingsSubscription;
 
   @override
   void initState() {
@@ -36,10 +49,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _addressController = TextEditingController();
     _currencyController = TextEditingController(text: '৳');
     _vatRateController = TextEditingController(text: '0.0');
+    _logoUrlController = TextEditingController();
 
     // Fetch Initial Settings and Payment History
     InjectionContainer.settingsBloc.add(const FetchSettingsEvent());
     _fetchPaymentHistory();
+
+    _settingsSubscription = InjectionContainer.settingsBloc.stream.listen((state) {
+      if (!mounted) return;
+      if (state is SettingsOperationSuccessState) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(state.message), backgroundColor: Colors.green),
+        );
+      } else if (state is SettingsErrorState) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+        );
+      }
+    });
   }
 
   Future<void> _fetchPaymentHistory() async {
@@ -59,12 +88,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   void dispose() {
+    _settingsSubscription?.cancel();
     _shopNameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
     _addressController.dispose();
     _currencyController.dispose();
     _vatRateController.dispose();
+    _logoUrlController.dispose();
     super.dispose();
   }
 
@@ -74,13 +105,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _phoneController.text = profile.phone;
       _emailController.text = profile.email ?? '';
       _addressController.text = profile.address ?? '';
-      _currencyController.text = profile.currencySymbol;
       _vatRateController.text = profile.defaultVatRate.toString();
+      _logoUrlController.text = profile.logoUrl ?? '';
+
+      final symbol = profile.currencySymbol.isNotEmpty ? profile.currencySymbol : '৳';
+      _selectedCurrencySymbol = symbol;
+      _currencyController.text = symbol;
     }
   }
 
   void _saveSettings(ShopProfileEntity currentProfile) {
     if (_formKey.currentState?.validate() ?? false) {
+      setState(() => _isSaving = true);
       final updated = currentProfile.copyWith(
         shopName: _shopNameController.text.trim(),
         phone: _phoneController.text.trim(),
@@ -88,6 +124,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
         currencySymbol: _currencyController.text.trim(),
         defaultVatRate: double.tryParse(_vatRateController.text.trim()) ?? 0.0,
+        logoUrl: _logoUrlController.text.trim().isEmpty ? null : _logoUrlController.text.trim(),
       );
 
       InjectionContainer.settingsBloc.add(UpdateShopProfileEvent(updated));
@@ -441,28 +478,74 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 14),
 
+                  TextFormField(
+                    controller: _logoUrlController,
+                    keyboardType: TextInputType.url,
+                    decoration: InputDecoration(
+                      labelText: 'Logo URL (Optional)',
+                      prefixIcon: const Icon(Icons.image_rounded),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      hintText: 'https://example.com/logo.png',
+                    ),
+                    validator: (val) {
+                      if (val != null && val.trim().isNotEmpty) {
+                        final uri = Uri.tryParse(val.trim());
+                        if (uri == null || !uri.hasAbsolutePath) {
+                          return 'Enter a valid URL';
+                        }
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 14),
+
                   Row(
                     children: [
                       Expanded(
-                        child: TextFormField(
-                          controller: _currencyController,
+                        child: DropdownButtonFormField<String>(
+                          initialValue: _currencies.any((c) => c['symbol'] == _selectedCurrencySymbol)
+                              ? _selectedCurrencySymbol
+                              : '৳',
                           decoration: InputDecoration(
-                            labelText: 'Currency Symbol',
+                            labelText: 'Currency',
                             prefixIcon: const Icon(Icons.attach_money_rounded),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                           ),
+                          items: _currencies.map((c) {
+                            return DropdownMenuItem<String>(
+                              value: c['symbol'],
+                              child: Text(c['name']!),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() {
+                                _selectedCurrencySymbol = val;
+                                _currencyController.text = val;
+                              });
+                            }
+                          },
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: TextFormField(
                           controller: _vatRateController,
-                          keyboardType: TextInputType.number,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           decoration: InputDecoration(
                             labelText: 'Default VAT (%)',
                             prefixIcon: const Icon(Icons.percent_rounded),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                           ),
+                          validator: (val) {
+                            if (val != null && val.trim().isNotEmpty) {
+                              final parsed = double.tryParse(val.trim());
+                              if (parsed == null || parsed < 0) {
+                                return 'Enter a valid positive number';
+                              }
+                            }
+                            return null;
+                          },
                         ),
                       ),
                     ],
@@ -472,13 +555,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   SizedBox(
                     width: double.infinity,
                     height: 50,
-                    child: ElevatedButton.icon(
-                      onPressed: () => _saveSettings(profile),
-                      icon: const Icon(Icons.save_rounded),
-                      label: const Text('Save Settings', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    child: ElevatedButton(
+                      onPressed: _isSaving ? null : () => _saveSettings(profile),
                       style: ElevatedButton.styleFrom(
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
+                      child: _isSaving
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2.5),
+                            )
+                          : const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.save_rounded),
+                                SizedBox(width: 8),
+                                Text('Save Settings', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
                     ),
                   ),
                 ],
