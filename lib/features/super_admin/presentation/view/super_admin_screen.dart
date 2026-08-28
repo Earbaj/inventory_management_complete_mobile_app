@@ -741,7 +741,6 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> with SingleTickerPr
                   children: [
                     Chip(
                       label: Text(payment.method.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-                      backgroundColor: colorScheme.primaryContainer,
                     ),
                     Text(
                       '৳ ${payment.amount.toStringAsFixed(0)}',
@@ -758,10 +757,14 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> with SingleTickerPr
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Expanded(
-                      child: OutlinedButton.icon(
+                      child: ElevatedButton.icon(
                         onPressed: () => _showRejectDialog(context, payment.id),
-                        icon: const Icon(Icons.close_rounded, color: Colors.red),
-                        label: const Text('Reject', style: TextStyle(color: Colors.red)),
+                        icon: const Icon(Icons.close_rounded, color: Colors.white),
+                        label: const Text('Reject', style: TextStyle(color: Colors.white)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -771,7 +774,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> with SingleTickerPr
                           InjectionContainer.superAdminBloc.add(ApprovePaymentEvent(payment.id));
                         },
                         icon: const Icon(Icons.check_circle_rounded),
-                        label: const Text('Approve Upgrade', style: TextStyle(fontWeight: FontWeight.bold)),
+                        label: const Text('Approve', style: TextStyle(fontWeight: FontWeight.bold)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green.shade700,
                           foregroundColor: Colors.white,
