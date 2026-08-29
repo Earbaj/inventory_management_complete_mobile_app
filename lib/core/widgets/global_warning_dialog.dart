@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 class GlobalWarningDialog extends StatefulWidget {
@@ -95,6 +96,7 @@ class _GlobalWarningDialogState extends State<GlobalWarningDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final screenSize = MediaQuery.of(context).size;
     final effectiveIconColor = widget.iconColor ?? widget.confirmColor;
 
     return PopScope(
@@ -105,8 +107,9 @@ class _GlobalWarningDialogState extends State<GlobalWarningDialog> {
         ),
         elevation: 0,
         backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
           decoration: BoxDecoration(
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(20),
@@ -119,50 +122,65 @@ class _GlobalWarningDialogState extends State<GlobalWarningDialog> {
             ],
           ),
           constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.85,
-            maxHeight: MediaQuery.of(context).size.height * 0.6,
+            maxWidth: math.min(screenSize.width * 0.9, 400),
+            maxHeight: screenSize.height * 0.85,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Icon Container
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: effectiveIconColor.withValues(alpha: 0.1),
-                ),
-                child: Icon(
-                  widget.icon,
-                  color: effectiveIconColor,
-                  size: 48,
+              // Scrollable content area
+              Flexible(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Icon Container
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: effectiveIconColor.withValues(alpha: 0.1),
+                        ),
+                        child: Icon(
+                          widget.icon,
+                          color: effectiveIconColor,
+                          size: 38,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Title
+                      Text(
+                        widget.title,
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Message
+                      Text(
+                        widget.message,
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          fontSize: 13.5,
+                          height: 1.45,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 20),
 
-              // Title
-              Text(
-                widget.title,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
 
-              // Message
-              Text(
-                widget.message,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Action Buttons
+              // Action Buttons (Pinned at bottom)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -176,22 +194,22 @@ class _GlobalWarningDialogState extends State<GlobalWarningDialog> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         side: BorderSide(
-                          color: colorScheme.outline,
+                          color: colorScheme.outline.withValues(alpha: 0.5),
                         ),
                       ),
                       child: Text(
                         widget.cancelText,
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
 
                   // Confirm Button
                   Expanded(
@@ -203,21 +221,21 @@ class _GlobalWarningDialogState extends State<GlobalWarningDialog> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                       child: _isLoading
                           ? const SizedBox(
-                              width: 20,
-                              height: 20,
+                              width: 18,
+                              height: 18,
                               child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
+                                strokeWidth: 2.2,
                                 valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             )
                           : Text(
                               widget.confirmText,
                               style: const TextStyle(
-                                fontSize: 16,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),

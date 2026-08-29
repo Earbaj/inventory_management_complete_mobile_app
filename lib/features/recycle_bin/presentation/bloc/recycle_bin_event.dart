@@ -8,12 +8,14 @@ class FetchTrashItemsEvent extends RecycleBinEvent {
   final String? search;
   final int page;
   final bool isRefresh;
+  final bool forceRefresh;
 
   const FetchTrashItemsEvent({
     this.entityType,
     this.search,
     this.page = 1,
     this.isRefresh = false,
+    this.forceRefresh = false,
   });
 }
 

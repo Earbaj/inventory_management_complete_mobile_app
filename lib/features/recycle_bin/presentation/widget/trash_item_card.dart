@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/global_warning_dialog.dart';
 import '../../domain/entities/trash_item_entity.dart';
 
 class TrashItemCard extends StatelessWidget {
@@ -58,7 +59,7 @@ class TrashItemCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Header: Entity Icon, Title, Badge
+            // Top Header: Entity Icon, Title, Badge & Amount
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -187,48 +188,16 @@ class TrashItemCard extends StatelessWidget {
   }
 
   void _confirmPermanentDelete(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
-              SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'Permanent Hard Delete?',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
-          content: Text(
-            'Are you sure you want to permanently purge "${item.title}" from MongoDB storage?\n\n'
-            '⚠️ WARNING: This action is IRREVERSIBLE. Data cannot be recovered after permanent deletion.',
-            style: const TextStyle(fontSize: 14, height: 1.4),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade700,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              icon: const Icon(Icons.delete_forever_rounded),
-              label: const Text('Purge Permanently'),
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                onPermanentDelete();
-              },
-            ),
-          ],
-        );
+    GlobalWarningDialog.show(
+      context,
+      title: 'Permanent Hard Delete?',
+      message: 'Are you sure you want to permanently purge "${item.title}" from MongoDB storage?\n\n⚠️ WARNING: This action is IRREVERSIBLE. Data cannot be recovered after permanent deletion.',
+      confirmText: 'Purge Permanently',
+      cancelText: 'Cancel',
+      confirmColor: Colors.red.shade700,
+      icon: Icons.delete_forever_rounded,
+      onConfirm: () async {
+        onPermanentDelete();
       },
     );
   }

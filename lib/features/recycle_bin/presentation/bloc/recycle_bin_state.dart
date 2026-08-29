@@ -20,6 +20,7 @@ class RecycleBinLoadedState extends RecycleBinState {
   final String searchQuery;
   final bool isLoadingMore;
   final bool hasReachedMax;
+  final bool isListLoading;
 
   const RecycleBinLoadedState({
     required this.items,
@@ -28,6 +29,7 @@ class RecycleBinLoadedState extends RecycleBinState {
     this.searchQuery = '',
     this.isLoadingMore = false,
     this.hasReachedMax = false,
+    this.isListLoading = false,
   });
 
   List<TrashItemEntity> get filteredItems {
@@ -42,6 +44,7 @@ class RecycleBinLoadedState extends RecycleBinState {
     String? searchQuery,
     bool? isLoadingMore,
     bool? hasReachedMax,
+    bool? isListLoading,
   }) {
     return RecycleBinLoadedState(
       items: items ?? this.items,
@@ -50,6 +53,7 @@ class RecycleBinLoadedState extends RecycleBinState {
       searchQuery: searchQuery ?? this.searchQuery,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       hasReachedMax: hasReachedMax ?? this.hasReachedMax,
+      isListLoading: isListLoading ?? this.isListLoading,
     );
   }
 }
@@ -62,6 +66,7 @@ class RecycleBinOperationSuccessState extends RecycleBinState {
 
 class RecycleBinErrorState extends RecycleBinState {
   final String message;
+  final List<TrashItemEntity> previousItems;
 
-  const RecycleBinErrorState(this.message);
+  const RecycleBinErrorState(this.message, {this.previousItems = const []});
 }

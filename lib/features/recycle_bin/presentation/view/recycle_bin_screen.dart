@@ -3,9 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/route/app_route.dart';
 import '../../../../core/widgets/global_empty_placeholder.dart';
+import '../../../../core/widgets/global_warning_dialog.dart';
 import '../bloc/recycle_bin_bloc.dart';
 import '../bloc/recycle_bin_event.dart';
 import '../bloc/recycle_bin_state.dart';
+import '../widget/recycle_bin_shimmer.dart';
 import '../widget/trash_item_card.dart';
 
 class RecycleBinScreen extends StatefulWidget {
@@ -76,6 +78,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
       search: _searchController.text,
       page: 1,
       isRefresh: true,
+      forceRefresh: true,
     ));
   }
 
@@ -92,21 +95,15 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
           },
           icon: const Icon(Icons.menu_rounded),
         ),
-        title: const Row(
-          children: [
-            Icon(Icons.delete_sweep_rounded, size: 24),
-            SizedBox(width: 8),
-            Text('Recycle Bin'),
-          ],
-        ),
+        title: const  Text('Recycle Bin'),
         actions: [
           IconButton(
-            tooltip: 'Empty Trash / রিসাইকেল বিন খালি করুন',
+            tooltip: 'Empty Recycle Bin',
             onPressed: () => _confirmEmptyTrash(context),
             icon: const Icon(Icons.delete_sweep_rounded, color: Colors.redAccent),
           ),
           IconButton(
-            tooltip: 'Log Cleanup / ৯০ দিনের পুরনো লগ ক্লিনআপ',
+            tooltip: 'Clean 90-day Audit Logs',
             onPressed: () => _confirmCleanupLogs(context),
             icon: const Icon(Icons.cleaning_services_rounded),
           ),
@@ -117,10 +114,11 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                 search: _searchController.text,
                 page: 1,
                 isRefresh: true,
+                forceRefresh: true,
               ));
             },
             icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Refresh Recycle Bin',
+            tooltip: 'Refresh',
           ),
         ],
       ),
@@ -159,11 +157,11 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
           }
         },
         builder: (context, state) {
-          if (state is RecycleBinLoadingState && state is! RecycleBinLoadedState) {
-            return const Center(child: CircularProgressIndicator());
-          }
+          final loadedState = state is RecycleBinLoadedState ? state : null;
+          final isInitialLoading = state is RecycleBinLoadingState;
+          final isListLoading = loadedState?.isListLoading == true;
 
-          if (state is RecycleBinErrorState) {
+          if (state is RecycleBinErrorState && state.previousItems.isEmpty) {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -194,7 +192,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                     Text(
                       state.message.isNotEmpty
                           ? state.message
-                          : 'Unable to connect to database or fetch trash items.',
+                          : 'Unable to connect to database or fetch deleted items.',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant,
@@ -207,6 +205,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                           entityType: _selectedFilter,
                           search: _searchController.text,
                           page: 1,
+                          forceRefresh: true,
                         ));
                       },
                       icon: const Icon(Icons.refresh_rounded),
@@ -224,7 +223,6 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
             );
           }
 
-          final loadedState = state is RecycleBinLoadedState ? state : null;
           final trashItems = loadedState?.filteredItems ?? [];
           final meta = loadedState?.meta;
 
@@ -237,7 +235,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                   controller: _searchController,
                   onChanged: (val) => _onSearchChanged(context, val),
                   decoration: InputDecoration(
-                    hintText: 'Search deleted items, customers or invoices',
+                    hintText: 'Search deleted items, customers or invoices...',
                     prefixIcon: const Icon(Icons.search_rounded),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
@@ -305,58 +303,61 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
 
               const SizedBox(height: 8),
 
-              // RECYCLE BIN LIST WITH PAGINATION
+              // RECYCLE BIN LIST WITH SHIMMER & PAGINATION
               Expanded(
-                child: trashItems.isEmpty
-                    ? GlobalEmptyPlaceholder(
-          title: 'Recycle Bin is Empty',
-          subtitle: 'No soft-deleted records match your filter criteria.',
-          ) : RefreshIndicator(
-                        onRefresh: () => _onRefresh(context),
-                        child: ListView.builder(
-                          controller: _scrollController,
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                          itemCount: trashItems.length + (loadedState?.isLoadingMore == true ? 1 : 0),
-                          itemBuilder: (context, index) {
-                            if (index == trashItems.length) {
-                              return const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 16.0),
-                                child: Center(
-                                  child: SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(strokeWidth: 2.5),
-                                  ),
-                                ),
-                              );
-                            }
+                child: (isInitialLoading || isListLoading)
+                    ? const RecycleBinShimmerView()
+                    : trashItems.isEmpty
+                        ? const GlobalEmptyPlaceholder(
+                            title: 'Recycle Bin is Empty',
+                            subtitle: 'No soft-deleted records match your search or filter.',
+                          )
+                        : RefreshIndicator(
+                            onRefresh: () => _onRefresh(context),
+                            child: ListView.builder(
+                              controller: _scrollController,
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                              itemCount: trashItems.length + (loadedState?.isLoadingMore == true ? 1 : 0),
+                              itemBuilder: (context, index) {
+                                if (index == trashItems.length) {
+                                  return const Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 16.0),
+                                    child: Center(
+                                      child: SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(strokeWidth: 2.5),
+                                      ),
+                                    ),
+                                  );
+                                }
 
-                            final item = trashItems[index];
-                            return TrashItemCard(
-                              item: item,
-                              onRestore: () {
-                                context.read<RecycleBinBloc>().add(
-                                  RestoreTrashItemEvent(
-                                    entityType: item.entityType,
-                                    id: item.id,
-                                    title: item.title,
-                                  ),
+                                final item = trashItems[index];
+                                return TrashItemCard(
+                                  item: item,
+                                  onRestore: () {
+                                    context.read<RecycleBinBloc>().add(
+                                      RestoreTrashItemEvent(
+                                        entityType: item.entityType,
+                                        id: item.id,
+                                        title: item.title,
+                                      ),
+                                    );
+                                  },
+                                  onPermanentDelete: () {
+                                    context.read<RecycleBinBloc>().add(
+                                      PermanentDeleteTrashItemEvent(
+                                        entityType: item.entityType,
+                                        id: item.id,
+                                        title: item.title,
+                                      ),
+                                    );
+                                  },
                                 );
                               },
-                              onPermanentDelete: () {
-                                context.read<RecycleBinBloc>().add(
-                                  PermanentDeleteTrashItemEvent(
-                                    entityType: item.entityType,
-                                    id: item.id,
-                                    title: item.title,
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                        ),
-                      ),
+                            ),
+                          ),
               ),
             ],
           );
@@ -366,54 +367,34 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
   }
 
   void _confirmEmptyTrash(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (dialogCtx) => AlertDialog(
-        title: const Text('রিসাইকেল বিন ফাঁকা করবেন?'),
-        content: const Text(
-          'আপনি কি নিশ্চিত যে রিসাইকেল বিনের সব ডাটা স্থায়ীভাবে ডিলিট করতে চান? এই ডাটা আর কখনো ফিরিয়ে আনা যাবে না।',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogCtx),
-            child: const Text('বাতিল'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              context.read<RecycleBinBloc>().add(const EmptyTrashEvent());
-              Navigator.pop(dialogCtx);
-            },
-            child: const Text('হ্যাঁ, বিন খালি করুন'),
-          ),
-        ],
-      ),
+    GlobalWarningDialog.show(
+      context,
+      title: 'Empty Recycle Bin?',
+      message: 'Are you sure you want to permanently delete all items in the Recycle Bin?\n\n⚠️ WARNING: This action cannot be undone.',
+      confirmText: 'Empty Bin',
+      cancelText: 'Cancel',
+      confirmColor: Colors.red.shade700,
+      icon: Icons.delete_sweep_rounded,
+      onConfirm: () async {
+        final bloc = context.read<RecycleBinBloc>();
+        bloc.add(const EmptyTrashEvent());
+      },
     );
   }
 
   void _confirmCleanupLogs(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (dialogCtx) => AlertDialog(
-        title: const Text('পুরনো অডিট লগ সাফ করবেন?'),
-        content: const Text(
-          'আপনি কি নিশ্চিত যে ৯০ দিনের পুরনো সকল কাজের ইতিহাস (Audit Logs) মুছে ফেলে স্টোরেজ খালি করতে চান?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogCtx),
-            child: const Text('বাতিল'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.orange.shade800),
-            onPressed: () {
-              context.read<RecycleBinBloc>().add(const CleanupAuditLogsEvent(days: 90));
-              Navigator.pop(dialogCtx);
-            },
-            child: const Text('লগ সফট সাফ করুন'),
-          ),
-        ],
-      ),
+    GlobalWarningDialog.show(
+      context,
+      title: 'Cleanup Old Audit Logs?',
+      message: 'Are you sure you want to purge audit activity logs older than 90 days to free up database storage?',
+      confirmText: 'Purge Logs',
+      cancelText: 'Cancel',
+      confirmColor: Colors.orange.shade800,
+      icon: Icons.cleaning_services_rounded,
+      onConfirm: () async {
+        final bloc = context.read<RecycleBinBloc>();
+        bloc.add(const CleanupAuditLogsEvent(days: 90));
+      },
     );
   }
 }

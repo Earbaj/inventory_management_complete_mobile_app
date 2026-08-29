@@ -1,5 +1,4 @@
 import '../entities/pagination_meta_entity.dart';
-import '../entities/trash_item_entity.dart';
 import '../repositories/recycle_bin_repository.dart';
 
 /// UseCase: Fetches soft-deleted records from Recycle Bin with pagination.
@@ -13,12 +12,14 @@ class GetTrashItemsUseCase {
     String? search,
     int page = 1,
     int limit = 10,
+    bool forceRefresh = false,
   }) {
     return repository.getTrashItems(
       entityType: entityType,
       search: search,
       page: page,
       limit: limit,
+      forceRefresh: forceRefresh,
     );
   }
 }

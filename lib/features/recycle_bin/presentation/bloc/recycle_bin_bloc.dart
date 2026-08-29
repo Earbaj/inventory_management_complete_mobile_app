@@ -51,7 +51,14 @@ class RecycleBinBloc extends Bloc<RecycleBinEvent, RecycleBinState> {
     _currentPage = event.page;
     _hasReachedMax = false;
 
-    if (_currentPage == 1 && !event.isRefresh) {
+    final currentState = state;
+    if (_currentPage == 1 && (event.isRefresh || event.forceRefresh)) {
+      if (currentState is RecycleBinLoadedState) {
+        emit(currentState.copyWith(isListLoading: true));
+      } else {
+        emit(const RecycleBinLoadingState());
+      }
+    } else if (_currentPage == 1 && state is! RecycleBinLoadedState) {
       emit(const RecycleBinLoadingState());
     }
 
@@ -61,6 +68,7 @@ class RecycleBinBloc extends Bloc<RecycleBinEvent, RecycleBinState> {
         search: _searchQuery,
         page: _currentPage,
         limit: 10,
+        forceRefresh: event.forceRefresh || event.isRefresh,
       );
 
       _allItems = List.from(paginatedResult.items);
@@ -69,8 +77,10 @@ class RecycleBinBloc extends Bloc<RecycleBinEvent, RecycleBinState> {
 
       _emitLoadedState(emit);
     } catch (e) {
+      final prev = currentState is RecycleBinLoadedState ? currentState.items : <TrashItemEntity>[];
       emit(RecycleBinErrorState(
         e.toString().replaceAll('Exception: ', '').replaceAll('ServerFailure: ', ''),
+        previousItems: prev,
       ));
     }
   }
@@ -113,6 +123,10 @@ class RecycleBinBloc extends Bloc<RecycleBinEvent, RecycleBinState> {
     RestoreTrashItemEvent event,
     Emitter<RecycleBinState> emit,
   ) async {
+    final currentState = state;
+    if (currentState is RecycleBinLoadedState) {
+      emit(currentState.copyWith(isListLoading: true));
+    }
     try {
       await restoreTrashItemUseCase(
         entityType: event.entityType,
@@ -121,8 +135,22 @@ class RecycleBinBloc extends Bloc<RecycleBinEvent, RecycleBinState> {
       _allItems.removeWhere((item) => item.id == event.id);
       _decrementMetaTotal();
       emit(RecycleBinOperationSuccessState('"${event.title}" restored successfully!'));
+
+      final paginatedResult = await getTrashItemsUseCase(
+        entityType: _activeFilter,
+        search: _searchQuery,
+        page: 1,
+        limit: 10,
+        forceRefresh: true,
+      );
+      _allItems = List.from(paginatedResult.items);
+      _meta = paginatedResult.meta;
+      _hasReachedMax = !paginatedResult.meta.hasNextPage;
       _emitLoadedState(emit);
     } catch (e) {
+      if (currentState is RecycleBinLoadedState) {
+        emit(currentState.copyWith(isListLoading: false));
+      }
       emit(RecycleBinErrorState(
         e.toString().replaceAll('Exception: ', '').replaceAll('ServerFailure: ', ''),
       ));
@@ -133,6 +161,10 @@ class RecycleBinBloc extends Bloc<RecycleBinEvent, RecycleBinState> {
     PermanentDeleteTrashItemEvent event,
     Emitter<RecycleBinState> emit,
   ) async {
+    final currentState = state;
+    if (currentState is RecycleBinLoadedState) {
+      emit(currentState.copyWith(isListLoading: true));
+    }
     try {
       await permanentDeleteTrashItemUseCase(
         entityType: event.entityType,
@@ -140,9 +172,23 @@ class RecycleBinBloc extends Bloc<RecycleBinEvent, RecycleBinState> {
       );
       _allItems.removeWhere((item) => item.id == event.id);
       _decrementMetaTotal();
-      emit(RecycleBinOperationSuccessState('"${event.title}" permanently deleted from database.'));
+      emit(RecycleBinOperationSuccessState('"${event.title}" permanently deleted.'));
+
+      final paginatedResult = await getTrashItemsUseCase(
+        entityType: _activeFilter,
+        search: _searchQuery,
+        page: 1,
+        limit: 10,
+        forceRefresh: true,
+      );
+      _allItems = List.from(paginatedResult.items);
+      _meta = paginatedResult.meta;
+      _hasReachedMax = !paginatedResult.meta.hasNextPage;
       _emitLoadedState(emit);
     } catch (e) {
+      if (currentState is RecycleBinLoadedState) {
+        emit(currentState.copyWith(isListLoading: false));
+      }
       emit(RecycleBinErrorState(
         e.toString().replaceAll('Exception: ', '').replaceAll('ServerFailure: ', ''),
       ));
@@ -153,6 +199,10 @@ class RecycleBinBloc extends Bloc<RecycleBinEvent, RecycleBinState> {
     EmptyTrashEvent event,
     Emitter<RecycleBinState> emit,
   ) async {
+    final currentState = state;
+    if (currentState is RecycleBinLoadedState) {
+      emit(currentState.copyWith(isListLoading: true));
+    }
     try {
       await remoteDataSource.emptyTrash();
       _allItems.clear();
@@ -164,10 +214,13 @@ class RecycleBinBloc extends Bloc<RecycleBinEvent, RecycleBinState> {
         hasNextPage: false,
         hasPrevPage: false,
       );
-      emit(const RecycleBinOperationSuccessState('রিসাইকেল বিন সম্পূর্ণ ফাঁকা করা হয়েছে! 🧹'));
+      emit(const RecycleBinOperationSuccessState('Recycle Bin emptied successfully! 🧹'));
       _emitLoadedState(emit);
     } catch (e) {
-      emit(RecycleBinErrorState('রিসাইকেল বিন ফাঁকা করতে ব্যর্থ: ${e.toString()}'));
+      if (currentState is RecycleBinLoadedState) {
+        emit(currentState.copyWith(isListLoading: false));
+      }
+      emit(RecycleBinErrorState('Failed to empty Recycle Bin: ${e.toString()}'));
     }
   }
 
@@ -175,12 +228,19 @@ class RecycleBinBloc extends Bloc<RecycleBinEvent, RecycleBinState> {
     CleanupAuditLogsEvent event,
     Emitter<RecycleBinState> emit,
   ) async {
+    final currentState = state;
+    if (currentState is RecycleBinLoadedState) {
+      emit(currentState.copyWith(isListLoading: true));
+    }
     try {
       await remoteDataSource.cleanupAuditLogs(days: event.days);
-      emit(RecycleBinOperationSuccessState('${event.days} দিনের পুরনো অডিট লগ সাফ করা হয়েছে। 🧹'));
+      emit(RecycleBinOperationSuccessState('Audit logs older than ${event.days} days cleared. 🧹'));
       _emitLoadedState(emit);
     } catch (e) {
-      emit(RecycleBinErrorState('অডিট লগ সাফ করতে ব্যর্থ: ${e.toString()}'));
+      if (currentState is RecycleBinLoadedState) {
+        emit(currentState.copyWith(isListLoading: false));
+      }
+      emit(RecycleBinErrorState('Failed to clean audit logs: ${e.toString()}'));
     }
   }
 
@@ -204,6 +264,7 @@ class RecycleBinBloc extends Bloc<RecycleBinEvent, RecycleBinState> {
       searchQuery: _searchQuery,
       isLoadingMore: false,
       hasReachedMax: _hasReachedMax,
+      isListLoading: false,
     ));
   }
 }

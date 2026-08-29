@@ -1,5 +1,4 @@
 import '../entities/pagination_meta_entity.dart';
-import '../entities/trash_item_entity.dart';
 
 /// Repository interface contract for Recycle Bin & Data Recovery operations.
 abstract class RecycleBinRepository {
@@ -9,6 +8,7 @@ abstract class RecycleBinRepository {
     String? search,
     int page = 1,
     int limit = 10,
+    bool forceRefresh = false,
   });
 
   /// Restores soft-deleted item back to active database list (POST /api/trash/restore/:entityType/:id).

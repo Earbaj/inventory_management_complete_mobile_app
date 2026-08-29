@@ -1,5 +1,5 @@
 import 'dart:developer' as developer;
-
+import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../models/pagination_meta_model.dart';
@@ -10,6 +10,7 @@ abstract class RecycleBinRemoteDataSource {
     String? search,
     int page = 1,
     int limit = 10,
+    bool forceRefresh = false,
   });
 
   Future<void> restoreItem(String entityType, String id);
@@ -32,14 +33,18 @@ class RecycleBinRemoteDataSourceImpl implements RecycleBinRemoteDataSource {
     String? search,
     int page = 1,
     int limit = 10,
+    bool forceRefresh = false,
   }) async {
     developer.log(
-      '♻️ [RecycleBinRemoteDataSource] getTrashItems() calling GET ${ApiEndpoints.trash} (type: $entityType, search: "$search", page: $page, limit: $limit)...',
+      '♻️ [RecycleBinRemoteDataSource] getTrashItems() calling GET ${ApiEndpoints.trash} (type: $entityType, search: "$search", page: $page, limit: $limit, forceRefresh: $forceRefresh)...',
       name: 'RecycleBinRemoteDataSource',
     );
     try {
       final response = await apiClient.get(
         ApiEndpoints.trash,
+        cache: true,
+        cachePolicy: forceRefresh ? CachePolicy.refresh : CachePolicy.forceCache,
+        maxStale: const Duration(minutes: 30),
         queryParameters: {
           if (entityType != null && entityType.isNotEmpty && entityType != 'all') 'entityType': entityType,
           if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
@@ -103,6 +108,7 @@ class RecycleBinRemoteDataSourceImpl implements RecycleBinRemoteDataSource {
       developer.log('✅ [RecycleBinRemoteDataSource] emptyTrash success.', name: 'RecycleBinRemoteDataSource');
     } catch (e) {
       developer.log('⚠️ [RecycleBinRemoteDataSource] emptyTrash API Error: $e', name: 'RecycleBinRemoteDataSource');
+      rethrow;
     }
   }
 
@@ -115,6 +121,7 @@ class RecycleBinRemoteDataSourceImpl implements RecycleBinRemoteDataSource {
       developer.log('✅ [RecycleBinRemoteDataSource] cleanupAuditLogs success.', name: 'RecycleBinRemoteDataSource');
     } catch (e) {
       developer.log('⚠️ [RecycleBinRemoteDataSource] cleanupAuditLogs API Error: $e', name: 'RecycleBinRemoteDataSource');
+      rethrow;
     }
   }
 }
