@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../../core/widgets/global_empty_placeholder.dart';
 import '../../../../core/widgets/global_warning_dialog.dart';
@@ -275,8 +276,29 @@ class _CustomersScreenState extends State<CustomersScreen> {
       cancelText: 'Cancel',
       icon: Icons.delete_forever_rounded,
       confirmColor: Colors.red,
-      onConfirm: () {
-        context.read<CustomerBloc>().add(DeleteCustomerEvent(customer.id));
+      onConfirm: () async {
+        try {
+          await InjectionContainer.deleteCustomerUseCase(customer.id);
+          if (mounted) {
+            context.read<CustomerBloc>().add(const FetchCustomersEvent());
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Customer deleted successfully'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(e.toString().replaceAll('Exception: ', '')),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          rethrow;
+        }
       },
     );
   }
