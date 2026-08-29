@@ -3,8 +3,13 @@ import 'package:shimmer/shimmer.dart';
 
 class ReportsShimmerView extends StatelessWidget {
   final int itemCount;
+  final bool showMetricCards;
 
-  const ReportsShimmerView({super.key, this.itemCount = 5});
+  const ReportsShimmerView({
+    super.key,
+    this.itemCount = 5,
+    this.showMetricCards = true,
+  });
 
   Widget _box({double? width, required double height, double radius = 6}) {
     return Container(
@@ -105,23 +110,25 @@ class ReportsShimmerView extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final listView = ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: itemCount,
+      itemBuilder: (_, _) => _buildInvoiceCardShimmer(),
+    );
+
     return Shimmer.fromColors(
       baseColor: isDark ? Colors.grey.shade800 : Colors.grey.shade300,
       highlightColor: isDark ? Colors.grey.shade700 : Colors.grey.shade100,
-      child: Column(
-        children: [
-          _buildMetricCardsShimmer(),
-          const SizedBox(height: 8),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: itemCount,
-              itemBuilder: (_, _) => _buildInvoiceCardShimmer(),
-            ),
-          ),
-        ],
-      ),
+      child: showMetricCards
+          ? Column(
+              children: [
+                _buildMetricCardsShimmer(),
+                const SizedBox(height: 8),
+                Expanded(child: listView),
+              ],
+            )
+          : listView,
     );
   }
 }

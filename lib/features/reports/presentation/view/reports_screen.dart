@@ -278,9 +278,6 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
 
           return Column(
             children: [
-              if (isListLoading)
-                const LinearProgressIndicator(minHeight: 2.5),
-
               if (_isFilterShow) ...[
                 // BRANCH FILTER DROPDOWN
                 if (_branches.isNotEmpty)
@@ -369,16 +366,27 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                       return Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: ChoiceChip(
-                          avatar: filter == DateFilterType.custom
+                          avatar: isSelected && isListLoading
+                              ? SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                isSelected ? colorScheme.onPrimary : colorScheme.primary,
+                              ),
+                            ),
+                          )
+                              : (filter == DateFilterType.custom
                               ? Icon(
                             Icons.calendar_month_rounded,
                             size: 16,
                             color: isSelected ? colorScheme.onPrimary : colorScheme.primary,
                           )
-                              : null,
+                              : null),
                           label: Text(label),
                           selected: isSelected,
-                          onSelected: (_) => _applyDateFilter(context, filter),
+                          onSelected: isListLoading ? null : (_) => _applyDateFilter(context, filter),
                         ),
                       );
                     }).toList(),
@@ -394,7 +402,19 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                     decoration: InputDecoration(
                       hintText: 'Search invoice no or customer name...',
                       prefixIcon: const Icon(Icons.search_rounded),
-                      suffixIcon: _searchController.text.isNotEmpty
+                      suffixIcon: isListLoading && _searchController.text.isNotEmpty
+                          ? Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                          ),
+                        ),
+                      )
+                          : (_searchController.text.isNotEmpty
                           ? IconButton(
                         onPressed: () {
                           _searchController.clear();
@@ -402,7 +422,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                         },
                         icon: const Icon(Icons.close_rounded),
                       )
-                          : null,
+                          : null),
                       filled: true,
                       fillColor: colorScheme.surfaceContainerHighest,
                       border: OutlineInputBorder(
@@ -460,7 +480,9 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                   child: TabBarView(
                     controller: _tabController,
                     children: [
-                      InvoiceLogsTab(
+                      isListLoading
+                          ? const ReportsShimmerView(showMetricCards: false)
+                          : InvoiceLogsTab(
                         invoices: logs.map((sale) {
                           return InvoiceLog(
                             id: sale.id,
@@ -486,7 +508,9 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                           );
                         }).toList(),
                       ),
-                      ItemsSoldTab(
+                      isListLoading
+                          ? const ReportsShimmerView(showMetricCards: false)
+                          : ItemsSoldTab(
                         invoices: logs.map((sale) {
                           return InvoiceLog(
                             id: sale.id,

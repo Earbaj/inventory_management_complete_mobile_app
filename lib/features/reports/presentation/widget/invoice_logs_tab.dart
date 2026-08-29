@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/global_empty_placeholder.dart';
 import '../../reports_models.dart';
 import 'receipt_dialog.dart';
 
@@ -28,35 +29,10 @@ class InvoiceLogsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (invoices.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.receipt_long_outlined,
-                size: 64,
-                color: Colors.grey[400],
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'No Invoice Logs Found',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Try adjusting your search query or date range filter.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-              ),
-            ],
-          ),
-        ),
+      return const GlobalEmptyPlaceholder(
+        title: 'No Invoice Logs Found',
+        subtitle:
+        'Try adjusting your search query or date range filter.',
       );
     }
 
