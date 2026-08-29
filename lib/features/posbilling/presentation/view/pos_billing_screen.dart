@@ -28,7 +28,6 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
 
   String selectedCategory = 'All';
   StreamSubscription<PosState>? _posSubscription;
-  Timer? _searchDebounceTimer;
 
   @override
   void initState() {
@@ -63,7 +62,6 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
 
   @override
   void dispose() {
-    _searchDebounceTimer?.cancel();
     _posSubscription?.cancel();
     searchController.dispose();
     discountController.dispose();
@@ -71,15 +69,7 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
   }
 
   void _onSearchChanged(String query) {
-    _searchDebounceTimer?.cancel();
-    _searchDebounceTimer = Timer(const Duration(milliseconds: 400), () {
-      InjectionContainer.inventoryBloc.add(
-        FetchInventoryItemsEvent(
-          searchQuery: query,
-          category: selectedCategory,
-        ),
-      );
-    });
+    setState(() {});
   }
 
   @override
@@ -146,9 +136,11 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
                             );
 
                             InjectionContainer.posBloc.add(AddToCartEvent(matchingItem));
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Scanned & Added "${matchingItem.name}" to Cart!'), backgroundColor: Colors.green.shade700),
-                            );
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Scanned & Added "${matchingItem.name}" to Cart!'), backgroundColor: Colors.green.shade700),
+                              );
+                            }
                           }
                         }
                       },
@@ -180,11 +172,20 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
 
                 final loadedState = state is InventoryLoadedState ? state : null;
                 final allProducts = loadedState?.items ?? [];
-                final categories = ['All', ...allProducts.map((e) => e.category).toSet()];
+                final List<String> categories;
+                if (loadedState != null && loadedState.categories.isNotEmpty) {
+                  categories = loadedState.categories.contains('All')
+                      ? loadedState.categories
+                      : ['All', ...loadedState.categories];
+                } else {
+                  categories = ['All', ...allProducts.map((e) => e.category.trim()).where((c) => c.isNotEmpty).toSet()];
+                }
 
                 final query = searchController.text.trim().toLowerCase();
                 final filteredProducts = allProducts.where((p) {
-                  final matchesSearch = query.isEmpty || p.name.toLowerCase().contains(query) || p.sku.toLowerCase().contains(query);
+                  final matchesSearch = query.isEmpty ||
+                      p.name.toLowerCase().contains(query) ||
+                      p.sku.toLowerCase().contains(query);
                   final matchesCategory = selectedCategory == 'All' || p.category == selectedCategory;
                   return matchesSearch && matchesCategory;
                 }).toList();
@@ -198,7 +199,7 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         scrollDirection: Axis.horizontal,
                         itemCount: categories.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        separatorBuilder: (_, _) => const SizedBox(width: 8),
                         itemBuilder: (context, index) {
                           final category = categories[index];
                           final selected = selectedCategory == category;
@@ -210,12 +211,6 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
                               setState(() {
                                 selectedCategory = category;
                               });
-                              InjectionContainer.inventoryBloc.add(
-                                FetchInventoryItemsEvent(
-                                  searchQuery: searchController.text,
-                                  category: category,
-                                ),
-                              );
                             },
                           );
                         },
