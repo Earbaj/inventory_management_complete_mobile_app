@@ -25,9 +25,10 @@ class InventoryItemCardShimmer extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(16),
+      // প্যারেন্ট ব্যাকগ্রাউন্ড ট্রান্সপারেন্ট বা বর্ডার রাখা হয়েছে যাতে ভেতরের শিমার ব্লকগুলো স্পষ্ট দেখা যায়
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -114,8 +115,76 @@ class InventoryListShimmer extends StatelessWidget {
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
         physics: const NeverScrollableScrollPhysics(),
+        shrinkWrap: true,
         itemCount: itemCount,
         itemBuilder: (_, _) => const InventoryItemCardShimmer(),
+      ),
+    );
+  }
+}
+
+class InventorySummaryShimmer extends StatelessWidget {
+
+  const InventorySummaryShimmer({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return InventoryShimmerEffect(
+      child: SizedBox(
+        height: 108,
+        child: ListView.separated(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          scrollDirection: Axis.horizontal,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: 3,
+          separatorBuilder: (_, _) => const SizedBox(width: 8),
+          itemBuilder: (_, _) {
+            return Container(
+              width: 140,
+              padding: EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    height: 40,
+                    width: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  const SizedBox(width: 5,),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        height: 20,
+                        width: 20,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      const SizedBox(height: 5,),
+                      Container(
+                        height: 20,
+                        width: 60,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                      ),
+                    ],
+                  )
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }

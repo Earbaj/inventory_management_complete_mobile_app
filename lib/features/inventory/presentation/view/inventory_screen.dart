@@ -719,7 +719,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 ),
               ],
               // SUMMARY
-              InventorySummary(
+              (loadedState != null && loadedState.isListLoading)
+                  ? const InventorySummaryShimmer() :InventorySummary(
                 totalItems: totalItems,
                 lowStock: lowStockCount,
                 outOfStock: outOfStockCount,
