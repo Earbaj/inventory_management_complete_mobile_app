@@ -5,6 +5,8 @@ import 'package:inventory_management_complete/features/staff_managers/presentati
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
+import '../../../../core/widgets/global_empty_placeholder.dart';
+import '../../../../core/widgets/global_warning_dialog.dart';
 import '../../domain/entities/staff_entity.dart';
 import '../bloc/staff_event.dart';
 import '../bloc/staff_state.dart';
@@ -64,40 +66,18 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
   }
 
   void _confirmDeleteStaff(BuildContext context, String staffId, String staffName) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.red),
-              SizedBox(width: 10),
-              Text('Delete Staff Member?'),
-            ],
-          ),
-          content: Text(
-            'Are you sure you want to remove "$staffName" from your shop staff list?\n\nThis action will delete their account permanently.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade700,
-                foregroundColor: Colors.white,
-              ),
-              icon: const Icon(Icons.delete_forever_rounded),
-              label: const Text('Delete'),
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                InjectionContainer.staffBloc.add(DeleteStaffEvent(staffId));
-              },
-            ),
-          ],
-        );
+    GlobalWarningDialog.show(
+      context,
+      title: 'Delete Staff Member?',
+      message:
+      'Are you sure you want to remove "$staffName" from your shop staff list?\n\nThis action will delete their account permanently.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      icon: Icons.delete_forever_rounded,
+      confirmColor: Colors.red,
+      onConfirm: () async {
+        Navigator.pop(context);
+        InjectionContainer.staffBloc.add(DeleteStaffEvent(staffId));
       },
     );
   }
@@ -325,9 +305,10 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
               // STAFF MEMBERS LIST
               Expanded(
                 child: staffList.isEmpty
-                    ? const Center(
-                        child: Text('No managers found.', style: TextStyle(color: Colors.grey)),
-                      )
+                    ? GlobalEmptyPlaceholder(
+                  title: 'NO Staff Found',
+                  subtitle: 'Add Staff To Start Your Business.',
+                )
                     : ListView.builder(
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
                         itemCount: staffList.length,

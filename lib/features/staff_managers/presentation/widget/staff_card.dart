@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/global_warning_dialog.dart';
 import '../../staff_manager_model.dart';
 
 class StaffCard extends StatelessWidget {
@@ -245,29 +246,20 @@ class StaffCard extends StatelessWidget {
   }
 
   void _confirmDelete(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Delete ${staff.role.label}'),
-        content: Text(
-          'Are you sure you want to delete ${staff.name} (${staff.role.label})?\n\n'
+    GlobalWarningDialog.show(
+      context,
+      title: 'Delete ${staff.role.label}',
+      message:
+      'Are you sure you want to delete ${staff.name} (${staff.role.label})?\n\n'
           'This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              Navigator.pop(context);
-              onDelete();
-            },
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      icon: Icons.delete_forever_rounded,
+      confirmColor: Colors.red,
+      onConfirm: () async {
+        Navigator.pop(context);
+        onDelete();
+      },
     );
   }
 }
