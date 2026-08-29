@@ -16,21 +16,27 @@ class CustomerLoadingState extends CustomerState {
   const CustomerLoadingState();
 }
 
+class CustomerActionLoadingState extends CustomerState {
+  const CustomerActionLoadingState();
+}
+
 class CustomerLoadedState extends CustomerState {
   final List<CustomerEntity> customers;
   final List<CustomerEntity> filteredCustomers;
   final String searchQuery;
+  final bool isListLoading;
 
   const CustomerLoadedState({
     required this.customers,
     required this.filteredCustomers,
     required this.searchQuery,
+    this.isListLoading = false,
   });
 
   double get totalDues => customers.fold(0.0, (sum, customer) => sum + customer.totalDue);
   int get dueCustomersCount => customers.where((customer) => customer.hasDue).length;
   @override
-  List<Object?> get props => [customers,filteredCustomers,searchQuery];
+  List<Object?> get props => [customers, filteredCustomers, searchQuery, isListLoading];
 }
 
 class CustomerOperationSuccessState extends CustomerState {

@@ -53,6 +53,8 @@ class CustomerBloc extends Bloc<CustomerEvent, CustomerState> {
 
     if (_allCustomers.isEmpty) {
       emit(const CustomerLoadingState());
+    } else {
+      _emitLoadedState(emit, isListLoading: true);
     }
 
     try {
@@ -60,7 +62,7 @@ class CustomerBloc extends Bloc<CustomerEvent, CustomerState> {
         page: event.page,
         limit: event.limit,
       );
-      _emitLoadedState(emit);
+      _emitLoadedState(emit, isListLoading: false);
     } catch (e) {
       emit(CustomerErrorState(e.toString()));
     }
@@ -88,13 +90,14 @@ class CustomerBloc extends Bloc<CustomerEvent, CustomerState> {
       AddCustomerEvent event,
       Emitter<CustomerState> emit,
       ) async {
+    emit(const CustomerActionLoadingState());
     try {
       final savedCustomer = await addCustomerUseCase(event.customer);
       _allCustomers.insert(0, savedCustomer);
       emit(const CustomerOperationSuccessState('Customer added successfully!'));
       _emitLoadedState(emit);
     } catch (e) {
-      emit(CustomerErrorState(e.toString(),previousCustomers: _allCustomers));
+      emit(CustomerErrorState(e.toString(), previousCustomers: _allCustomers));
     }
   }
 
@@ -102,6 +105,7 @@ class CustomerBloc extends Bloc<CustomerEvent, CustomerState> {
       UpdateCustomerEvent event,
       Emitter<CustomerState> emit,
       ) async {
+    emit(const CustomerActionLoadingState());
     try {
       final updatedCustomer = await updateCustomerUseCase(event.customer);
       final index = _allCustomers.indexWhere((c) => c.id == updatedCustomer.id);
@@ -111,7 +115,7 @@ class CustomerBloc extends Bloc<CustomerEvent, CustomerState> {
       emit(const CustomerOperationSuccessState('Customer updated successfully!'));
       _emitLoadedState(emit);
     } catch (e) {
-      emit(CustomerErrorState(e.toString()));
+      emit(CustomerErrorState(e.toString(), previousCustomers: _allCustomers));
     }
   }
 
@@ -179,7 +183,7 @@ class CustomerBloc extends Bloc<CustomerEvent, CustomerState> {
     }
   }
 
-  void _emitLoadedState(Emitter<CustomerState> emit) {
+  void _emitLoadedState(Emitter<CustomerState> emit, {bool isListLoading = false}) {
     final query = _currentSearchQuery.trim().toLowerCase();
     final filtered = _allCustomers.where((customer) {
       final matchesSearch = query.isEmpty ||
@@ -193,6 +197,7 @@ class CustomerBloc extends Bloc<CustomerEvent, CustomerState> {
       customers: _allCustomers,
       filteredCustomers: filtered,
       searchQuery: _currentSearchQuery,
+      isListLoading: isListLoading,
     ));
   }
 }

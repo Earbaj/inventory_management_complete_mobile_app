@@ -1,21 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../../core/widgets/global_empty_placeholder.dart';
 import '../../../customers/domain/entities/customer_entity.dart';
 import '../../../customers/presentation/bloc/customer_event.dart';
 import '../../../customers/presentation/bloc/customer_state.dart';
 import '../../../posbilling/domain/entities/sale_entity.dart';
+import '../../../reports/presentation/bloc/reports_bloc.dart';
 import '../../../reports/presentation/bloc/reports_state.dart';
-import '../../customer.dart';
 import '../../customer_transaction.dart';
 import '../bloc/customer_bloc.dart';
 import '../widget/add_customer_sheet.dart';
 import '../widget/collect_payment_sheet.dart';
 import '../widget/customer_card.dart';
-import '../widget/customer_summary.dart';
-import '../widget/empty_customer_state.dart';
+import '../widget/customer_shimmer.dart';
 import 'customer_statement_screen.dart';
 
 class CustomersScreen extends StatefulWidget {
@@ -70,9 +68,10 @@ class _CustomersScreenState extends State<CustomersScreen> {
           ),
           IconButton(
             onPressed: () {
-              InjectionContainer.customerBloc.add(FetchCustomersEvent(searchQuery: searchController.text));
+              context.read<CustomerBloc>().add(FetchCustomersEvent(searchQuery: searchController.text));
             },
             icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh',
           ),
           IconButton(
             onPressed: (){
@@ -132,11 +131,8 @@ class _CustomersScreenState extends State<CustomersScreen> {
         },
         builder: (context, snapshot) {
           final state = snapshot;
-
-          if (state is CustomerLoadingState && state is! CustomerLoadedState) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
+          final bool isInitialLoading = state is CustomerLoadingState || state is CustomerInitialState;
+          final bool isRefreshing = state is CustomerLoadedState && state.isListLoading;
 
           // 🎯 মূল ফিক্স: LoadedState থাকলে সেটা নেবে, আর ErrorState হলে আগের লিস্টটা ধরে রাখবে
           List<CustomerEntity> filteredCustomers = [];
@@ -148,11 +144,8 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
           return Column(
             children: [
-              /*// SUMMARY
-              CustomerSummary(totalCustomers: totalCustomers),
-*/
               // SEARCH
-              if(isSearch)...[
+              if (isSearch) ...[
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
                   child: TextField(
@@ -163,12 +156,12 @@ class _CustomersScreenState extends State<CustomersScreen> {
                       prefixIcon: const Icon(Icons.search_rounded),
                       suffixIcon: searchController.text.isNotEmpty
                           ? IconButton(
-                        onPressed: () {
-                          searchController.clear();
-                          _onSearchChanged('');
-                        },
-                        icon: const Icon(Icons.close_rounded),
-                      )
+                              onPressed: () {
+                                searchController.clear();
+                                _onSearchChanged('');
+                              },
+                              icon: const Icon(Icons.close_rounded),
+                            )
                           : null,
                       filled: true,
                       fillColor: colorScheme.surfaceContainerHighest,
@@ -180,37 +173,55 @@ class _CustomersScreenState extends State<CustomersScreen> {
                   ),
                 ),
               ],
-              // LIST
-              Expanded(
-                child: filteredCustomers.isEmpty
-                    ? const GlobalEmptyPlaceholder(
-                  title: 'No customers found',
-                  subtitle: 'Tap Add Customer To Create Customer And Sell.',
-                )
-                    : ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                        itemCount: filteredCustomers.length,
-                        itemBuilder: (context, index) {
-                          final customer = filteredCustomers[index];
 
-                          return CustomerCard(
-                            customer: customer,
-                            onEdit: () {
-                              _openAddCustomerSheet(existingCustomer: customer);
+              // LIST OR SHIMMER
+              if (isInitialLoading || isRefreshing)
+                const Expanded(
+                  child: CustomerShimmerView(),
+                )
+              else
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: () async {
+                      context.read<CustomerBloc>().add(FetchCustomersEvent(searchQuery: searchController.text));
+                    },
+                    child: filteredCustomers.isEmpty
+                        ? const SingleChildScrollView(
+                            physics: AlwaysScrollableScrollPhysics(),
+                            child: SizedBox(
+                              height: 400,
+                              child: GlobalEmptyPlaceholder(
+                                title: 'No customers found',
+                                subtitle: 'Tap Add Customer To Create Customer And Sell.',
+                              ),
+                            ),
+                          )
+                        : ListView.builder(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                            itemCount: filteredCustomers.length,
+                            itemBuilder: (context, index) {
+                              final customer = filteredCustomers[index];
+
+                              return CustomerCard(
+                                customer: customer,
+                                onEdit: () {
+                                  _openAddCustomerSheet(existingCustomer: customer);
+                                },
+                                onDelete: () {
+                                  _deleteCustomer(customer);
+                                },
+                                onStatement: () {
+                                  _openStatement(customer);
+                                },
+                                onCollectPayment: () {
+                                  _openCollectPaymentSheet(preSelectedCustomer: customer);
+                                },
+                              );
                             },
-                            onDelete: () {
-                              _deleteCustomer(customer);
-                            },
-                            onStatement: () {
-                              _openStatement(customer);
-                            },
-                            onCollectPayment: () {
-                              _openCollectPaymentSheet(preSelectedCustomer: customer);
-                            },
-                          );
-                        },
-                      ),
-              ),
+                          ),
+                  ),
+                ),
             ],
           );
         },
@@ -227,23 +238,6 @@ class _CustomersScreenState extends State<CustomersScreen> {
       builder: (context) {
         return AddCustomerSheet(
           existingCustomer: existingCustomer,
-          onSave: (customer) {
-            if (existingCustomer == null) {
-              InjectionContainer.customerBloc.add(AddCustomerEvent(customer));
-            } else {
-              InjectionContainer.customerBloc.add(UpdateCustomerEvent(customer));
-            }
-
-            Navigator.pop(context);
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  existingCustomer == null ? 'Customer added successfully' : 'Customer updated successfully',
-                ),
-              ),
-            );
-          },
         );
       },
     );
@@ -278,7 +272,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
             ),
             FilledButton(
               onPressed: () {
-                InjectionContainer.customerBloc.add(DeleteCustomerEvent(customer.id));
+                context.read<CustomerBloc>().add(DeleteCustomerEvent(customer.id));
 
                 Navigator.pop(context);
 
@@ -298,7 +292,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
   // VIEW STATEMENT
   void _openStatement(CustomerEntity customer) {
-    final reportsState = InjectionContainer.reportsBloc.state;
+    final reportsState = context.read<ReportsBloc>().state;
     final allLogs = reportsState is ReportsLoadedState ? reportsState.invoiceLogs : <SaleEntity>[];
 
     final customerSales = allLogs.where((sale) {
