@@ -26,13 +26,18 @@ class BranchBloc extends Bloc<BranchEvent, BranchState> {
     FetchBranchesEvent event,
     Emitter<BranchState> emit,
   ) async {
-    emit(const BranchLoadingState());
+    if (_branches.isEmpty) {
+      emit(const BranchLoadingState());
+    } else {
+      emit(BranchLoadedState(branches: List.from(_branches), isListLoading: true));
+    }
     try {
       _branches = await getBranchesUseCase();
-      emit(BranchLoadedState(branches: List.from(_branches)));
+      emit(BranchLoadedState(branches: List.from(_branches), isListLoading: false));
     } catch (e) {
       emit(BranchErrorState(
         e.toString().replaceAll('Exception: ', '').replaceAll('ServerFailure: ', ''),
+        previousBranches: _branches,
       ));
     }
   }
@@ -53,6 +58,7 @@ class BranchBloc extends Bloc<BranchEvent, BranchState> {
     } catch (e) {
       emit(BranchErrorState(
         e.toString().replaceAll('Exception: ', '').replaceAll('ServerFailure: ', ''),
+        previousBranches: _branches,
       ));
     }
   }

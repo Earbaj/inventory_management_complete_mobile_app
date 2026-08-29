@@ -6,6 +6,8 @@ import '../../../../core/widgets/global_empty_placeholder.dart';
 import '../bloc/branch_bloc.dart';
 import '../bloc/branch_event.dart';
 import '../bloc/branch_state.dart';
+import '../widget/add_branch_sheet.dart';
+import '../widget/branch_shimmer.dart';
 
 class BranchManagementScreen extends StatefulWidget {
   const BranchManagementScreen({super.key});
@@ -21,98 +23,8 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
     context.read<BranchBloc>().add(const FetchBranchesEvent());
   }
 
-  void _showAddBranchDialog(BuildContext context) {
-    final formKey = GlobalKey<FormState>();
-    final nameController = TextEditingController();
-    final addressController = TextEditingController();
-    final phoneController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text('Create New Branch'),
-          content: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Branch Name *',
-                    hintText: 'e.g. Mirpur Branch',
-                    prefixIcon: Icon(Icons.storefront_outlined),
-                  ),
-                  validator: (v) => v == null || v.trim().isEmpty ? 'Branch name required' : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: addressController,
-                  decoration: const InputDecoration(
-                    labelText: 'Address *',
-                    hintText: 'e.g. Mirpur-10, Dhaka',
-                    prefixIcon: Icon(Icons.location_on_outlined),
-                  ),
-                  validator: (v) => v == null || v.trim().isEmpty ? 'Address required' : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: phoneController,
-                  keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
-                    labelText: 'Phone Number *',
-                    hintText: 'e.g. 01711000001',
-                    prefixIcon: Icon(Icons.phone_outlined),
-                  ),
-                  validator: (v) => v == null || v.trim().isEmpty ? 'Phone number required' : null,
-                ),
-                const SizedBox(height: 5,),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          side: BorderSide(
-                            color: Colors.grey,
-                          ),
-                        ),
-                        onPressed: () => Navigator.pop(dialogContext),
-                        child: const Text('Cancel'),
-                      ),
-                    ),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          if (formKey.currentState!.validate()) {
-                            context.read<BranchBloc>().add(
-                              CreateBranchEvent(
-                                name: nameController.text.trim(),
-                                address: addressController.text.trim(),
-                                phone: phoneController.text.trim(),
-                              ),
-                            );
-                            Navigator.pop(dialogContext);
-                          }
-                        },
-                        child: const Text('Save Branch'),
-                      ),
-                    ),
-                  ],
-                ),
-
-              ],
-            ),
-          ),
-        );
-      },
-    );
+  void _openAddBranchSheet() {
+    AddBranchSheet.show(context);
   }
 
   @override
@@ -146,11 +58,14 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddBranchDialog(context),
+        onPressed: _openAddBranchSheet,
         icon: const Icon(Icons.add_rounded),
         label: const Text('Add Branch'),
       ),
       body: BlocConsumer<BranchBloc, BranchState>(
+        listenWhen: (previous, current) =>
+        current is BranchOperationSuccessState || current is BranchErrorState,
+        buildWhen: (previous, current) => current is! BranchOperationSuccessState,
         listener: (context, state) {
           if (state is BranchOperationSuccessState) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -171,26 +86,94 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
           }
         },
         builder: (context, state) {
-          if (state is BranchLoadingState && state is! BranchLoadedState) {
-            return const Center(child: CircularProgressIndicator());
+          final bool isInitialLoading = state is BranchLoadingState && state is! BranchLoadedState;
+          final bool isRefreshing = state is BranchLoadedState && state.isListLoading;
+
+          if (isInitialLoading || isRefreshing) {
+            return const BranchShimmerView();
           }
 
-          final loadedState = state is BranchLoadedState ? state : null;
-          final branches = loadedState?.branches ?? context.read<BranchBloc>().branches;
-
-          if (branches.isEmpty) {
-            return GlobalEmptyPlaceholder(
-              title: 'No Branches Registered',
-              subtitle: 'Tap + Add Branch button below to create your first shop branch.',
+          if (state is BranchErrorState && state.previousBranches.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: colorScheme.errorContainer.withValues(alpha: 0.3),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.cloud_off_rounded,
+                        color: colorScheme.error,
+                        size: 48,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Something Went Wrong',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      state.message.isNotEmpty
+                          ? state.message
+                          : 'Unable to load branch list. Please check your connection and try again.',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        context.read<BranchBloc>().add(const FetchBranchesEvent());
+                      },
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: const Text('Try Again'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             );
           }
+
+          final branches = (state is BranchLoadedState)
+              ? state.branches
+              : (state is BranchErrorState
+              ? state.previousBranches
+              : context.read<BranchBloc>().branches);
 
           return RefreshIndicator(
             onRefresh: () async {
               context.read<BranchBloc>().add(const FetchBranchesEvent());
             },
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
+            child: branches.isEmpty
+                ? SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height * 0.7,
+                child: const GlobalEmptyPlaceholder(
+                  title: 'No Branches Registered',
+                  subtitle: 'Tap + Add Branch button below to create your first shop branch.',
+                ),
+              ),
+            )
+                : ListView.builder(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
               itemCount: branches.length,
               itemBuilder: (context, index) {
                 final branch = branches[index];
@@ -203,7 +186,7 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
                     leading: Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: colorScheme.primaryContainer,
+                        color: Colors.grey,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(Icons.store_rounded, color: colorScheme.primary),
@@ -223,7 +206,10 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
                             Expanded(
                               child: Text(
                                 branch.address,
-                                style: const TextStyle(fontSize: 12, color: Colors.black87),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
                               ),
                             ),
                           ],
@@ -235,7 +221,10 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
                             const SizedBox(width: 4),
                             Text(
                               branch.phone,
-                              style: const TextStyle(fontSize: 12, color: Colors.black87),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
                             ),
                           ],
                         ),

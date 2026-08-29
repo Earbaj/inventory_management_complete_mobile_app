@@ -14,9 +14,11 @@ class BranchLoadingState extends BranchState {
 
 class BranchLoadedState extends BranchState {
   final List<BranchEntity> branches;
+  final bool isListLoading;
 
   const BranchLoadedState({
     required this.branches,
+    this.isListLoading = false,
   });
 }
 
@@ -28,6 +30,7 @@ class BranchOperationSuccessState extends BranchState {
 
 class BranchErrorState extends BranchState {
   final String message;
+  final List<BranchEntity> previousBranches;
 
-  const BranchErrorState(this.message);
+  const BranchErrorState(this.message, {this.previousBranches = const []});
 }
