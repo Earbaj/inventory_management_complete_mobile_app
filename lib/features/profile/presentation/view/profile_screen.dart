@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
+import '../../../../core/widgets/global_warning_dialog.dart';
 import '../../../auth/domain/entities/user_entity.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -229,32 +230,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _confirmDeleteAccount(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (dialogCtx) => AlertDialog(
-        title: const Text('প্রোফাইল অ্যাকাউন্ট ডিলিট নিশ্চিতকরণ'),
-        content: const Text(
-          'আপনি কি নিশ্চিত যে আপনার প্রোফাইল স্থায়ীভাবে মুছে ফেলতে চান? আপনি অ্যাপ থেকে লগআউট হবেন।',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogCtx),
-            child: const Text('বাতিল'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () async {
-              Navigator.pop(dialogCtx);
-              setState(() => _isLoading = true);
-              await InjectionContainer.authRepository.deleteAccount();
-              if (mounted) {
-                context.go('/login');
-              }
-            },
-            child: const Text('হ্যাঁ, ডিলিট করুন'),
-          ),
-        ],
-      ),
+    GlobalWarningDialog.show(
+      context,
+      title: 'Delete Account',
+      message:
+          'Are you sure you want to permanently delete your account? All your data will be removed and you will be logged out.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      icon: Icons.delete_forever_rounded,
+      confirmColor: Colors.red,
+      onConfirm: () async {
+        setState(() => _isLoading = true);
+        await InjectionContainer.authRepository.deleteAccount();
+        if (mounted && context.mounted) {
+          context.go('/login');
+        }
+      },
     );
   }
 }
