@@ -5,8 +5,6 @@ class GlobalEmptyPlaceholder extends StatelessWidget {
   final String? subtitle;
   final String imagePath;
   final double imageSize;
-  final String? actionText;
-  final VoidCallback? onAction;
   final Widget? actionButton;
   final EdgeInsetsGeometry padding;
   final bool isScrollable;
@@ -17,8 +15,6 @@ class GlobalEmptyPlaceholder extends StatelessWidget {
     this.subtitle,
     this.imagePath = 'assets/icon/empty_placeholder.png',
     this.imageSize = 140,
-    this.actionText,
-    this.onAction,
     this.actionButton,
     this.padding = const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
     this.isScrollable = true,
@@ -30,8 +26,6 @@ class GlobalEmptyPlaceholder extends StatelessWidget {
     String? subtitle,
     String imagePath = 'assets/icon/empty_placeholder.png',
     double imageSize = 140,
-    String? actionText,
-    VoidCallback? onAction,
     Widget? actionButton,
     EdgeInsetsGeometry padding = const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
   }) {
@@ -42,8 +36,6 @@ class GlobalEmptyPlaceholder extends StatelessWidget {
         subtitle: subtitle,
         imagePath: imagePath,
         imageSize: imageSize,
-        actionText: actionText,
-        onAction: onAction,
         actionButton: actionButton,
         padding: padding,
         isScrollable: false,

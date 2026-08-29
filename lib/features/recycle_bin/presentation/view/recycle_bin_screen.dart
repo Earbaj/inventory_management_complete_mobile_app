@@ -311,9 +311,6 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                     ? GlobalEmptyPlaceholder(
           title: 'Recycle Bin is Empty',
           subtitle: 'No soft-deleted records match your filter criteria.',
-          actionText: 'Add Product',
-          onAction: () {
-          },
           ) : RefreshIndicator(
                         onRefresh: () => _onRefresh(context),
                         child: ListView.builder(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
+import '../../../../core/widgets/global_empty_placeholder.dart';
 import '../../../inventory/data/models/inventory_item_model.dart';
 import '../../domain/entities/supplier_entity.dart';
 import '../../domain/entities/purchase_order_entity.dart';
@@ -313,8 +314,9 @@ class _SuppliersScreenState extends State<SuppliersScreen> with TickerProviderSt
 
   Widget _buildSupplierList(BuildContext context, List<SupplierEntity> suppliers) {
     if (suppliers.isEmpty) {
-      return const Center(
-        child: Text('কোন মহাজন পাওয়া যায়নি। "নতুন মহাজন" বাটনে ক্লিক করে যোগ করুন।'),
+      return GlobalEmptyPlaceholder(
+        title: 'NO Suppliers Found',
+        subtitle: 'Add Suppliers To Start Your Business.',
       );
     }
 
@@ -531,8 +533,9 @@ class _SuppliersScreenState extends State<SuppliersScreen> with TickerProviderSt
 
   Widget _buildPurchaseOrdersList(BuildContext context, List<PurchaseOrderEntity> orders) {
     if (orders.isEmpty) {
-      return const Center(
-        child: Text('এখনও কোন কেনাকাটার মেমো তৈরি হয়নি। "মালামাল ক্রয়" বাটনে চাপুন।'),
+      return GlobalEmptyPlaceholder(
+        title: 'NO Recipe Found',
+        subtitle: 'Buy Product From Suppliers To Start Your Business.',
       );
     }
 
