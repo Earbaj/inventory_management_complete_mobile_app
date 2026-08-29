@@ -32,13 +32,7 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
       builder: (dialogContext) {
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(
-            children: [
-              Icon(Icons.store_rounded, color: Colors.blue),
-              SizedBox(width: 10),
-              Text('Create New Branch'),
-            ],
-          ),
+          title: Text('Create New Branch'),
           content: Form(
             key: formKey,
             child: Column(
@@ -74,31 +68,48 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
                   ),
                   validator: (v) => v == null || v.trim().isEmpty ? 'Phone number required' : null,
                 ),
+                const SizedBox(height: 5,),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          side: BorderSide(
+                            color: Colors.grey,
+                          ),
+                        ),
+                        onPressed: () => Navigator.pop(dialogContext),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (formKey.currentState!.validate()) {
+                            context.read<BranchBloc>().add(
+                              CreateBranchEvent(
+                                name: nameController.text.trim(),
+                                address: addressController.text.trim(),
+                                phone: phoneController.text.trim(),
+                              ),
+                            );
+                            Navigator.pop(dialogContext);
+                          }
+                        },
+                        child: const Text('Save Branch'),
+                      ),
+                    ),
+                  ],
+                ),
+
               ],
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton.icon(
-              onPressed: () {
-                if (formKey.currentState!.validate()) {
-                  context.read<BranchBloc>().add(
-                        CreateBranchEvent(
-                          name: nameController.text.trim(),
-                          address: addressController.text.trim(),
-                          phone: phoneController.text.trim(),
-                        ),
-                      );
-                  Navigator.pop(dialogContext);
-                }
-              },
-              icon: const Icon(Icons.check_rounded),
-              label: const Text('Save Branch'),
-            ),
-          ],
         );
       },
     );
