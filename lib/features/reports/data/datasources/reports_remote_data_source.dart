@@ -7,7 +7,7 @@ import '../models/report_summary_model.dart';
 
 abstract class ReportsRemoteDataSource {
   Future<ReportSummaryModel> getReportsSummary({DateTime? startDate, DateTime? endDate, String? branchId});
-  Future<List<SaleModel>> getInvoiceLogs({int page = 1, int limit = 20, String? query, DateTime? startDate, DateTime? endDate, String? branchId});
+  Future<List<SaleModel>> getInvoiceLogs({int page = 1, int limit = 100, String? query, DateTime? startDate, DateTime? endDate, String? branchId});
 }
 
 class ReportsRemoteDataSourceImpl implements ReportsRemoteDataSource {
@@ -73,7 +73,7 @@ class ReportsRemoteDataSourceImpl implements ReportsRemoteDataSource {
   @override
   Future<List<SaleModel>> getInvoiceLogs({
     int page = 1,
-    int limit = 20,
+    int limit = 100,
     String? query,
     DateTime? startDate,
     DateTime? endDate,

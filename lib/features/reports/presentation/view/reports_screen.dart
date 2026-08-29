@@ -1,18 +1,19 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:inventory_management_complete/features/reports/presentation/bloc/reports_bloc.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../../branches/domain/entities/branch_entity.dart';
+import '../../reports_models.dart';
+import '../bloc/reports_bloc.dart';
 import '../bloc/reports_event.dart';
 import '../bloc/reports_state.dart';
 import '../widget/invoice_logs_tab.dart';
 import '../widget/items_sold_tab.dart';
-import '../../reports_models.dart';
+import '../widget/reports_shimmer.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -65,11 +66,20 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
 
   void _onSearchChanged(BuildContext context, String query) {
     _searchDebounceTimer?.cancel();
-    _searchDebounceTimer = Timer(const Duration(milliseconds: 400), () {
+    if (query.isEmpty) {
+      context.read<ReportsBloc>().add(const SearchReportsEvent(''));
+      return;
+    }
+    _searchDebounceTimer = Timer(const Duration(milliseconds: 500), () {
       if (mounted) {
-        context.read<ReportsBloc>().add(FetchReportsEvent(searchQuery: query, branchId: _selectedBranchId));
+        context.read<ReportsBloc>().add(SearchReportsEvent(query));
       }
     });
+  }
+
+  String _getMonthName(int month) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return (month >= 1 && month <= 12) ? months[month - 1] : '';
   }
 
   void _applyDateFilter(BuildContext context, DateFilterType filter) {
@@ -78,26 +88,103 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
     DateTime? end;
 
     if (filter == DateFilterType.today) {
-      start = DateTime(now.year, now.month, now.day);
+      start = DateTime(now.year, now.month, now.day, 0, 0, 0);
       end = DateTime(now.year, now.month, now.day, 23, 59, 59);
+      setState(() {
+        _selectedDateFilter = filter;
+        _customDateRange = null;
+      });
+    } else if (filter == DateFilterType.yesterday) {
+      final yesterday = now.subtract(const Duration(days: 1));
+      start = DateTime(yesterday.year, yesterday.month, yesterday.day, 0, 0, 0);
+      end = DateTime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59);
+      setState(() {
+        _selectedDateFilter = filter;
+        _customDateRange = null;
+      });
     } else if (filter == DateFilterType.last7Days) {
-      start = now.subtract(Duration(days: now.weekday - 1));
-      end = now;
+      final sevenDaysAgo = DateTime(now.year, now.month, now.day, 0, 0, 0).subtract(const Duration(days: 6));
+      start = sevenDaysAgo;
+      end = DateTime(now.year, now.month, now.day, 23, 59, 59);
+      setState(() {
+        _selectedDateFilter = filter;
+        _customDateRange = null;
+      });
     } else if (filter == DateFilterType.last30Days) {
-      start = DateTime(now.year, now.month, 1);
-      end = now;
+      final thirtyDaysAgo = DateTime(now.year, now.month, now.day, 0, 0, 0).subtract(const Duration(days: 29));
+      start = thirtyDaysAgo;
+      end = DateTime(now.year, now.month, now.day, 23, 59, 59);
+      setState(() {
+        _selectedDateFilter = filter;
+        _customDateRange = null;
+      });
+    } else if (filter == DateFilterType.custom) {
+      _selectCustomDateRange(context);
+      return;
+    } else {
+      // allTime
+      start = null;
+      end = null;
+      setState(() {
+        _selectedDateFilter = filter;
+        _customDateRange = null;
+      });
     }
-
-    setState(() {
-      _selectedDateFilter = filter;
-      _customDateRange = null;
-    });
 
     context.read<ReportsBloc>().add(FilterReportsByDateRangeEvent(
       startDate: start,
       endDate: end,
       branchId: _selectedBranchId,
+      dateFilterType: filter,
     ));
+  }
+
+  Future<void> _selectCustomDateRange(BuildContext context) async {
+    final now = DateTime.now();
+    final initialRange = _customDateRange ?? DateTimeRange(
+      start: now.subtract(const Duration(days: 7)),
+      end: now,
+    );
+
+    final pickedRange = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: now.add(const Duration(days: 1)),
+      initialDateRange: initialRange,
+      helpText: 'Select Date Range for Reports',
+      cancelText: 'Cancel',
+      confirmText: 'Apply',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: Theme.of(context).colorScheme.primary,
+              onPrimary: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (pickedRange != null) {
+      final start = DateTime(pickedRange.start.year, pickedRange.start.month, pickedRange.start.day, 0, 0, 0);
+      final end = DateTime(pickedRange.end.year, pickedRange.end.month, pickedRange.end.day, 23, 59, 59);
+
+      setState(() {
+        _selectedDateFilter = DateFilterType.custom;
+        _customDateRange = pickedRange;
+      });
+
+      if (context.mounted) {
+        context.read<ReportsBloc>().add(FilterReportsByDateRangeEvent(
+          startDate: start,
+          endDate: end,
+          branchId: _selectedBranchId,
+          dateFilterType: DateFilterType.custom,
+        ));
+      }
+    }
   }
 
   @override
@@ -117,8 +204,13 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
         actions: [
           IconButton(
             onPressed: () {
-              context.read<ReportsBloc>().add(FetchReportsEvent(searchQuery: _searchController.text));
+              context.read<ReportsBloc>().add(FetchReportsEvent(
+                searchQuery: _searchController.text,
+                branchId: _selectedBranchId,
+                forceRefresh: true,
+              ));
             },
+            tooltip: 'Refresh Reports',
             icon: const Icon(Icons.refresh_rounded),
           ),
           IconButton(
@@ -127,7 +219,8 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                 _isFilterShow = !_isFilterShow;
               });
             },
-            icon: Icon(_isFilterShow ? Icons.filter_alt_off:Icons.filter_alt),
+            tooltip: _isFilterShow ? 'Hide Filters' : 'Show Filters',
+            icon: Icon(_isFilterShow ? Icons.filter_alt_off_rounded : Icons.filter_alt_rounded),
           ),
         ],
         bottom: TabBar(
@@ -138,30 +231,42 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
           ],
         ),
       ),
-      body: BlocBuilder<ReportsBloc,ReportsState>(
+      body: BlocBuilder<ReportsBloc, ReportsState>(
         builder: (context, snapshot) {
           final state = snapshot;
 
           if (state is ReportsLoadingState && state is! ReportsLoadedState) {
-            return const Center(child: CircularProgressIndicator());
+            return const ReportsShimmerView();
           }
 
           if (state is ReportsErrorState) {
             return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.cloud_off_rounded, color: Colors.red, size: 48),
-                  const SizedBox(height: 12),
-                  Text(state.message, style: const TextStyle(color: Colors.red)),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      context.read<ReportsBloc>().add(FetchReportsEvent(searchQuery: _searchController.text));
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.cloud_off_rounded, color: Colors.red, size: 54),
+                    const SizedBox(height: 14),
+                    Text(
+                      state.message,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.red, fontSize: 14),
+                    ),
+                    const SizedBox(height: 18),
+                    FilledButton.icon(
+                      onPressed: () {
+                        context.read<ReportsBloc>().add(FetchReportsEvent(
+                          searchQuery: _searchController.text,
+                          branchId: _selectedBranchId,
+                          forceRefresh: true,
+                        ));
+                      },
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: const Text('Retry'),
+                    ),
+                  ],
+                ),
               ),
             );
           }
@@ -169,14 +274,20 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
           final loadedState = state is ReportsLoadedState ? state : null;
           final summary = loadedState?.summary;
           final logs = loadedState?.filteredLogs ?? [];
+          final isListLoading = loadedState?.isListLoading ?? false;
 
           return Column(
             children: [
-              if (_isFilterShow)...[
+              if (isListLoading)
+                const LinearProgressIndicator(minHeight: 2.5),
+
+              if (_isFilterShow) ...[
                 // BRANCH FILTER DROPDOWN
                 if (_branches.isNotEmpty)
                   BlocSelector<AuthBloc, AuthState, bool>(
-                    selector: (state) => state is AuthenticatedState && (state.user?.role.toLowerCase() == 'admin' || state.user?.role.toLowerCase() == 'owner'),
+                    selector: (state) =>
+                    state is AuthenticatedState &&
+                        (state.user?.role.toLowerCase() == 'admin' || state.user?.role.toLowerCase() == 'owner'),
                     builder: (context, isAdmin) {
                       if (!isAdmin) return const SizedBox.shrink();
                       return Padding(
@@ -230,6 +341,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                                 context.read<ReportsBloc>().add(FetchReportsEvent(
                                   searchQuery: _searchController.text,
                                   branchId: branchId,
+                                  forceRefresh: true,
                                 ));
                               },
                             ),
@@ -238,6 +350,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                       );
                     },
                   ),
+
                 // DATE FILTER CHIPS
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
@@ -245,10 +358,25 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                   child: Row(
                     children: DateFilterType.values.map((filter) {
                       final isSelected = _selectedDateFilter == filter;
+
+                      String label = filter.label;
+                      if (filter == DateFilterType.custom && _customDateRange != null) {
+                        final s = _customDateRange!.start;
+                        final e = _customDateRange!.end;
+                        label = '${s.day} ${_getMonthName(s.month)} - ${e.day} ${_getMonthName(e.month)}';
+                      }
+
                       return Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: ChoiceChip(
-                          label: Text(filter.label),
+                          avatar: filter == DateFilterType.custom
+                              ? Icon(
+                            Icons.calendar_month_rounded,
+                            size: 16,
+                            color: isSelected ? colorScheme.onPrimary : colorScheme.primary,
+                          )
+                              : null,
+                          label: Text(label),
                           selected: isSelected,
                           onSelected: (_) => _applyDateFilter(context, filter),
                         ),
@@ -256,14 +384,15 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                     }).toList(),
                   ),
                 ),
+
                 // SEARCH INPUT
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                   child: TextField(
                     controller: _searchController,
                     onChanged: (val) => _onSearchChanged(context, val),
                     decoration: InputDecoration(
-                      hintText: 'Search invoice no or customer name',
+                      hintText: 'Search invoice no or customer name...',
                       prefixIcon: const Icon(Icons.search_rounded),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
@@ -280,10 +409,12 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                         borderRadius: BorderRadius.circular(14),
                         borderSide: BorderSide.none,
                       ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     ),
                   ),
                 ),
               ],
+
               // SUMMARY METRICS CARDS
               if (summary != null)
                 Padding(
@@ -314,65 +445,75 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                   ),
                 ),
 
+              const SizedBox(height: 6),
 
               // TAB VIEWS
               Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    InvoiceLogsTab(
-                      invoices: logs.map((sale) {
-                        return InvoiceLog(
-                          id: sale.id,
-                          invoiceNumber: sale.invoiceNo,
-                          date: sale.createdAt,
-                          customerName: sale.customer?.name ?? 'Walk-in Customer',
-                          customerPhone: sale.customer?.phone ?? 'N/A',
-                          totalAmount: sale.netTotal,
-                          paidAmount: sale.paidAmount,
-                          dueAmount: sale.dueAmount,
-                          paymentStatus: sale.dueAmount > 0 ? PaymentStatus.partial : PaymentStatus.paid,
-                          servedBy: sale.servedBy,
-                          items: sale.items.map((cartItem) {
-                            return ReportItemSold(
-                              itemId: cartItem.item.id,
-                              name: cartItem.item.name,
-                              category: cartItem.item.category,
-                              soldBy: sale.servedBy,
-                              unitPrice: cartItem.item.retailSellPrice,
-                              quantity: cartItem.quantity,
-                            );
-                          }).toList(),
-                        );
-                      }).toList(),
-                    ),
-                    ItemsSoldTab(
-                      invoices: logs.map((sale) {
-                        return InvoiceLog(
-                          id: sale.id,
-                          invoiceNumber: sale.invoiceNo,
-                          date: sale.createdAt,
-                          customerName: sale.customer?.name ?? 'Walk-in Customer',
-                          customerPhone: sale.customer?.phone ?? 'N/A',
-                          totalAmount: sale.netTotal,
-                          paidAmount: sale.paidAmount,
-                          dueAmount: sale.dueAmount,
-                          paymentStatus: sale.dueAmount > 0 ? PaymentStatus.partial : PaymentStatus.paid,
-                          servedBy: sale.servedBy,
-                          items: sale.items.map((cartItem) {
-                            return ReportItemSold(
-                              itemId: cartItem.item.id,
-                              name: cartItem.item.name,
-                              category: cartItem.item.category,
-                              soldBy: sale.servedBy,
-                              unitPrice: cartItem.item.retailSellPrice,
-                              quantity: cartItem.quantity,
-                            );
-                          }).toList(),
-                        );
-                      }).toList(),
-                    ),
-                  ],
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    context.read<ReportsBloc>().add(FetchReportsEvent(
+                      searchQuery: _searchController.text,
+                      branchId: _selectedBranchId,
+                      forceRefresh: true,
+                    ));
+                  },
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      InvoiceLogsTab(
+                        invoices: logs.map((sale) {
+                          return InvoiceLog(
+                            id: sale.id,
+                            invoiceNumber: sale.invoiceNo,
+                            date: sale.createdAt,
+                            customerName: sale.customer?.name ?? 'Walk-in Customer',
+                            customerPhone: sale.customer?.phone ?? 'N/A',
+                            totalAmount: sale.netTotal,
+                            paidAmount: sale.paidAmount,
+                            dueAmount: sale.dueAmount,
+                            paymentStatus: sale.dueAmount > 0 ? PaymentStatus.partial : PaymentStatus.paid,
+                            servedBy: sale.servedBy,
+                            items: sale.items.map((cartItem) {
+                              return ReportItemSold(
+                                itemId: cartItem.item.id,
+                                name: cartItem.item.name,
+                                category: cartItem.item.category,
+                                soldBy: sale.servedBy,
+                                unitPrice: cartItem.item.retailSellPrice,
+                                quantity: cartItem.quantity,
+                              );
+                            }).toList(),
+                          );
+                        }).toList(),
+                      ),
+                      ItemsSoldTab(
+                        invoices: logs.map((sale) {
+                          return InvoiceLog(
+                            id: sale.id,
+                            invoiceNumber: sale.invoiceNo,
+                            date: sale.createdAt,
+                            customerName: sale.customer?.name ?? 'Walk-in Customer',
+                            customerPhone: sale.customer?.phone ?? 'N/A',
+                            totalAmount: sale.netTotal,
+                            paidAmount: sale.paidAmount,
+                            dueAmount: sale.dueAmount,
+                            paymentStatus: sale.dueAmount > 0 ? PaymentStatus.partial : PaymentStatus.paid,
+                            servedBy: sale.servedBy,
+                            items: sale.items.map((cartItem) {
+                              return ReportItemSold(
+                                itemId: cartItem.item.id,
+                                name: cartItem.item.name,
+                                category: cartItem.item.category,
+                                soldBy: sale.servedBy,
+                                unitPrice: cartItem.item.retailSellPrice,
+                                quantity: cartItem.quantity,
+                              );
+                            }).toList(),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],

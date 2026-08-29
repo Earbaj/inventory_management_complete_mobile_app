@@ -1,5 +1,6 @@
 import '../../../posbilling/domain/entities/sale_entity.dart';
 import '../../domain/entities/report_summary_entity.dart';
+import '../../reports_models.dart';
 
 abstract class ReportsState {
   const ReportsState();
@@ -18,12 +19,22 @@ class ReportsLoadedState extends ReportsState {
   final List<SaleEntity> invoiceLogs;
   final List<SaleEntity> filteredLogs;
   final String searchQuery;
+  final bool isListLoading;
+  final DateFilterType selectedDateFilter;
+  final DateTime? startDate;
+  final DateTime? endDate;
+  final String? branchId;
 
   const ReportsLoadedState({
     required this.summary,
     required this.invoiceLogs,
     required this.filteredLogs,
     required this.searchQuery,
+    this.isListLoading = false,
+    this.selectedDateFilter = DateFilterType.allTime,
+    this.startDate,
+    this.endDate,
+    this.branchId,
   });
 }
 
