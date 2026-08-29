@@ -30,6 +30,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
   String? _selectedBranchId;
   List<BranchEntity> _branches = [];
   Timer? _searchDebounceTimer;
+  bool _isFilterShow = false;
 
   @override
   void initState() {
@@ -120,6 +121,14 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
             },
             icon: const Icon(Icons.refresh_rounded),
           ),
+          IconButton(
+            onPressed: () {
+              setState(() {
+                _isFilterShow = !_isFilterShow;
+              });
+            },
+            icon: Icon(_isFilterShow ? Icons.filter_alt_off:Icons.filter_alt),
+          ),
         ],
         bottom: TabBar(
           controller: _tabController,
@@ -163,91 +172,118 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
 
           return Column(
             children: [
-              // BRANCH FILTER DROPDOWN
-              if (_branches.isNotEmpty)
-                BlocSelector<AuthBloc, AuthState, bool>(
-                  selector: (state) => state is AuthenticatedState && (state.user?.role.toLowerCase() == 'admin' || state.user?.role.toLowerCase() == 'owner'),
-                  builder: (context, isAdmin) {
-                    if (!isAdmin) return const SizedBox.shrink();
-                    return Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String?>(
-                            value: _selectedBranchId,
-                            isExpanded: true,
-                            hint: const Row(
-                              children: [
-                                Icon(Icons.store_rounded, size: 20, color: Colors.blue),
-                                SizedBox(width: 8),
-                                Text('All Branches (Shop Aggregate)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                              ],
-                            ),
-                            items: [
-                              const DropdownMenuItem<String?>(
-                                value: null,
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.store_rounded, size: 20, color: Colors.blue),
-                                    SizedBox(width: 8),
-                                    Text('All Branches (Shop Aggregate)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                                  ],
-                                ),
+              if (_isFilterShow)...[
+                // BRANCH FILTER DROPDOWN
+                if (_branches.isNotEmpty)
+                  BlocSelector<AuthBloc, AuthState, bool>(
+                    selector: (state) => state is AuthenticatedState && (state.user?.role.toLowerCase() == 'admin' || state.user?.role.toLowerCase() == 'owner'),
+                    builder: (context, isAdmin) {
+                      if (!isAdmin) return const SizedBox.shrink();
+                      return Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String?>(
+                              value: _selectedBranchId,
+                              isExpanded: true,
+                              hint: const Row(
+                                children: [
+                                  Icon(Icons.store_rounded, size: 20, color: Colors.blue),
+                                  SizedBox(width: 8),
+                                  Text('All Branches (Shop Aggregate)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                ],
                               ),
-                              ..._branches.map((b) {
-                                return DropdownMenuItem<String?>(
-                                  value: b.id,
+                              items: [
+                                const DropdownMenuItem<String?>(
+                                  value: null,
                                   child: Row(
                                     children: [
-                                      const Icon(Icons.location_on_outlined, size: 18, color: Colors.indigo),
-                                      const SizedBox(width: 8),
-                                      Text(b.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                      Icon(Icons.store_rounded, size: 20, color: Colors.blue),
+                                      SizedBox(width: 8),
+                                      Text('All Branches (Shop Aggregate)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                                     ],
                                   ),
-                                );
-                              }),
-                            ],
-                            onChanged: (branchId) {
-                              setState(() {
-                                _selectedBranchId = branchId;
-                              });
-                              context.read<ReportsBloc>().add(FetchReportsEvent(
-                                searchQuery: _searchController.text,
-                                branchId: branchId,
-                              ));
-                            },
+                                ),
+                                ..._branches.map((b) {
+                                  return DropdownMenuItem<String?>(
+                                    value: b.id,
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.location_on_outlined, size: 18, color: Colors.indigo),
+                                        const SizedBox(width: 8),
+                                        Text(b.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                      ],
+                                    ),
+                                  );
+                                }),
+                              ],
+                              onChanged: (branchId) {
+                                setState(() {
+                                  _selectedBranchId = branchId;
+                                });
+                                context.read<ReportsBloc>().add(FetchReportsEvent(
+                                  searchQuery: _searchController.text,
+                                  branchId: branchId,
+                                ));
+                              },
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
+                // DATE FILTER CHIPS
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    children: DateFilterType.values.map((filter) {
+                      final isSelected = _selectedDateFilter == filter;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text(filter.label),
+                          selected: isSelected,
+                          onSelected: (_) => _applyDateFilter(context, filter),
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 ),
-
-              // DATE FILTER CHIPS
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: DateFilterType.values.map((filter) {
-                    final isSelected = _selectedDateFilter == filter;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ChoiceChip(
-                        label: Text(filter.label),
-                        selected: isSelected,
-                        onSelected: (_) => _applyDateFilter(context, filter),
+                // SEARCH INPUT
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (val) => _onSearchChanged(context, val),
+                    decoration: InputDecoration(
+                      hintText: 'Search invoice no or customer name',
+                      prefixIcon: const Icon(Icons.search_rounded),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                        onPressed: () {
+                          _searchController.clear();
+                          _onSearchChanged(context, '');
+                        },
+                        icon: const Icon(Icons.close_rounded),
+                      )
+                          : null,
+                      filled: true,
+                      fillColor: colorScheme.surfaceContainerHighest,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
                       ),
-                    );
-                  }).toList(),
+                    ),
+                  ),
                 ),
-              ),
-
+              ],
               // SUMMARY METRICS CARDS
               if (summary != null)
                 Padding(
@@ -278,33 +314,6 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                   ),
                 ),
 
-              // SEARCH INPUT
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (val) => _onSearchChanged(context, val),
-                  decoration: InputDecoration(
-                    hintText: 'Search invoice no or customer name',
-                    prefixIcon: const Icon(Icons.search_rounded),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            onPressed: () {
-                              _searchController.clear();
-                              _onSearchChanged(context, '');
-                            },
-                            icon: const Icon(Icons.close_rounded),
-                          )
-                        : null,
-                    filled: true,
-                    fillColor: colorScheme.surfaceContainerHighest,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-              ),
 
               // TAB VIEWS
               Expanded(
