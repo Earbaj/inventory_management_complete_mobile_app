@@ -6,7 +6,7 @@ class GetPurchaseOrdersUseCase {
 
   const GetPurchaseOrdersUseCase(this.repository);
 
-  Future<List<PurchaseOrderEntity>> call({String? supplierId}) {
-    return repository.getPurchaseOrders(supplierId: supplierId);
+  Future<List<PurchaseOrderEntity>> call({String? supplierId, bool forceRefresh = false}) {
+    return repository.getPurchaseOrders(supplierId: supplierId, forceRefresh: forceRefresh);
   }
 }

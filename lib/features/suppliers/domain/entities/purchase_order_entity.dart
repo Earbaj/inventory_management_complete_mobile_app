@@ -16,6 +16,7 @@ class PurchaseOrderItemEntity {
 
 class PurchaseOrderEntity {
   final String id;
+  final String poNumber;
   final String supplierId;
   final String supplierName;
   final List<PurchaseOrderItemEntity> items;
@@ -27,6 +28,7 @@ class PurchaseOrderEntity {
 
   const PurchaseOrderEntity({
     required this.id,
+    this.poNumber = '',
     required this.supplierId,
     required this.supplierName,
     required this.items,

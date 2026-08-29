@@ -6,7 +6,7 @@ class GetSuppliersUseCase {
 
   const GetSuppliersUseCase(this.repository);
 
-  Future<List<SupplierEntity>> call({String? search}) {
-    return repository.getSuppliers(search: search);
+  Future<List<SupplierEntity>> call({String? search, bool forceRefresh = false}) {
+    return repository.getSuppliers(search: search, forceRefresh: forceRefresh);
   }
 }

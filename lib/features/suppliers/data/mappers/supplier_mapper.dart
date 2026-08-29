@@ -55,6 +55,7 @@ class SupplierMapper {
   static PurchaseOrderEntity orderToEntity(PurchaseOrderModel model) {
     return PurchaseOrderEntity(
       id: model.id,
+      poNumber: model.poNumber,
       supplierId: model.supplierId,
       supplierName: model.supplierName,
       items: model.items.map(itemToEntity).toList(),
@@ -69,6 +70,7 @@ class SupplierMapper {
   static PurchaseOrderModel orderToModel(PurchaseOrderEntity entity) {
     return PurchaseOrderModel(
       id: entity.id,
+      poNumber: entity.poNumber,
       supplierId: entity.supplierId,
       supplierName: entity.supplierName,
       items: entity.items.map(itemToModel).toList(),

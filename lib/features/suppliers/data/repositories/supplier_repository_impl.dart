@@ -20,17 +20,48 @@ class SupplierRepositoryImpl implements SupplierRepository {
   });
 
   @override
-  Future<List<SupplierEntity>> getSuppliers({String? search}) async {
+  Future<List<SupplierEntity>> getSuppliers({String? search, bool forceRefresh = false}) async {
     try {
-      final remoteList = await remoteDataSource.getSuppliers(search: search);
-      for (final s in remoteList) {
+      final remoteList = await remoteDataSource.getSuppliers(search: search, forceRefresh: forceRefresh);
+      final orders = await getPurchaseOrders(forceRefresh: forceRefresh);
+
+      // Compute totalPurchases and dueAmount dynamically for each supplier from their purchase orders!
+      final updatedList = remoteList.map((sup) {
+        final supOrders = orders.where((o) => o.supplierId == sup.id).toList();
+        if (supOrders.isNotEmpty) {
+          final double total = supOrders.fold(0.0, (sum, o) => sum + o.totalAmount);
+          final double due = supOrders.fold(0.0, (sum, o) => sum + o.dueAmount);
+          return sup.copyWith(
+            totalPurchases: total,
+            dueAmount: due,
+          );
+        }
+        return sup;
+      }).toList();
+
+      for (final s in updatedList) {
         await localDataSource.saveSupplier(s);
       }
-      return remoteList.map(SupplierMapper.supplierToEntity).toList();
+      return updatedList.map(SupplierMapper.supplierToEntity).toList();
     } catch (e) {
       developer.log('⚠️ Network failed, fallback to local suppliers: $e', name: 'SupplierRepository');
       final localList = await localDataSource.getSuppliers(search: search);
-      return localList.map(SupplierMapper.supplierToEntity).toList();
+      final orders = await getPurchaseOrders();
+
+      final updatedLocalList = localList.map((sup) {
+        final supOrders = orders.where((o) => o.supplierId == sup.id).toList();
+        if (supOrders.isNotEmpty) {
+          final double total = supOrders.fold(0.0, (sum, o) => sum + o.totalAmount);
+          final double due = supOrders.fold(0.0, (sum, o) => sum + o.dueAmount);
+          return sup.copyWith(
+            totalPurchases: total,
+            dueAmount: due,
+          );
+        }
+        return sup;
+      }).toList();
+
+      return updatedLocalList.map(SupplierMapper.supplierToEntity).toList();
     }
   }
 
@@ -100,42 +131,44 @@ class SupplierRepositoryImpl implements SupplierRepository {
       final newId = 'po_${DateTime.now().millisecondsSinceEpoch}';
       finalOrder = PurchaseOrderModel(
         id: newId,
+        poNumber: 'PO-${DateTime.now().millisecondsSinceEpoch % 100000}',
         supplierId: model.supplierId,
         supplierName: model.supplierName,
         items: model.items,
         totalAmount: model.totalAmount,
         paidAmount: model.paidAmount,
         dueAmount: model.dueAmount,
+        status: 'received',
         note: model.note,
         createdAt: DateTime.now(),
       );
       await localDataSource.savePurchaseOrder(finalOrder);
     }
 
-    // Auto-restock inventory items stock quantity!
-    for (final item in finalOrder.items) {
-      try {
-        final existingItem = await inventoryLocalDataSource.getItemById(item.itemId);
-        if (existingItem != null) {
-          final updatedItem = existingItem.copyWith(
-            quantity: existingItem.quantity + item.quantity,
-            costPrice: item.unitCost > 0 ? item.unitCost : existingItem.costPrice,
-          );
-          await inventoryLocalDataSource.updateItem(updatedItem);
-          developer.log('✅ Auto-restocked ${item.itemName}: +${item.quantity} (New Qty: ${updatedItem.quantity})', name: 'SupplierRepository');
-        }
-      } catch (err) {
-        developer.log('⚠️ Error restocking item ${item.itemId}: $err', name: 'SupplierRepository');
+    // Auto update supplier's totalPurchases & dueAmount locally
+    try {
+      final sup = await localDataSource.getSupplierById(finalOrder.supplierId);
+      if (sup != null) {
+        final updatedSup = sup.copyWith(
+          totalPurchases: sup.totalPurchases + finalOrder.totalAmount,
+          dueAmount: sup.dueAmount + finalOrder.dueAmount,
+        );
+        await localDataSource.saveSupplier(updatedSup);
       }
-    }
+    } catch (_) {}
+
+    // Invalidate local inventory cache so fresh inventory is fetched from backend
+    try {
+      await inventoryLocalDataSource.clearCache();
+    } catch (_) {}
 
     return SupplierMapper.orderToEntity(finalOrder);
   }
 
   @override
-  Future<List<PurchaseOrderEntity>> getPurchaseOrders({String? supplierId}) async {
+  Future<List<PurchaseOrderEntity>> getPurchaseOrders({String? supplierId, bool forceRefresh = false}) async {
     try {
-      final remoteList = await remoteDataSource.getPurchaseOrders(supplierId: supplierId);
+      final remoteList = await remoteDataSource.getPurchaseOrders(supplierId: supplierId, forceRefresh: forceRefresh);
       for (final po in remoteList) {
         await localDataSource.savePurchaseOrder(po);
       }

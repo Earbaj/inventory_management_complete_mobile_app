@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../../core/widgets/global_empty_placeholder.dart';
-import '../../../inventory/data/models/inventory_item_model.dart';
+import '../../../../core/widgets/global_warning_dialog.dart';
 import '../../domain/entities/supplier_entity.dart';
 import '../../domain/entities/purchase_order_entity.dart';
 import '../bloc/supplier_bloc.dart';
 import '../bloc/supplier_event.dart';
 import '../bloc/supplier_state.dart';
+import '../widget/add_edit_supplier_sheet.dart';
+import '../widget/new_purchase_order_sheet.dart';
+import '../widget/supplier_details_sheet.dart';
+import '../widget/suppliers_shimmer.dart';
 
 class SuppliersScreen extends StatefulWidget {
   const SuppliersScreen({super.key});
@@ -52,10 +55,8 @@ class _SuppliersScreenState extends State<SuppliersScreen> with TickerProviderSt
     _tabController.dispose();
     _searchController.dispose();
     _fabAnimationController.dispose();
-    _searchController.dispose();
     super.dispose();
   }
-
 
   void _toggleFab() {
     setState(() {
@@ -67,12 +68,60 @@ class _SuppliersScreenState extends State<SuppliersScreen> with TickerProviderSt
       }
     });
   }
-  
+
+  void _showAddSupplierSheet(BuildContext context) {
+    AddEditSupplierSheet.show(
+      context,
+      onSave: (supplier) async {
+        final bloc = context.read<SupplierBloc>();
+        bloc.add(CreateSupplierEvent(supplier));
+        await bloc.stream.firstWhere((s) => (s is SupplierLoadedState && !s.isSaving) || s is SupplierErrorState);
+      },
+    );
+  }
+
+  void _showEditSupplierSheet(BuildContext context, SupplierEntity supplier) {
+    AddEditSupplierSheet.show(
+      context,
+      supplierToEdit: supplier,
+      onSave: (updated) async {
+        final bloc = context.read<SupplierBloc>();
+        bloc.add(UpdateSupplierEvent(updated));
+        await bloc.stream.firstWhere((s) => (s is SupplierLoadedState && !s.isSaving) || s is SupplierErrorState);
+      },
+    );
+  }
+
+  void _showNewPurchaseOrderSheet(BuildContext context, List<SupplierEntity> suppliers) {
+    NewPurchaseOrderSheet.show(
+      context,
+      suppliers: suppliers,
+      onSave: (order) async {
+        final bloc = context.read<SupplierBloc>();
+        bloc.add(CreatePurchaseOrderEvent(order));
+        await bloc.stream.firstWhere((s) => (s is SupplierLoadedState && !s.isSaving) || s is SupplierErrorState);
+      },
+    );
+  }
+
+  void _confirmDeleteSupplier(BuildContext context, SupplierEntity supplier) {
+    GlobalWarningDialog.show(
+      context,
+      title: 'মহাজন ডিলিট নিশ্চিতকরণ',
+      message: 'আপনি কি নিশ্চিত যে "${supplier.name}" এর প্রোফাইল ডিলিট করতে চান?',
+      confirmText: 'ডিলিট করুন',
+      cancelText: 'বাতিল',
+      icon: Icons.delete_forever_rounded,
+      confirmColor: Colors.red,
+      onConfirm: () async {
+        context.read<SupplierBloc>().add(DeleteSupplierEvent(supplier.id));
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -95,15 +144,19 @@ class _SuppliersScreenState extends State<SuppliersScreen> with TickerProviderSt
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',
             onPressed: () {
-              context.read<SupplierBloc>().add(const LoadSuppliersEvent());
+              context.read<SupplierBloc>().add(const LoadSuppliersEvent(forceRefresh: true));
             },
           ),
           IconButton(
-            icon: Icon(_isSearchOpen ? Icons.filter_alt_off:Icons.filter_alt),
-            tooltip: 'IsSearchTogle',
+            icon: Icon(_isSearchOpen ? Icons.filter_alt_off : Icons.filter_alt),
+            tooltip: 'Toggle Search',
             onPressed: () {
               setState(() {
                 _isSearchOpen = !_isSearchOpen;
+                if (!_isSearchOpen && _searchController.text.isNotEmpty) {
+                  _searchController.clear();
+                  context.read<SupplierBloc>().add(const LoadSuppliersEvent());
+                }
               });
             },
           ),
@@ -111,66 +164,72 @@ class _SuppliersScreenState extends State<SuppliersScreen> with TickerProviderSt
       ),
       floatingActionButton: _buildExpandableFab(context, colorScheme),
       body: BlocConsumer<SupplierBloc, SupplierState>(
-          listener: (context, state) {
-            if (state is SupplierLoadedState && state.successMessage != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.successMessage!),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            } else if (state is SupplierErrorState) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
-          },
-          builder: (context, state) {
-            return Column(
-              children: [
-                // Action Buttons Header
-                if(_isSearchOpen)...[
-                  Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _searchController,
-                            decoration: InputDecoration(
-                              hintText: 'Search Suppliers ...',
-                              prefixIcon: const Icon(Icons.search),
-                              isDense: true,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            onChanged: (val) {
-                              context.read<SupplierBloc>().add(LoadSuppliersEvent(search: val));
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-
-                // Main Tab Content
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildSupplierTabContent(context, state),
-                      _buildPurchaseOrdersTabContent(context, state),
-                    ],
-                  ),
-                ),
-              ],
+        listenWhen: (previous, current) {
+          return (current is SupplierLoadedState && current.successMessage != null) ||
+              current is SupplierErrorState;
+        },
+        buildWhen: (previous, current) =>
+            current is! SupplierLoadedState || current.isSaving == false,
+        listener: (context, state) {
+          if (state is SupplierLoadedState && state.successMessage != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.successMessage!),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          } else if (state is SupplierErrorState) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+              ),
             );
           }
+        },
+        builder: (context, state) {
+          final bool isInitialLoading =
+              state is SupplierLoadingState && state is! SupplierLoadedState;
+          final bool isRefreshing =
+              state is SupplierLoadedState && state.isListLoading;
+
+          return Column(
+            children: [
+              // Search Input Bar
+              if (_isSearchOpen)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search Suppliers ...',
+                      prefixIcon: const Icon(Icons.search),
+                      isDense: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onChanged: (val) {
+                      context.read<SupplierBloc>().add(LoadSuppliersEvent(search: val));
+                    },
+                  ),
+                ),
+
+              // Main Tab Content
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildSupplierTabContent(context, state, isInitialLoading, isRefreshing),
+                    _buildPurchaseOrdersTabContent(context, state, isInitialLoading, isRefreshing),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -210,7 +269,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> with TickerProviderSt
                     onPressed: () {
                       _toggleFab();
                       if (hasSuppliers) {
-                        _showNewPurchaseOrderDialog(context, state.suppliers);
+                        _showNewPurchaseOrderSheet(context, state.suppliers);
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
@@ -252,7 +311,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> with TickerProviderSt
                     foregroundColor: Colors.white,
                     onPressed: () {
                       _toggleFab();
-                      _showAddSupplierDialog(context);
+                      _showAddSupplierSheet(context);
                     },
                     child: const Icon(Icons.person_add_alt_1_rounded),
                   ),
@@ -269,7 +328,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> with TickerProviderSt
               elevation: 4,
               onPressed: _toggleFab,
               child: AnimatedRotation(
-                turns: _isFabOpen ? 0.125 : 0, // ট্যাপ করলে 45 ডিগ্রি ঘুরে Close (X) আইকন হবে
+                turns: _isFabOpen ? 0.125 : 0,
                 duration: const Duration(milliseconds: 250),
                 child: const Icon(Icons.add_rounded, size: 28),
               ),
@@ -280,53 +339,111 @@ class _SuppliersScreenState extends State<SuppliersScreen> with TickerProviderSt
     );
   }
 
-  Widget _buildSupplierTabContent(BuildContext context, SupplierState state) {
-    if (state is SupplierLoadingState) {
-      return const Center(child: CircularProgressIndicator());
+  Widget _buildSupplierTabContent(
+    BuildContext context,
+    SupplierState state,
+    bool isInitialLoading,
+    bool isRefreshing,
+  ) {
+    if (isInitialLoading || isRefreshing) {
+      return const SuppliersShimmerView();
     }
-    if (state is SupplierErrorState) {
+
+    if (state is SupplierErrorState && state.previousSuppliers.isEmpty) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Text(state.message, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.cloud_off_rounded, color: Colors.red.shade400, size: 48),
+              const SizedBox(height: 16),
+              Text(
+                state.message,
+                style: const TextStyle(color: Colors.red, fontSize: 14),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: () {
+                  context.read<SupplierBloc>().add(const LoadSuppliersEvent(forceRefresh: true));
+                },
+                icon: const Icon(Icons.refresh),
+                label: const Text('পুনরায় চেষ্টা করুন'),
+              ),
+            ],
+          ),
         ),
       );
     }
-    final List<SupplierEntity> suppliers = state is SupplierLoadedState ? state.suppliers : [];
-    return _buildSupplierList(context, suppliers);
+
+    final List<SupplierEntity> suppliers = state is SupplierLoadedState
+        ? state.suppliers
+        : (state is SupplierErrorState ? state.previousSuppliers : []);
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        context.read<SupplierBloc>().add(const LoadSuppliersEvent(forceRefresh: true));
+      },
+      child: _buildSupplierList(context, suppliers),
+    );
   }
 
-  Widget _buildPurchaseOrdersTabContent(BuildContext context, SupplierState state) {
-    if (state is SupplierLoadingState) {
-      return const Center(child: CircularProgressIndicator());
+  Widget _buildPurchaseOrdersTabContent(
+    BuildContext context,
+    SupplierState state,
+    bool isInitialLoading,
+    bool isRefreshing,
+  ) {
+    if (isInitialLoading || isRefreshing) {
+      return const SuppliersShimmerView(isPurchaseOrder: true);
     }
-    if (state is SupplierErrorState) {
+
+    if (state is SupplierErrorState && state.previousPurchaseOrders.isEmpty) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(24.0),
           child: Text(state.message, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
         ),
       );
     }
-    final List<PurchaseOrderEntity> orders = state is SupplierLoadedState ? state.purchaseOrders : [];
-    return _buildPurchaseOrdersList(context, orders);
+
+    final List<PurchaseOrderEntity> orders = state is SupplierLoadedState
+        ? state.purchaseOrders
+        : (state is SupplierErrorState ? state.previousPurchaseOrders : []);
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        context.read<SupplierBloc>().add(const LoadPurchaseOrdersEvent(forceRefresh: true));
+      },
+      child: _buildPurchaseOrdersList(context, orders),
+    );
   }
 
   Widget _buildSupplierList(BuildContext context, List<SupplierEntity> suppliers) {
     if (suppliers.isEmpty) {
-      return GlobalEmptyPlaceholder(
-        title: 'NO Suppliers Found',
-        subtitle: 'Add Suppliers To Start Your Business.',
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.65,
+            child: const GlobalEmptyPlaceholder(
+              title: 'NO Suppliers Found',
+              subtitle: 'Add Suppliers To Start Your Business.',
+            ),
+          ),
+        ],
       );
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 80),
       itemCount: suppliers.length,
       itemBuilder: (context, index) {
         final supplier = suppliers[index];
         return InkWell(
-          onTap: () => _showSupplierDetailsDialog(context, supplier),
+          onTap: () => SupplierDetailsSheet.show(context, supplier),
           borderRadius: BorderRadius.circular(16),
           child: Container(
             margin: const EdgeInsets.only(bottom: 12),
@@ -393,9 +510,9 @@ class _SuppliersScreenState extends State<SuppliersScreen> with TickerProviderSt
                       constraints: const BoxConstraints(),
                       onSelected: (val) {
                         if (val == 'details') {
-                          _showSupplierDetailsDialog(context, supplier);
+                          SupplierDetailsSheet.show(context, supplier);
                         } else if (val == 'edit') {
-                          _showEditSupplierDialog(context, supplier);
+                          _showEditSupplierSheet(context, supplier);
                         } else if (val == 'delete') {
                           _confirmDeleteSupplier(context, supplier);
                         }
@@ -446,7 +563,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> with TickerProviderSt
                 const Divider(height: 1, thickness: 0.8),
                 const SizedBox(height: 12),
 
-                // ৩. মোট ক্রয় এবং বাকি হিসাবের কাস্টম সমান স্পেসযুক্ত কার্ডস
+                // ৩. মোট ক্রয় এবং বাকি হিসাবের কার্ড
                 Row(
                   children: [
                     // মোট ক্রয়
@@ -498,12 +615,10 @@ class _SuppliersScreenState extends State<SuppliersScreen> with TickerProviderSt
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'বাকি টাকা',
+                              'বাকি (Due)',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: supplier.dueAmount > 0
-                                    ? Colors.red.shade700
-                                    : Colors.green.shade700,
+                                color: supplier.dueAmount > 0 ? Colors.red.shade700 : Colors.green.shade700,
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -512,9 +627,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> with TickerProviderSt
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
-                                color: supplier.dueAmount > 0
-                                    ? Colors.red.shade700
-                                    : Colors.green.shade700,
+                                color: supplier.dueAmount > 0 ? Colors.red.shade700 : Colors.green.shade700,
                               ),
                             ),
                           ],
@@ -533,503 +646,86 @@ class _SuppliersScreenState extends State<SuppliersScreen> with TickerProviderSt
 
   Widget _buildPurchaseOrdersList(BuildContext context, List<PurchaseOrderEntity> orders) {
     if (orders.isEmpty) {
-      return GlobalEmptyPlaceholder(
-        title: 'NO Recipe Found',
-        subtitle: 'Buy Product From Suppliers To Start Your Business.',
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.65,
+            child: const GlobalEmptyPlaceholder(
+              title: 'NO Purchase History Found',
+              subtitle: 'Start Purchasing Stock From Suppliers.',
+            ),
+          ),
+        ],
       );
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 80),
       itemCount: orders.length,
       itemBuilder: (context, index) {
         final order = orders[index];
+        final formattedDate =
+            '${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}';
+
         return Card(
-          margin: const EdgeInsets.only(bottom: 10),
-          child: ExpansionTile(
-            leading: const Icon(Icons.receipt_long, color: Colors.blue),
-            title: Text(
-              'মেমো #${order.id} - ${order.supplierName}',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Text(
-              'তারিখ: ${order.createdAt.toString().split(' ')[0]} | মোট: ৳${order.totalAmount.toStringAsFixed(0)} (পরিশোধ: ৳${order.paidAmount.toStringAsFixed(0)})',
-            ),
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          margin: const EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 1,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('ক্রয়কৃত আইটেমের তালিকা:', style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 6),
-                    ...order.items.map((item) => Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 2.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('• ${item.itemName} (${item.quantity} টি)'),
-                              Text('৳${item.totalPrice.toStringAsFixed(0)} (@ ৳${item.unitCost})'),
-                            ],
-                          ),
-                        )),
-                    if (order.note.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Text('নোট: ${order.note}', style: const TextStyle(fontStyle: FontStyle.italic, fontSize: 12)),
-                    ],
+                    Text(
+                      'ভাউচার: ${order.poNumber.isNotEmpty ? order.poNumber : "#${order.id.length > 8 ? order.id.substring(order.id.length - 6) : order.id}"}',
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+                    ),
+                    Text(formattedDate, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
                   ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 6),
+                Text(
+                  'মহাজন: ${order.supplierName}',
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                ),
+                const Divider(),
+                ...order.items.map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('${item.itemName} (x${item.quantity})'),
+                        Text('৳${item.totalPrice.toStringAsFixed(2)}'),
+                      ],
+                    ),
+                  ),
+                ),
+                const Divider(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('মোট: ৳${order.totalAmount.toStringAsFixed(2)}',
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Text(
+                      'বাকি: ৳${order.dueAmount.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: order.dueAmount > 0 ? Colors.red : Colors.green,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         );
       },
-    );
-  }
-
-  void _showAddSupplierDialog(BuildContext context) {
-    final nameCtrl = TextEditingController();
-    final companyCtrl = TextEditingController();
-    final phoneCtrl = TextEditingController();
-    final emailCtrl = TextEditingController();
-    final addressCtrl = TextEditingController();
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogCtx) {
-        return BlocConsumer<SupplierBloc, SupplierState>(
-          listenWhen: (previous, current) {
-            return previous is SupplierLoadedState &&
-                previous.isSaving &&
-                current is SupplierLoadedState &&
-                !current.isSaving &&
-                current.successMessage != null;
-          },
-          listener: (context, state) {
-            Navigator.pop(dialogCtx);
-          },
-          builder: (context, state) {
-            final isSaving = state is SupplierLoadedState && state.isSaving;
-            return AlertDialog(
-              title: const Text('Create New Suppliers Profile'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: nameCtrl,
-                      decoration: const InputDecoration(labelText: 'Suppliers Name *'),
-                      enabled: !isSaving,
-                    ),
-                    const SizedBox(height: 4),
-                    TextField(
-                      controller: companyCtrl,
-                      decoration: const InputDecoration(labelText: 'Suppliers Name / Business *'),
-                      enabled: !isSaving,
-                    ),
-                    const SizedBox(height: 4),
-                    TextField(
-                      controller: phoneCtrl,
-                      decoration: const InputDecoration(labelText: 'Mobile Number *'),
-                      keyboardType: TextInputType.phone,
-                      enabled: !isSaving,
-                    ),
-                    const SizedBox(height: 4),
-                    TextField(
-                      controller: emailCtrl,
-                      decoration: const InputDecoration(labelText: 'Email (Optional)'),
-                      keyboardType: TextInputType.emailAddress,
-                      enabled: !isSaving,
-                    ),
-                    const SizedBox(height: 4),
-                    TextField(
-                      controller: addressCtrl,
-                      decoration: const InputDecoration(labelText: 'Address (Optional)'),
-                      enabled: !isSaving,
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: isSaving ? null : () => Navigator.pop(dialogCtx),
-                  child: const Text('Reject'),
-                ),
-                FilledButton(
-                  onPressed: isSaving
-                      ? null
-                      : () {
-                          if (nameCtrl.text.trim().isEmpty || phoneCtrl.text.trim().isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Name and Phone Number mandatory!')),
-                            );
-                            return;
-                          }
-
-                          final supplier = SupplierEntity(
-                            id: 'sup_${DateTime.now().millisecondsSinceEpoch}',
-                            name: nameCtrl.text.trim(),
-                            companyName: companyCtrl.text.trim(),
-                            phone: phoneCtrl.text.trim(),
-                            email: emailCtrl.text.trim(),
-                            address: addressCtrl.text.trim(),
-                            createdAt: DateTime.now(),
-                          );
-
-                          context.read<SupplierBloc>().add(CreateSupplierEvent(supplier));
-                        },
-                  child: isSaving
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Text('Save'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _showEditSupplierDialog(BuildContext context, SupplierEntity supplier) {
-    final nameCtrl = TextEditingController(text: supplier.name);
-    final companyCtrl = TextEditingController(text: supplier.companyName);
-    final phoneCtrl = TextEditingController(text: supplier.phone);
-    final emailCtrl = TextEditingController(text: supplier.email);
-    final addressCtrl = TextEditingController(text: supplier.address);
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogCtx) {
-        return BlocConsumer<SupplierBloc, SupplierState>(
-          listenWhen: (previous, current) {
-            return previous is SupplierLoadedState &&
-                previous.isSaving &&
-                current is SupplierLoadedState &&
-                !current.isSaving &&
-                current.successMessage != null;
-          },
-          listener: (context, state) {
-            Navigator.pop(dialogCtx);
-          },
-          builder: (context, state) {
-            final isSaving = state is SupplierLoadedState && state.isSaving;
-            return AlertDialog(
-              title: const Text('মহাজনের তথ্য আপডেট'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'মহাজনের নাম'), enabled: !isSaving),
-                    TextField(controller: companyCtrl, decoration: const InputDecoration(labelText: 'কোম্পানির নাম'), enabled: !isSaving),
-                    TextField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'মোবাইল নম্বর'), enabled: !isSaving),
-                    TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'ইমেইল'), enabled: !isSaving),
-                    TextField(controller: addressCtrl, decoration: const InputDecoration(labelText: 'ঠিকানা'), enabled: !isSaving),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(onPressed: isSaving ? null : () => Navigator.pop(dialogCtx), child: const Text('বাতিল')),
-                FilledButton(
-                  onPressed: isSaving
-                      ? null
-                      : () {
-                          final updated = supplier.copyWith(
-                            name: nameCtrl.text.trim(),
-                            companyName: companyCtrl.text.trim(),
-                            phone: phoneCtrl.text.trim(),
-                            email: emailCtrl.text.trim(),
-                            address: addressCtrl.text.trim(),
-                          );
-                          context.read<SupplierBloc>().add(UpdateSupplierEvent(updated));
-                        },
-                  child: isSaving
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Text('আপডেট করুন'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _confirmDeleteSupplier(BuildContext context, SupplierEntity supplier) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogCtx) {
-        return BlocConsumer<SupplierBloc, SupplierState>(
-          listenWhen: (previous, current) {
-            return previous is SupplierLoadedState &&
-                previous.isSaving &&
-                current is SupplierLoadedState &&
-                !current.isSaving &&
-                current.successMessage != null;
-          },
-          listener: (context, state) {
-            Navigator.pop(dialogCtx);
-          },
-          builder: (context, state) {
-            final isSaving = state is SupplierLoadedState && state.isSaving;
-            return AlertDialog(
-              title: const Text('মহাজন ডিলিট নিশ্চিতকরণ'),
-              content: Text('আপনি কি নিশ্চিত যে "${supplier.name}" এর প্রোফাইল ডিলিট করতে চান?'),
-              actions: [
-                TextButton(onPressed: isSaving ? null : () => Navigator.pop(dialogCtx), child: const Text('বাতিল')),
-                FilledButton(
-                  style: FilledButton.styleFrom(backgroundColor: Colors.red),
-                  onPressed: isSaving
-                      ? null
-                      : () {
-                          context.read<SupplierBloc>().add(DeleteSupplierEvent(supplier.id));
-                        },
-                  child: isSaving
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Text('ডিলিট করুন'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _showSupplierDetailsDialog(BuildContext context, SupplierEntity supplier) {
-    showDialog(
-      context: context,
-      builder: (dialogCtx) => AlertDialog(
-        title: Row(
-          children: [
-            const Icon(Icons.person, color: Colors.blue),
-            const SizedBox(width: 8),
-            Expanded(child: Text(supplier.name)),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('কোম্পানি: ${supplier.companyName}'),
-              Text('ফোন: ${supplier.phone}'),
-              Text('ইমেইল: ${supplier.email.isNotEmpty ? supplier.email : "N/A"}'),
-              Text('ঠিকানা: ${supplier.address.isNotEmpty ? supplier.address : "N/A"}'),
-              const Divider(),
-              Text('মোট কেনাকাটা: ৳${supplier.totalPurchases.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
-              Text('বর্তমান বাকি (Due): ৳${supplier.dueAmount.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.bold, color: supplier.dueAmount > 0 ? Colors.red : Colors.green)),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('বন্ধ করুন')),
-        ],
-      ),
-    );
-  }
-
-  void _showNewPurchaseOrderDialog(BuildContext context, List<SupplierEntity> suppliers) async {
-    SupplierEntity selectedSupplier = suppliers.first;
-    final qtyCtrl = TextEditingController(text: '10');
-    final costCtrl = TextEditingController(text: '100');
-    final paidCtrl = TextEditingController(text: '1000');
-    final noteCtrl = TextEditingController();
-
-    // Fetch existing inventory items to choose from
-    List<InventoryItemModel> inventoryItems = [];
-    try {
-      inventoryItems = await InjectionContainer.inventoryLocalDataSource.getItems();
-    } catch (_) {}
-
-    String selectedItemId = inventoryItems.isNotEmpty ? inventoryItems.first.id : 'item_1';
-    String selectedItemName = inventoryItems.isNotEmpty ? inventoryItems.first.name : 'নতুন মালামাল আইটেম';
-
-    if (!context.mounted) return;
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogCtx) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          final qty = int.tryParse(qtyCtrl.text) ?? 1;
-          final unitCost = double.tryParse(costCtrl.text) ?? 0.0;
-          final total = qty * unitCost;
-          final paid = double.tryParse(paidCtrl.text) ?? total;
-          final due = total - paid > 0 ? total - paid : 0.0;
-
-          return BlocConsumer<SupplierBloc, SupplierState>(
-            listenWhen: (previous, current) {
-              return previous is SupplierLoadedState &&
-                  previous.isSaving &&
-                  current is SupplierLoadedState &&
-                  !current.isSaving &&
-                  current.successMessage != null;
-            },
-            listener: (context, state) {
-              Navigator.pop(dialogCtx);
-            },
-            builder: (context, state) {
-              final isSaving = state is SupplierLoadedState && state.isSaving;
-              return AlertDialog(
-                title: const Text('New Purchase / মালামাল ক্রয় মেমো'),
-                content: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('মহাজন নির্বাচন করুন:', style: TextStyle(fontWeight: FontWeight.bold)),
-                      DropdownButton<SupplierEntity>(
-                        isExpanded: true,
-                        value: selectedSupplier,
-                        items: suppliers.map((sup) {
-                          return DropdownMenuItem(value: sup, child: Text('${sup.name} (${sup.companyName})'));
-                        }).toList(),
-                        onChanged: isSaving
-                            ? null
-                            : (val) {
-                                if (val != null) setDialogState(() => selectedSupplier = val);
-                              },
-                      ),
-                      const SizedBox(height: 10),
-                      const Text('প্রোডাক্ট আইটেম নির্বাচন করুন:', style: TextStyle(fontWeight: FontWeight.bold)),
-                      if (inventoryItems.isNotEmpty)
-                        DropdownButton<String>(
-                          isExpanded: true,
-                          value: selectedItemId,
-                          items: inventoryItems.map((item) {
-                            return DropdownMenuItem(value: item.id, child: Text('${item.name} (বর্তমান স্টক: ${item.quantity})'));
-                          }).toList(),
-                          onChanged: isSaving
-                              ? null
-                              : (val) {
-                                  if (val != null) {
-                                    final selected = inventoryItems.firstWhere((i) => i.id == val);
-                                    setDialogState(() {
-                                      selectedItemId = selected.id;
-                                      selectedItemName = selected.name;
-                                      costCtrl.text = selected.costPrice.toStringAsFixed(0);
-                                    });
-                                  }
-                                },
-                        )
-                      else
-                        TextField(
-                          decoration: const InputDecoration(labelText: 'মালামালের নাম'),
-                          onChanged: (val) => selectedItemName = val,
-                          enabled: !isSaving,
-                        ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: qtyCtrl,
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(labelText: 'পরিমাণ (Qty)'),
-                              onChanged: (_) => setDialogState(() {}),
-                              enabled: !isSaving,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: TextField(
-                              controller: costCtrl,
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(labelText: 'পাইকারি রেট (৳)'),
-                              onChanged: (_) => setDialogState(() {}),
-                              enabled: !isSaving,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('মোট বিল: ৳${total.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 4),
-                            TextField(
-                              controller: paidCtrl,
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(labelText: 'পরিশোধিত টাকা (৳)', isDense: true),
-                              onChanged: (_) => setDialogState(() {}),
-                              enabled: !isSaving,
-                            ),
-                            const SizedBox(height: 4),
-                            Text('বাকি (Due): ৳${due.toStringAsFixed(0)}', style: TextStyle(fontWeight: FontWeight.bold, color: due > 0 ? Colors.red : Colors.green)),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: noteCtrl,
-                        decoration: const InputDecoration(labelText: 'নোট / রিমার্কস (ঐচ্ছিক)'),
-                        enabled: !isSaving,
-                      ),
-                    ],
-                  ),
-                ),
-                actions: [
-                  TextButton(onPressed: isSaving ? null : () => Navigator.pop(dialogCtx), child: const Text('বাতিল')),
-                  FilledButton.icon(
-                    icon: isSaving
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Icon(Icons.check),
-                    label: isSaving ? const Text('সেভ করা হচ্ছে...') : const Text('মেমো সেভ & স্টক আপডেট'),
-                    onPressed: isSaving
-                        ? null
-                        : () {
-                            final orderItem = PurchaseOrderItemEntity(
-                              itemId: selectedItemId,
-                              itemName: selectedItemName,
-                              quantity: qty,
-                              unitCost: unitCost,
-                              totalPrice: total,
-                            );
-
-                            final order = PurchaseOrderEntity(
-                              id: 'PO_${DateTime.now().millisecondsSinceEpoch}',
-                              supplierId: selectedSupplier.id,
-                              supplierName: selectedSupplier.name,
-                              items: [orderItem],
-                              totalAmount: total,
-                              paidAmount: paid,
-                              dueAmount: due,
-                              note: noteCtrl.text.trim(),
-                              createdAt: DateTime.now(),
-                            );
-
-                            context.read<SupplierBloc>().add(CreatePurchaseOrderEvent(order));
-                          },
-                  ),
-                ],
-              );
-            },
-          );
-        },
-      ),
     );
   }
 }

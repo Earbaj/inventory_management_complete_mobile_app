@@ -7,7 +7,8 @@ abstract class SupplierEvent {
 
 class LoadSuppliersEvent extends SupplierEvent {
   final String? search;
-  const LoadSuppliersEvent({this.search});
+  final bool forceRefresh;
+  const LoadSuppliersEvent({this.search, this.forceRefresh = false});
 }
 
 class CreateSupplierEvent extends SupplierEvent {
@@ -32,5 +33,6 @@ class CreatePurchaseOrderEvent extends SupplierEvent {
 
 class LoadPurchaseOrdersEvent extends SupplierEvent {
   final String? supplierId;
-  const LoadPurchaseOrdersEvent({this.supplierId});
+  final bool forceRefresh;
+  const LoadPurchaseOrdersEvent({this.supplierId, this.forceRefresh = false});
 }
