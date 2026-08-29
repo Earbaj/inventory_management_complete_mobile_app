@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/route/app_route.dart';
+import '../../../../core/widgets/global_empty_placeholder.dart';
 import '../bloc/branch_bloc.dart';
 import '../bloc/branch_event.dart';
 import '../bloc/branch_state.dart';
@@ -167,36 +168,9 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
           final branches = loadedState?.branches ?? context.read<BranchBloc>().branches;
 
           if (branches.isEmpty) {
-            return RefreshIndicator(
-              onRefresh: () async {
-                context.read<BranchBloc>().add(const FetchBranchesEvent());
-              },
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Container(
-                  height: MediaQuery.of(context).size.height * 0.6,
-                  alignment: Alignment.center,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.storefront_outlined, size: 64, color: Colors.grey.shade400),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No Branches Registered',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      const Text(
-                        'Tap + Add Branch button below to create your first shop branch.',
-                        style: TextStyle(color: Colors.grey, fontSize: 13),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            return GlobalEmptyPlaceholder(
+              title: 'No Branches Registered',
+              subtitle: 'Tap + Add Branch button below to create your first shop branch.',
             );
           }
 

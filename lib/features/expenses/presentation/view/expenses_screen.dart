@@ -265,7 +265,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                 if (expenses.isEmpty)
                   GlobalEmptyPlaceholder.sliver(
                     title: 'NO Shop Expenses Found',
-                    subtitle: 'Record Expenses To Start Your Business.',
+                    subtitle: 'Tap + Record Expenses To Start Record Your Expenses.',
                   )
                 else
                   SliverPadding(
