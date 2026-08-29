@@ -5,13 +5,13 @@ import 'package:inventory_management_complete/features/auth/presentation/bloc/au
 import 'package:inventory_management_complete/features/inventory/presentation/bloc/inventory_bloc.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
+import '../../../../core/widgets/global_empty_placeholder.dart';
 import '../../../auth/domain/entities/user_entity.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../domain/entities/inventory_item_entity.dart';
 import '../bloc/inventory_event.dart';
 import '../bloc/inventory_state.dart';
 import '../widget/inventory_add_item_bottom_sheet.dart';
-import '../widget/inventory_empty_state.dart';
 import '../widget/inventory_item_card.dart';
 import '../widget/inventory_shimmer.dart';
 import '../widget/inventory_summery.dart';
@@ -733,7 +733,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 child: (loadedState != null && loadedState.isListLoading)
                     ? const InventoryListShimmer()
                     : filteredItems.isEmpty
-                        ? const EmptyInventory()
+                        ? GlobalEmptyPlaceholder(
+                  title: 'No items found',
+                  subtitle: 'Try another search or category.',
+                )
                         : ListView.builder(
                             padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
                             itemCount: filteredItems.length,
