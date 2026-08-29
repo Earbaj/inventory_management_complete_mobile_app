@@ -50,7 +50,7 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
         actions: [
           IconButton(
             onPressed: () {
-              context.read<BranchBloc>().add(const FetchBranchesEvent());
+              context.read<BranchBloc>().add(const FetchBranchesEvent(forceRefresh: true));
             },
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Refresh Branches',
@@ -158,7 +158,7 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
 
           return RefreshIndicator(
             onRefresh: () async {
-              context.read<BranchBloc>().add(const FetchBranchesEvent());
+              context.read<BranchBloc>().add(const FetchBranchesEvent(forceRefresh: true));
             },
             child: branches.isEmpty
                 ? SingleChildScrollView(
@@ -180,13 +180,12 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  elevation: 1.5,
                   child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     leading: Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.grey,
+                        color: Colors.black12,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(Icons.store_rounded, color: colorScheme.primary),

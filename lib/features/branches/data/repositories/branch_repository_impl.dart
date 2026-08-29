@@ -9,9 +9,9 @@ class BranchRepositoryImpl implements BranchRepository {
   BranchRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<List<BranchEntity>> getBranches() async {
+  Future<List<BranchEntity>> getBranches({bool forceRefresh = false}) async {
     try {
-      final models = await remoteDataSource.getBranches();
+      final models = await remoteDataSource.getBranches(forceRefresh: forceRefresh);
       return models.map((m) => m.toEntity()).toList();
     } catch (e) {
       if (e is Failure) rethrow;

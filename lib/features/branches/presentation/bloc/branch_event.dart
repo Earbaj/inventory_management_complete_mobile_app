@@ -4,7 +4,9 @@ abstract class BranchEvent {
 
 /// Event: Fetch registered branches list.
 class FetchBranchesEvent extends BranchEvent {
-  const FetchBranchesEvent();
+  final bool forceRefresh;
+
+  const FetchBranchesEvent({this.forceRefresh = false});
 }
 
 /// Event: Create a new branch.

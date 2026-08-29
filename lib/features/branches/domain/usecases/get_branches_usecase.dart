@@ -7,7 +7,7 @@ class GetBranchesUseCase {
 
   const GetBranchesUseCase(this.repository);
 
-  Future<List<BranchEntity>> call() {
-    return repository.getBranches();
+  Future<List<BranchEntity>> call({bool forceRefresh = false}) {
+    return repository.getBranches(forceRefresh: forceRefresh);
   }
 }

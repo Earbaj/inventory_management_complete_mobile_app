@@ -1,10 +1,11 @@
 import 'dart:developer' as developer;
+import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../models/branch_model.dart';
 
 abstract class BranchRemoteDataSource {
-  Future<List<BranchModel>> getBranches();
+  Future<List<BranchModel>> getBranches({bool forceRefresh = false});
   Future<BranchModel> createBranch({
     required String name,
     required String address,
@@ -18,12 +19,13 @@ class BranchRemoteDataSourceImpl implements BranchRemoteDataSource {
   BranchRemoteDataSourceImpl(this.apiClient);
 
   @override
-  Future<List<BranchModel>> getBranches() async {
-    developer.log('🏢 [BranchRemoteDataSource] getBranches() calling GET ${ApiEndpoints.branches}...', name: 'BranchRemoteDataSource');
+  Future<List<BranchModel>> getBranches({bool forceRefresh = false}) async {
+    developer.log('🏢 [BranchRemoteDataSource] getBranches(forceRefresh: $forceRefresh) calling GET ${ApiEndpoints.branches}...', name: 'BranchRemoteDataSource');
     try {
       final response = await apiClient.get(
         ApiEndpoints.branches,
         cache: true,
+        cachePolicy: forceRefresh ? CachePolicy.refresh : CachePolicy.forceCache,
         maxStale: const Duration(minutes: 30),
       );
 
@@ -57,7 +59,17 @@ class BranchRemoteDataSourceImpl implements BranchRemoteDataSource {
       );
 
       developer.log('✅ [BranchRemoteDataSource] createBranch() success.', name: 'BranchRemoteDataSource');
-      return BranchModel.fromJson(response is Map<String, dynamic> ? response : {});
+      final Map<String, dynamic> data = response is Map<String, dynamic>
+          ? (response['branch'] ?? response['data'] ?? response) as Map<String, dynamic>
+          : <String, dynamic>{};
+      final createdBranch = BranchModel.fromJson(data);
+
+      // Force refresh cache to invalidate previous stale cache and store updated branch list
+      try {
+        await getBranches(forceRefresh: true);
+      } catch (_) {}
+
+      return createdBranch;
     } catch (e) {
       developer.log('⚠️ [BranchRemoteDataSource] createBranch() API Error: $e', name: 'BranchRemoteDataSource');
       rethrow;

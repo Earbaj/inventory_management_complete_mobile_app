@@ -32,7 +32,7 @@ class BranchBloc extends Bloc<BranchEvent, BranchState> {
       emit(BranchLoadedState(branches: List.from(_branches), isListLoading: true));
     }
     try {
-      _branches = await getBranchesUseCase();
+      _branches = await getBranchesUseCase(forceRefresh: event.forceRefresh);
       emit(BranchLoadedState(branches: List.from(_branches), isListLoading: false));
     } catch (e) {
       emit(BranchErrorState(
@@ -52,7 +52,11 @@ class BranchBloc extends Bloc<BranchEvent, BranchState> {
         address: event.address,
         phone: event.phone,
       );
-      _branches.add(newBranch);
+      try {
+        _branches = await getBranchesUseCase(forceRefresh: true);
+      } catch (_) {
+        _branches.add(newBranch);
+      }
       emit(BranchOperationSuccessState('Branch "${newBranch.name}" created successfully!'));
       emit(BranchLoadedState(branches: List.from(_branches)));
     } catch (e) {
