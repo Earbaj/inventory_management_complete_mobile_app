@@ -11,6 +11,7 @@ import '../../../customers/presentation/bloc/customer_state.dart';
 import '../../../inventory/presentation/bloc/inventory_bloc.dart';
 import '../../../inventory/presentation/bloc/inventory_event.dart';
 import '../../../inventory/presentation/bloc/inventory_state.dart';
+import '../../domain/entities/sale_entity.dart';
 import '../bloc/pos_bloc.dart';
 import '../bloc/pos_event.dart';
 import '../bloc/pos_state.dart';
@@ -98,38 +99,16 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return MultiBlocListener(
-      listeners: [
-        BlocListener<PosBloc, PosState>(
-          listener: (context, state) {
-            if (state is PosCheckoutSuccessState) {
-              discountController.clear();
-              showDialog(
-                context: context,
-                builder: (_) => SaleSuccessDialog(completedSale: state.completedSale),
-              );
-            } else if (state is PosCheckoutErrorState) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
-          },
-        ),
-        BlocListener<InventoryBloc, InventoryState>(
-          listener: (context, state) {
-            if (state is InventoryLoadedState && !state.isListLoading) {
-              if (_isSearching) {
-                setState(() {
-                  _isSearching = false;
-                });
-              }
-            }
-          },
-        ),
-      ],
+    return BlocListener<InventoryBloc, InventoryState>(
+      listener: (context, state) {
+        if (state is InventoryLoadedState && !state.isListLoading) {
+          if (_isSearching) {
+            setState(() {
+              _isSearching = false;
+            });
+          }
+        }
+      },
       child: Scaffold(
         appBar: AppBar(
           leading: IconButton(
@@ -476,8 +455,8 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
   );
   }
 
-  void _openCheckoutSheet(BuildContext context, PosCartState posState) {
-    showModalBottomSheet(
+  void _openCheckoutSheet(BuildContext context, PosCartState posState) async {
+    final completedSale = await showModalBottomSheet<SaleEntity?>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -488,8 +467,6 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
           subtotal: posState.subtotal,
           discountController: discountController,
           onComplete: (paymentMethod, paidAmount) {
-            Navigator.pop(sheetContext);
-
             context.read<PosBloc>().add(SubmitCheckoutEvent(
               paymentMethod: paymentMethod,
               paidAmount: paidAmount,
@@ -498,5 +475,13 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
         );
       },
     );
+
+    if (completedSale != null && context.mounted) {
+      discountController.clear();
+      showDialog(
+        context: context,
+        builder: (_) => SaleSuccessDialog(completedSale: completedSale),
+      );
+    }
   }
 }

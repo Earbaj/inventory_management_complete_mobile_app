@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inventory_management_complete/features/posbilling/presentation/bloc/pos_bloc.dart';
 
-import '../../../../core/di/injection_container.dart';
 import '../../../customers/domain/entities/customer_entity.dart';
 import '../../domain/entities/cart_item_entity.dart';
 import '../../presentation/bloc/pos_event.dart';
@@ -252,7 +251,7 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
               FilledButton(
                 onPressed: () {
                   final parsed = _parseDiscount(discCtrl.text, selectedType);
-                  InjectionContainer.posBloc.add(UpdateCartItemDiscountEvent(
+                  context.read<PosBloc>().add(UpdateCartItemDiscountEvent(
                     itemId: cartItem.item.id,
                     discount: parsed.value,
                     discountType: parsed.type,
@@ -273,11 +272,27 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return BlocBuilder<PosBloc, PosState>(
-      builder: (context, snapshot) {
-        final posState = snapshot is PosCartState
-            ? snapshot
-            : PosCartState(cartItems: widget.cartItems ?? []);
+    return BlocConsumer<PosBloc, PosState>(
+      listener: (context, state) {
+        if (state is PosCheckoutSuccessState) {
+          Navigator.of(context).pop(state.completedSale);
+        } else if (state is PosCheckoutErrorState) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
+      builder: (context, state) {
+        final bool isLoading = state is PosCheckoutLoadingState;
+        final posState = state is PosCartState
+            ? state
+            : PosCartState(
+                cartItems: widget.cartItems ?? [],
+                selectedCustomer: widget.customer,
+              );
 
         final cartItemsList = posState.cartItems.isNotEmpty ? posState.cartItems : (widget.cartItems ?? []);
         final double rawSubtotal = cartItemsList.fold<double>(0.0, (sum, i) => sum + i.rawSubtotal);
@@ -303,12 +318,14 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
         final paidAmountInput = double.tryParse(_paidCtrl.text) ?? 0.0;
         final dueAmount = (calcNetTotal - paidAmountInput).clamp(0.0, double.infinity);
 
-        return Container(
-          height: MediaQuery.sizeOf(context).height * 0.92,
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
-          ),
+        return PopScope(
+          canPop: !isLoading,
+          child: Container(
+            height: MediaQuery.sizeOf(context).height * 0.92,
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+            ),
           child: SafeArea(
             child: Column(
               children: [
@@ -357,7 +374,7 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             itemCount: cartItemsList.length,
-                            separatorBuilder: (_, __) => const Divider(height: 1),
+                            separatorBuilder: (_, _) => const Divider(height: 1),
                             itemBuilder: (context, idx) {
                               final cItem = cartItemsList[idx];
                               return ListTile(
@@ -609,51 +626,82 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
                   child: FilledButton(
-                    onPressed: () {
-                      // Sync overall calculated discount (in Tk) with PosBloc state
-                      InjectionContainer.posBloc.add(ApplyDiscountEvent(overallDiscInTk));
+                    onPressed: isLoading
+                        ? null
+                        : () {
+                            // Sync overall calculated discount (in Tk) with PosBloc state
+                            context.read<PosBloc>().add(ApplyDiscountEvent(overallDiscInTk));
 
-                      final double finalPaid;
-                      if (_paymentMethod.toLowerCase() == 'due') {
-                        finalPaid = 0.0;
-                      } else {
-                        finalPaid = double.tryParse(_paidCtrl.text) ?? calcNetTotal;
-                      }
+                            final double finalPaid;
+                            if (_paymentMethod.toLowerCase() == 'due') {
+                              finalPaid = 0.0;
+                            } else {
+                              finalPaid = double.tryParse(_paidCtrl.text) ?? calcNetTotal;
+                            }
 
-                      if (widget.onComplete != null) {
-                        widget.onComplete!(_paymentMethod, finalPaid);
-                      } else if (widget.onCheckout != null) {
-                        widget.onCheckout!();
-                      }
-                    },
+                            if (widget.onComplete != null) {
+                              widget.onComplete!(_paymentMethod, finalPaid);
+                            } else if (widget.onCheckout != null) {
+                              widget.onCheckout!();
+                            } else {
+                              context.read<PosBloc>().add(SubmitCheckoutEvent(
+                                paymentMethod: _paymentMethod,
+                                paidAmount: finalPaid,
+                              ));
+                            }
+                          },
                     style: FilledButton.styleFrom(
                       minimumSize: const Size.fromHeight(54),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            dueAmount > 0 ? 'Checkout with ৳${dueAmount.toStringAsFixed(0)} Due' : 'Complete Checkout',
-                            style: const TextStyle(fontWeight: FontWeight.w700),
+                    child: isLoading
+                        ? const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              ),
+                              SizedBox(width: 12),
+                              Text(
+                                'Processing Checkout...',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  dueAmount > 0 ? 'Checkout with ৳${dueAmount.toStringAsFixed(0)} Due' : 'Complete Checkout',
+                                  style: const TextStyle(fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                              Text(
+                                '৳ ${calcNetTotal.toStringAsFixed(0)}',
+                                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                              ),
+                            ],
                           ),
-                        ),
-                        Text(
-                          '৳ ${calcNetTotal.toStringAsFixed(0)}',
-                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-                        ),
-                      ],
-                    ),
                   ),
                 ),
               ],
             ),
           ),
-        );
-      },
-    );
+        ),
+      );
+    },
+  );
   }
 }
 
