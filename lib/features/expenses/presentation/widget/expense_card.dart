@@ -36,7 +36,6 @@ class ExpenseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     final catColor = _getCategoryColor(expense.category);
     final catIcon = _getCategoryIcon(expense.category);

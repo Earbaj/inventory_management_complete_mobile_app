@@ -140,7 +140,7 @@ class _AddEditExpenseDialogState extends State<AddEditExpenseDialog> {
                     children: [
                       // Category
                       DropdownButtonFormField<String>(
-                        value: _categories.any((c) => c['key'] == _selectedCategory) ? _selectedCategory : 'misc',
+                        initialValue: _categories.any((c) => c['key'] == _selectedCategory) ? _selectedCategory : 'misc',
                         decoration: const InputDecoration(
                           labelText: 'Expense Category *',
                           prefixIcon: Icon(Icons.category_outlined),

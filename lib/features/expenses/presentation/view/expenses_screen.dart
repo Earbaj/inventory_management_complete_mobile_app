@@ -3,12 +3,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/route/app_route.dart';
 import '../../../../core/widgets/global_empty_placeholder.dart';
+import '../../../../core/widgets/global_warning_dialog.dart';
 import '../../domain/entities/expense_entity.dart';
 import '../bloc/expenses_bloc.dart';
 import '../bloc/expenses_event.dart';
 import '../bloc/expenses_state.dart';
-import '../widget/add_edit_expense_dialog.dart';
+import '../widget/add_edit_expense_sheet.dart';
 import '../widget/expense_card.dart';
+import '../widget/expenses_shimmer.dart';
 
 class ExpensesScreen extends StatefulWidget {
   const ExpensesScreen({super.key});
@@ -49,64 +51,42 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     }
   }
 
-  void _showAddExpenseDialog() {
-    showDialog(
-      context: context,
-      builder: (dialogCtx) => AddEditExpenseDialog(
-        onSave: (expense) {
-          context.read<ExpensesBloc>().add(CreateExpenseEvent(expense));
-        },
-      ),
+  void _showAddExpenseSheet() {
+    AddEditExpenseSheet.show(
+      context,
+      onSave: (expense) {
+        context.read<ExpensesBloc>().add(CreateExpenseEvent(expense));
+      },
     );
   }
 
-  void _showEditExpenseDialog(ExpenseEntity expense) {
-    showDialog(
-      context: context,
-      builder: (dialogCtx) => AddEditExpenseDialog(
-        expenseToEdit: expense,
-        onSave: (updatedExpense) {
-          context.read<ExpensesBloc>().add(UpdateExpenseEvent(updatedExpense));
-        },
-      ),
+  void _showEditExpenseSheet(ExpenseEntity expense) {
+    AddEditExpenseSheet.show(
+      context,
+      expenseToEdit: expense,
+      onSave: (updatedExpense) {
+        context.read<ExpensesBloc>().add(UpdateExpenseEvent(updatedExpense));
+      },
     );
   }
 
   void _confirmDeleteExpense(ExpenseEntity expense) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.delete_outline_rounded, color: Colors.red),
-            SizedBox(width: 8),
-            Text('Move to Recycle Bin?'),
-          ],
-        ),
-        content: Text('Are you sure you want to delete "${expense.title}"? It can be restored later from the Recycle Bin.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              Navigator.pop(ctx);
-              context.read<ExpensesBloc>().add(DeleteExpenseEvent(expense.id));
-            },
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+    GlobalWarningDialog.show(
+      context,
+      title: 'Move to Recycle Bin?',
+      message: 'Are you sure you want to delete "${expense.title}"? It can be restored later from the Recycle Bin.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      icon: Icons.delete_forever_rounded,
+      confirmColor: Colors.red,
+      onConfirm: () async {
+        context.read<ExpensesBloc>().add(DeleteExpenseEvent(expense.id));
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -133,11 +113,16 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showAddExpenseDialog,
+        onPressed: _showAddExpenseSheet,
         icon: const Icon(Icons.add_rounded),
         label: const Text('Record Expense'),
+        backgroundColor: Colors.red.shade700,
+        foregroundColor: Colors.white,
       ),
       body: BlocConsumer<ExpensesBloc, ExpensesState>(
+        listenWhen: (previous, current) =>
+            current is ExpensesOperationSuccessState || current is ExpensesErrorState,
+        buildWhen: (previous, current) => current is! ExpensesOperationSuccessState,
         listener: (context, state) {
           if (state is ExpensesOperationSuccessState) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -158,13 +143,74 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
           }
         },
         builder: (context, state) {
-          if (state is ExpensesLoadingState && state is! ExpensesLoadedState) {
-            return const Center(child: CircularProgressIndicator());
+          final bool isInitialLoading = state is ExpensesLoadingState && state is! ExpensesLoadedState;
+          final bool isRefreshing = state is ExpensesLoadedState && state.isListLoading;
+
+          if (isInitialLoading || isRefreshing) {
+            return const ExpensesShimmerView();
+          }
+
+          if (state is ExpensesErrorState && state.previousExpenses.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.cloud_off_rounded,
+                        color: Colors.red.shade700,
+                        size: 48,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Something Went Wrong',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      state.message.isNotEmpty
+                          ? state.message
+                          : 'Unable to load shop expenses. Please check your connection and try again.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.grey.shade600,
+                          ),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        context.read<ExpensesBloc>().add(const FetchExpensesEvent(isRefresh: true));
+                      },
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: const Text('Try Again'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
           }
 
           final loadedState = state is ExpensesLoadedState ? state : null;
-          final expenses = loadedState?.expenses ?? [];
-          final totalAmount = loadedState?.totalExpenseAmount ?? 0.0;
+          final expenses = loadedState?.expenses ??
+              (state is ExpensesErrorState ? state.previousExpenses : []);
+          final totalAmount = loadedState?.totalExpenseAmount ??
+              (state is ExpensesErrorState ? state.previousTotalAmount : 0.0);
           final isLoadingMore = loadedState?.isLoadingMore ?? false;
 
           return RefreshIndicator(
@@ -173,6 +219,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
             },
             child: CustomScrollView(
               controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
                 // TOTAL SUMMARY CARD
                 SliverToBoxAdapter(
@@ -264,8 +311,8 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                 // EXPENSES LIST
                 if (expenses.isEmpty)
                   GlobalEmptyPlaceholder.sliver(
-                    title: 'NO Shop Expenses Found',
-                    subtitle: 'Tap + Record Expenses To Start Record Your Expenses.',
+                    title: 'No Shop Expenses Found',
+                    subtitle: 'Tap + Record Expense to start recording your shop costs.',
                   )
                 else
                   SliverPadding(
@@ -283,7 +330,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                           final expense = expenses[index];
                           return ExpenseCard(
                             expense: expense,
-                            onEdit: () => _showEditExpenseDialog(expense),
+                            onEdit: () => _showEditExpenseSheet(expense),
                             onDelete: () => _confirmDeleteExpense(expense),
                           );
                         },

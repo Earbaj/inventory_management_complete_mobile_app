@@ -41,7 +41,10 @@ class ExpensesBloc extends Bloc<ExpensesEvent, ExpensesState> {
     _startDate = event.startDate ?? _startDate;
     _endDate = event.endDate ?? _endDate;
 
-    if (state is! ExpensesLoadedState || event.isRefresh) {
+    final currentState = state;
+    if (currentState is ExpensesLoadedState) {
+      emit(currentState.copyWith(isListLoading: true));
+    } else {
       emit(const ExpensesLoadingState());
     }
 
@@ -61,9 +64,12 @@ class ExpensesBloc extends Bloc<ExpensesEvent, ExpensesState> {
         meta: res.meta,
         hasReachedMax: !res.meta.hasNextPage,
         selectedCategory: _currentCategory,
+        isListLoading: false,
       ));
     } catch (e) {
-      emit(ExpensesErrorState(e.toString()));
+      final previous = currentState is ExpensesLoadedState ? currentState.expenses : <ExpenseEntity>[];
+      final prevTotal = currentState is ExpensesLoadedState ? currentState.totalExpenseAmount : 0.0;
+      emit(ExpensesErrorState(e.toString(), previousExpenses: previous, previousTotalAmount: prevTotal));
     }
   }
 
@@ -117,7 +123,7 @@ class ExpensesBloc extends Bloc<ExpensesEvent, ExpensesState> {
     Emitter<ExpensesState> emit,
   ) async {
     try {
-      final created = await createExpenseUseCase(event.expense);
+      await createExpenseUseCase(event.expense);
       emit(const ExpensesOperationSuccessState('Expense created successfully!'));
 
       // Re-fetch expenses

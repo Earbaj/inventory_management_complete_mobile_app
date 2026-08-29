@@ -24,6 +24,7 @@ class ExpensesLoadedState extends ExpensesState {
   final bool isLoadingMore;
   final bool hasReachedMax;
   final String? selectedCategory;
+  final bool isListLoading;
 
   const ExpensesLoadedState({
     required this.expenses,
@@ -32,6 +33,7 @@ class ExpensesLoadedState extends ExpensesState {
     this.isLoadingMore = false,
     this.hasReachedMax = false,
     this.selectedCategory,
+    this.isListLoading = false,
   });
 
   ExpensesLoadedState copyWith({
@@ -41,6 +43,7 @@ class ExpensesLoadedState extends ExpensesState {
     bool? isLoadingMore,
     bool? hasReachedMax,
     String? selectedCategory,
+    bool? isListLoading,
   }) {
     return ExpensesLoadedState(
       expenses: expenses ?? this.expenses,
@@ -49,6 +52,7 @@ class ExpensesLoadedState extends ExpensesState {
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       hasReachedMax: hasReachedMax ?? this.hasReachedMax,
       selectedCategory: selectedCategory ?? this.selectedCategory,
+      isListLoading: isListLoading ?? this.isListLoading,
     );
   }
 
@@ -60,6 +64,7 @@ class ExpensesLoadedState extends ExpensesState {
         isLoadingMore,
         hasReachedMax,
         selectedCategory,
+        isListLoading,
       ];
 }
 
@@ -74,9 +79,15 @@ class ExpensesOperationSuccessState extends ExpensesState {
 
 class ExpensesErrorState extends ExpensesState {
   final String message;
+  final List<ExpenseEntity> previousExpenses;
+  final double previousTotalAmount;
 
-  const ExpensesErrorState(this.message);
+  const ExpensesErrorState(
+    this.message, {
+    this.previousExpenses = const [],
+    this.previousTotalAmount = 0.0,
+  });
 
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [message, previousExpenses, previousTotalAmount];
 }

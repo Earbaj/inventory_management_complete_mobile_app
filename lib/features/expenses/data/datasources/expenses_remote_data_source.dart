@@ -43,8 +43,9 @@ class ExpensesRemoteDataSourceImpl implements ExpensesRemoteDataSource {
     try {
       final response = await apiClient.get(
         ApiEndpoints.expenses,
-        cache: !forceRefresh,
-        maxStale: const Duration(minutes: 10), // ক্যাশ ১০ মিনিট ফ্রেশ থাকবে
+        cache: true,
+        cachePolicy: forceRefresh ? CachePolicy.refresh : CachePolicy.forceCache,
+        maxStale: const Duration(minutes: 30),
         queryParameters: {
           'page': page,
           'limit': limit,

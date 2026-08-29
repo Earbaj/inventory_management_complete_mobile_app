@@ -29,7 +29,7 @@ class PaginatedExpensesModel {
         : PaginationMetaModel(
             total: items.length,
             page: 1,
-            limit: items.length > 0 ? items.length : 10,
+            limit: items.isNotEmpty ? items.length : 10,
             totalPages: 1,
             hasNextPage: false,
             hasPrevPage: false,
