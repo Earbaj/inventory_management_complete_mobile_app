@@ -1,124 +1,77 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
-class DashboardShimmerEffect extends StatelessWidget {
-  final Widget child;
+class DashboardShimmerView extends StatelessWidget {
+  final bool isAdmin;
 
-  const DashboardShimmerEffect({super.key, required this.child});
+  const DashboardShimmerView({super.key, this.isAdmin = true});
 
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Shimmer.fromColors(
-      baseColor: isDark ? Colors.grey.shade800 : Colors.grey.shade300,
-      highlightColor: isDark ? Colors.grey.shade700 : Colors.grey.shade100,
-      child: child,
-    );
-  }
-}
-
-class DashboardQuickActionsShimmer extends StatelessWidget {
-  const DashboardQuickActionsShimmer({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        physics: const NeverScrollableScrollPhysics(),
-        child: Row(
-          children: List.generate(
-            4,
-            (index) => Container(
-              margin: const EdgeInsets.only(right: 10),
-              width: 110,
-              height: 42,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-        ),
+  // ছোট শিমার বক্স তৈরির সহজ হেল্পার
+  Widget _box({double? width, required double height, double radius = 6}) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(radius),
       ),
     );
   }
-}
 
-class DashboardStatCardShimmer extends StatelessWidget {
-  const DashboardStatCardShimmer({super.key});
-
-  @override
-  Widget build(BuildContext context) {
+  // স্ট্যাট কার্ড শিমার
+  Widget _buildStatCard() {
     return Container(
-      padding: const EdgeInsets.all(13),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white, width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: Container(
-                  height: 14,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(11),
-                ),
-              ),
+              _box(width: 75, height: 12),
+              _box(width: 32, height: 32, radius: 8),
             ],
           ),
           const Spacer(),
-          Container(
-            width: 80,
-            height: 22,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            width: 55,
-            height: 12,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
+          _box(width: 80, height: 18),
+          const SizedBox(height: 6),
+          _box(width: 50, height: 10),
         ],
       ),
     );
   }
-}
 
-class DashboardChartCardShimmer extends StatelessWidget {
-  final double height;
+  Widget _buildQuickActionCard({required double height, required double width}) {
+    return Container(
+      height: height,
+      width: width,
+      padding: EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white, width: 1.5),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          _box(width: 30, height: 20),
+          _box(width: 70, height: 20),
+        ],
+      ),
+    );
+  }
 
-  const DashboardChartCardShimmer({super.key, this.height = 280});
-
-  @override
-  Widget build(BuildContext context) {
+  // চার্ট ও লিস্ট সেকশনের জন্য শিমার কার্ড
+  Widget _buildCard({required double height}) {
     return Container(
       height: height,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white, width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,159 +79,51 @@ class DashboardChartCardShimmer extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                width: 140,
-                height: 18,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-              ),
-              Container(
-                width: 75,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class DashboardListSectionShimmer extends StatelessWidget {
-  final int itemCount;
-
-  const DashboardListSectionShimmer({
-    super.key,
-    this.itemCount = 3,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                width: 160,
-                height: 18,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-              ),
-              Container(
-                width: 60,
-                height: 16,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
+              _box(width: 130, height: 14),
+              _box(width: 50, height: 14),
             ],
           ),
           const SizedBox(height: 16),
-          ...List.generate(
-            itemCount,
-            (index) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Row(
-                children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: double.infinity,
-                          height: 14,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Container(
-                          width: 100,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Container(
-                    width: 50,
-                    height: 16,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          Expanded(
+            child: _box(width: double.infinity, height: double.infinity, radius: 10),
           ),
         ],
       ),
     );
   }
-}
-
-class DashboardShimmerView extends StatelessWidget {
-  final bool isAdmin;
-
-  const DashboardShimmerView({
-    super.key,
-    this.isAdmin = true,
-  });
 
   @override
   Widget build(BuildContext context) {
-    return DashboardShimmerEffect(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 1. Quick Actions Shimmer
-          if (isAdmin) const DashboardQuickActionsShimmer(),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-          // 2. Stat Cards Grid Shimmer
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: GridView.builder(
+    return Shimmer.fromColors(
+      baseColor: isDark ? Colors.grey.shade800 : Colors.grey.shade300,
+      highlightColor: isDark ? Colors.grey.shade700 : Colors.grey.shade100,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 8),
+
+            // ১. কুইক অ্যাকশন বাটনস
+            if (isAdmin)
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const NeverScrollableScrollPhysics(),
+                child: Row(
+                  children: List.generate(
+                    4,
+                    (index) => Padding(
+                      padding: const EdgeInsets.only(right: 10, bottom: 16),
+                      child: _buildQuickActionCard( height: 38,width: 130),
+                    ),
+                  ),
+                ),
+              ),
+
+            // ২. স্ট্যাট কার্ডস গ্রিড (৬টি কার্ড)
+            GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: 6,
@@ -288,36 +133,29 @@ class DashboardShimmerView extends StatelessWidget {
                 mainAxisSpacing: 12,
                 childAspectRatio: 1.28,
               ),
-              itemBuilder: (context, index) => const DashboardStatCardShimmer(),
+              itemBuilder: (context, index) => _buildStatCard(),
             ),
-          ),
 
-          // 3. Charts Shimmer
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-            child: Column(
-              children: [
-                const DashboardChartCardShimmer(height: 280),
-                if (isAdmin) ...[
-                  const SizedBox(height: 16),
-                  const DashboardChartCardShimmer(height: 260),
-                ],
-              ],
-            ),
-          ),
+            const SizedBox(height: 20),
 
-          // 4. Top Selling Items Shimmer
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 24, 20, 0),
-            child: DashboardListSectionShimmer(itemCount: 3),
-          ),
+            // ৩. সেলস চার্ট
+            _buildCard(height: 260),
 
-          // 5. Recent Transactions Shimmer
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 16, 20, 30),
-            child: DashboardListSectionShimmer(itemCount: 3),
-          ),
-        ],
+            // ৪. প্রফিট চার্ট (অ্যাডমিন)
+            if (isAdmin) ...[
+              const SizedBox(height: 16),
+              _buildCard(height: 240),
+            ],
+
+            const SizedBox(height: 20),
+
+            // ৫. টপ সেলিং ও রিসেন্ট ট্রানজ্যাকশন
+            _buildCard(height: 180),
+            const SizedBox(height: 16),
+            _buildCard(height: 180),
+            const SizedBox(height: 30),
+          ],
+        ),
       ),
     );
   }

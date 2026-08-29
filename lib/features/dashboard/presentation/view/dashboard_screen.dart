@@ -143,16 +143,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                           ),
                           IconButton(
                             onPressed: _isLoading ? null : () => _fetchDashboardData(),
-                            icon: _isLoading
-                                ? SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.2,
-                                      color: colorScheme.primary,
-                                    ),
-                                  )
-                                : const Icon(Icons.refresh_rounded),
+                            icon:  const Icon(Icons.refresh_rounded),
                           ),
                         ],
                       ),
