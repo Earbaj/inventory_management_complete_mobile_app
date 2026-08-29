@@ -32,13 +32,14 @@ class InventoryRemoteDataSourceImpl implements InventoryRemoteDataSource {
     String? search,
     String? category,
   }) async {
-    developer.log('📦 [InventoryRemoteDataSource] getItems() page: $page, limit: $limit, search: "$search", category: "$category"', name: 'InventoryRemoteDataSource');
+    final safeLimit = limit.clamp(1, 100);
+    developer.log('📦 [InventoryRemoteDataSource] getItems() page: $page, limit: $safeLimit (requested: $limit), search: "$search", category: "$category"', name: 'InventoryRemoteDataSource');
     try {
       final response = await apiClient.get(
         '${EnvConfig.apiBaseUrl}/api/items',
         queryParameters: {
           'page': page,
-          'limit': limit,
+          'limit': safeLimit,
           if (search != null && search.isNotEmpty) 'search': search,
           if (category != null && category != 'All') 'category': category,
         },

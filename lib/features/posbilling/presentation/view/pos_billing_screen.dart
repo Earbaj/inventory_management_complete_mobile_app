@@ -1,14 +1,17 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../../core/services/barcode_scanner_service.dart';
 import '../../../customers/domain/entities/customer_entity.dart';
+import '../../../customers/presentation/bloc/customer_bloc.dart';
 import '../../../customers/presentation/bloc/customer_event.dart';
 import '../../../customers/presentation/bloc/customer_state.dart';
+import '../../../inventory/presentation/bloc/inventory_bloc.dart';
 import '../../../inventory/presentation/bloc/inventory_event.dart';
 import '../../../inventory/presentation/bloc/inventory_state.dart';
+import '../bloc/pos_bloc.dart';
 import '../bloc/pos_event.dart';
 import '../bloc/pos_state.dart';
 import '../widget/check_out_sheet.dart';
@@ -27,49 +30,67 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
   final TextEditingController discountController = TextEditingController();
 
   String selectedCategory = 'All';
-  StreamSubscription<PosState>? _posSubscription;
+  Timer? _searchDebounceTimer;
+  String _lastRemoteSearchQuery = '';
+  bool _isSearching = false;
 
   @override
   void initState() {
     super.initState();
-    // Dispatch initial fetch events
-    InjectionContainer.inventoryBloc.add(const FetchInventoryItemsEvent());
-    InjectionContainer.customerBloc.add(const FetchCustomersEvent());
+    // Dispatch initial fetch events with maximum allowed backend limit (100)
+    context.read<InventoryBloc>().add(const FetchInventoryItemsEvent(limit: 100));
+    context.read<CustomerBloc>().add(const FetchCustomersEvent(limit: 100));
 
     discountController.addListener(() {
       final value = double.tryParse(discountController.text) ?? 0.0;
-      InjectionContainer.posBloc.add(ApplyDiscountEvent(value));
-    });
-
-    _posSubscription = InjectionContainer.posBloc.stream.listen((state) {
-      if (!mounted) return;
-      if (state is PosCheckoutSuccessState) {
-        discountController.clear();
-        showDialog(
-          context: context,
-          builder: (_) => SaleSuccessDialog(completedSale: state.completedSale),
-        );
-      } else if (state is PosCheckoutErrorState) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(state.message),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      context.read<PosBloc>().add(ApplyDiscountEvent(value));
     });
   }
 
   @override
   void dispose() {
-    _posSubscription?.cancel();
+    _searchDebounceTimer?.cancel();
     searchController.dispose();
     discountController.dispose();
     super.dispose();
   }
 
   void _onSearchChanged(String query) {
+    // 1. Instant local filter for in-memory products (0ms response)
     setState(() {});
+
+    _searchDebounceTimer?.cancel();
+    final trimmed = query.trim();
+
+    // If query is cleared and previously searched remotely, restore top 100 items
+    if (trimmed.isEmpty) {
+      _isSearching = false;
+      _lastRemoteSearchQuery = '';
+      context.read<InventoryBloc>().add(const FetchInventoryItemsEvent(searchQuery: '', limit: 100));
+      setState(() {});
+      return;
+    }
+
+    setState(() {
+      _isSearching = true;
+    });
+
+    // 2. Debounced remote search fallback to search entire database if item not in initial 100
+    _searchDebounceTimer = Timer(const Duration(milliseconds: 500), () {
+      if (_lastRemoteSearchQuery != trimmed) {
+        _lastRemoteSearchQuery = trimmed;
+        context.read<InventoryBloc>().add(
+          FetchInventoryItemsEvent(
+            searchQuery: trimmed,
+            limit: 100,
+          ),
+        );
+      } else {
+        setState(() {
+          _isSearching = false;
+        });
+      }
+    });
   }
 
   @override
@@ -77,26 +98,58 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () {
-            AppRoute.shellScaffoldKey.currentState?.openDrawer();
-          },
-          icon: const Icon(Icons.menu_rounded),
-        ),
-        title: const Text('POS Billing'),
-        actions: [
-          IconButton(
-            onPressed: () {
-              InjectionContainer.posBloc.add(const ClearCartEvent());
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<PosBloc, PosState>(
+          listener: (context, state) {
+            if (state is PosCheckoutSuccessState) {
               discountController.clear();
+              showDialog(
+                context: context,
+                builder: (_) => SaleSuccessDialog(completedSale: state.completedSale),
+              );
+            } else if (state is PosCheckoutErrorState) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          },
+        ),
+        BlocListener<InventoryBloc, InventoryState>(
+          listener: (context, state) {
+            if (state is InventoryLoadedState && !state.isListLoading) {
+              if (_isSearching) {
+                setState(() {
+                  _isSearching = false;
+                });
+              }
+            }
+          },
+        ),
+      ],
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            onPressed: () {
+              AppRoute.shellScaffoldKey.currentState?.openDrawer();
             },
-            tooltip: 'Clear Cart',
-            icon: const Icon(Icons.delete_sweep_outlined),
+            icon: const Icon(Icons.menu_rounded),
           ),
-        ],
-      ),
+          title: const Text('POS Billing'),
+          actions: [
+            IconButton(
+              onPressed: () {
+                context.read<PosBloc>().add(const ClearCartEvent());
+                discountController.clear();
+              },
+              tooltip: 'Clear Cart',
+              icon: const Icon(Icons.delete_sweep_outlined),
+            ),
+          ],
+        ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -124,21 +177,30 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
                       tooltip: 'Scan Barcode with Camera',
                       onPressed: () async {
                         final scannedCode = await BarcodeScannerService.scanBarcode(context);
+                        if (!context.mounted) return;
                         if (scannedCode != null && scannedCode.isNotEmpty) {
                           searchController.text = scannedCode;
                           setState(() {});
 
-                          final invState = InjectionContainer.inventoryBloc.state;
+                          final invState = context.read<InventoryBloc>().state;
                           if (invState is InventoryLoadedState) {
-                            final matchingItem = invState.items.firstWhere(
+                            final matches = invState.items.where(
                               (item) => item.sku.toLowerCase() == scannedCode.toLowerCase() || item.name.toLowerCase() == scannedCode.toLowerCase(),
-                              orElse: () => invState.items.first,
                             );
 
-                            InjectionContainer.posBloc.add(AddToCartEvent(matchingItem));
-                            if (context.mounted) {
+                            if (matches.isNotEmpty) {
+                              final matchingItem = matches.first;
+                              context.read<PosBloc>().add(AddToCartEvent(matchingItem));
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text('Scanned & Added "${matchingItem.name}" to Cart!'), backgroundColor: Colors.green.shade700),
+                              );
+                            } else {
+                              _lastRemoteSearchQuery = scannedCode;
+                              context.read<InventoryBloc>().add(
+                                FetchInventoryItemsEvent(
+                                  searchQuery: scannedCode,
+                                  limit: 100,
+                                ),
                               );
                             }
                           }
@@ -158,14 +220,10 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
             ),
           ),
 
-          // CATEGORIES & PRODUCT LIST (Streamed from InventoryBloc)
+          // CATEGORIES & PRODUCT LIST (BlocBuilder from InventoryBloc)
           Expanded(
-            child: StreamBuilder<InventoryState>(
-              stream: InjectionContainer.inventoryBloc.stream,
-              initialData: InjectionContainer.inventoryBloc.state,
-              builder: (context, snapshot) {
-                final state = snapshot.data;
-
+            child: BlocBuilder<InventoryBloc, InventoryState>(
+              builder: (context, state) {
                 if (state is InventoryLoadingState && state is! InventoryLoadedState) {
                   return const Center(child: CircularProgressIndicator());
                 }
@@ -221,48 +279,60 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
 
                     // PRODUCT LIST
                     Expanded(
-                      child: filteredProducts.isEmpty
+                      child: (_isSearching && filteredProducts.isEmpty)
                           ? const Center(
-                              child: Text(
-                                'No products available',
-                                style: TextStyle(color: Colors.grey),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  CircularProgressIndicator(),
+                                  SizedBox(height: 12),
+                                  Text(
+                                    'Searching database...',
+                                    style: TextStyle(color: Colors.grey, fontSize: 13),
+                                  ),
+                                ],
                               ),
                             )
-                          : StreamBuilder<PosState>(
-                              stream: InjectionContainer.posBloc.stream,
-                              initialData: InjectionContainer.posBloc.state,
-                              builder: (context, posSnapshot) {
-                                final posState = posSnapshot.data is PosCartState ? posSnapshot.data as PosCartState : const PosCartState(cartItems: []);
+                          : filteredProducts.isEmpty
+                              ? const Center(
+                                  child: Text(
+                                    'No products available',
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
+                                )
+                              : BlocBuilder<PosBloc, PosState>(
+                                  builder: (context, posState) {
+                                    final cartState = posState is PosCartState ? posState : const PosCartState(cartItems: []);
 
-                                return ListView.builder(
-                                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                                  itemCount: filteredProducts.length,
-                                  itemBuilder: (context, index) {
-                                    final product = filteredProducts[index];
-                                    final cartIndex = posState.cartItems.indexWhere((element) => element.item.id == product.id);
-                                    final quantity = cartIndex != -1 ? posState.cartItems[cartIndex].quantity : 0;
+                                    return ListView.builder(
+                                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                                      itemCount: filteredProducts.length,
+                                      itemBuilder: (context, index) {
+                                        final product = filteredProducts[index];
+                                        final cartIndex = cartState.cartItems.indexWhere((element) => element.item.id == product.id);
+                                        final quantity = cartIndex != -1 ? cartState.cartItems[cartIndex].quantity : 0;
 
-                                    return ProductCard(
-                                      product: product,
-                                      quantity: quantity,
-                                      onAdd: () {
-                                        InjectionContainer.posBloc.add(AddToCartEvent(product));
+                                        return ProductCard(
+                                          product: product,
+                                          quantity: quantity,
+                                          onAdd: () {
+                                            context.read<PosBloc>().add(AddToCartEvent(product));
+                                          },
+                                          onIncrease: () {
+                                            context.read<PosBloc>().add(AddToCartEvent(product));
+                                          },
+                                          onDecrease: () {
+                                            context.read<PosBloc>().add(UpdateCartQuantityEvent(
+                                              itemId: product.id,
+                                              quantity: quantity - 1,
+                                            ));
+                                          },
+                                          onRemove: () {},
+                                        );
                                       },
-                                      onIncrease: () {
-                                        InjectionContainer.posBloc.add(AddToCartEvent(product));
-                                      },
-                                      onDecrease: () {
-                                        InjectionContainer.posBloc.add(UpdateCartQuantityEvent(
-                                          itemId: product.id,
-                                          quantity: quantity - 1,
-                                        ));
-                                      },
-                                      onRemove: () {},
                                     );
                                   },
-                                );
-                              },
-                            ),
+                                ),
                     ),
                   ],
                 );
@@ -272,12 +342,10 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
         ],
       ),
 
-      // CART & CHECKOUT BOTTOM PANEL (Refactored to Scaffold bottomNavigationBar)
-      bottomNavigationBar: StreamBuilder<PosState>(
-        stream: InjectionContainer.posBloc.stream,
-        initialData: InjectionContainer.posBloc.state,
-        builder: (context, snapshot) {
-          final posState = snapshot.data is PosCartState ? snapshot.data as PosCartState : const PosCartState(cartItems: []);
+      // CART & CHECKOUT BOTTOM PANEL
+      bottomNavigationBar: BlocBuilder<PosBloc, PosState>(
+        builder: (context, posState) {
+          final cartState = posState is PosCartState ? posState : const PosCartState(cartItems: []);
 
           return Container(
             padding: const EdgeInsets.all(16),
@@ -297,17 +365,15 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // CUSTOMER SELECTION STREAM (Explicit height 48 to prevent Dropdown layout assertions)
-                  StreamBuilder<CustomerState>(
-                    stream: InjectionContainer.customerBloc.stream,
-                    initialData: InjectionContainer.customerBloc.state,
-                    builder: (context, custSnapshot) {
-                      final custState = custSnapshot.data is CustomerLoadedState ? custSnapshot.data as CustomerLoadedState : null;
-                      final customerList = custState?.customers ?? [];
+                  // CUSTOMER SELECTION BLOC BUILDER
+                  BlocBuilder<CustomerBloc, CustomerState>(
+                    builder: (context, custState) {
+                      final loadedCustState = custState is CustomerLoadedState ? custState : null;
+                      final customerList = loadedCustState?.customers ?? [];
 
                       CustomerEntity? selectedVal;
-                      if (posState.selectedCustomer != null) {
-                        final matchIndex = customerList.indexWhere((c) => c.id == posState.selectedCustomer!.id);
+                      if (cartState.selectedCustomer != null) {
+                        final matchIndex = customerList.indexWhere((c) => c.id == cartState.selectedCustomer!.id);
                         if (matchIndex != -1) {
                           selectedVal = customerList[matchIndex];
                         }
@@ -338,7 +404,7 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
                               }),
                             ],
                             onChanged: (cust) {
-                              InjectionContainer.posBloc.add(SelectPosCustomerEvent(cust));
+                              context.read<PosBloc>().add(SelectPosCustomerEvent(cust));
                             },
                           ),
                         ),
@@ -358,7 +424,7 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '${posState.totalItemCount} Items',
+                              '${cartState.totalItemCount} Items',
                               style: TextStyle(
                                 color: colorScheme.onSurfaceVariant,
                                 fontSize: 12,
@@ -366,7 +432,7 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              '৳${posState.netTotal.toStringAsFixed(2)}',
+                              '৳${cartState.netTotal.toStringAsFixed(2)}',
                               style: const TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
@@ -379,10 +445,10 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
                         width: 140,
                         height: 48,
                         child: ElevatedButton(
-                          onPressed: posState.cartItems.isEmpty
+                          onPressed: cartState.cartItems.isEmpty
                               ? null
                               : () {
-                                  _openCheckoutSheet(context, posState);
+                                  _openCheckoutSheet(context, cartState);
                                 },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: colorScheme.primary,
@@ -406,7 +472,8 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
           );
         },
       ),
-    );
+    ),
+  );
   }
 
   void _openCheckoutSheet(BuildContext context, PosCartState posState) {
@@ -414,16 +481,16 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) {
+      builder: (sheetContext) {
         return CheckOutSheet(
           cartItems: posState.cartItems,
           customer: posState.selectedCustomer,
           subtotal: posState.subtotal,
           discountController: discountController,
           onComplete: (paymentMethod, paidAmount) {
-            Navigator.pop(context);
+            Navigator.pop(sheetContext);
 
-            InjectionContainer.posBloc.add(SubmitCheckoutEvent(
+            context.read<PosBloc>().add(SubmitCheckoutEvent(
               paymentMethod: paymentMethod,
               paidAmount: paidAmount,
             ));

@@ -40,13 +40,14 @@ class CustomerRemoteDataSourceImpl implements CustomerRemoteDataSource {
     int limit = 20,
     String? search,
   }) async {
-    developer.log('👥 [CustomerRemoteDataSource] getCustomers() page: $page, limit: $limit, search: "$search"', name: 'CustomerRemoteDataSource');
+    final safeLimit = limit.clamp(1, 100);
+    developer.log('👥 [CustomerRemoteDataSource] getCustomers() page: $page, limit: $safeLimit (requested: $limit), search: "$search"', name: 'CustomerRemoteDataSource');
     try {
       final response = await apiClient.get(
         '${EnvConfig.apiBaseUrl}/api/customers',
         queryParameters: {
           'page': page,
-          'limit': limit,
+          'limit': safeLimit,
           if (search != null && search.isNotEmpty) 'search': search,
         },
       );

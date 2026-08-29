@@ -45,8 +45,10 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
       FetchInventoryItemsEvent event,
       Emitter<InventoryState> emit,
       ) async {
-    _currentSearchQuery = event.searchQuery ?? _currentSearchQuery;
-    _currentCategory = event.category ?? _currentCategory;
+    _currentSearchQuery = event.searchQuery ?? '';
+    if (event.category != null) {
+      _currentCategory = event.category!;
+    }
     _currentFilter = event.filter;
 
     if (_allItems.isEmpty && _fetchedCategories.isEmpty) {
