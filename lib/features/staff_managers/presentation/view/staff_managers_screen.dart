@@ -76,7 +76,6 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
       icon: Icons.delete_forever_rounded,
       confirmColor: Colors.red,
       onConfirm: () async {
-        Navigator.pop(context);
         InjectionContainer.staffBloc.add(DeleteStaffEvent(staffId));
       },
     );

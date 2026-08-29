@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../../core/widgets/global_empty_placeholder.dart';
+import '../../../../core/widgets/global_warning_dialog.dart';
 import '../../../customers/domain/entities/customer_entity.dart';
 import '../../../customers/presentation/bloc/customer_event.dart';
 import '../../../customers/presentation/bloc/customer_state.dart';
@@ -88,10 +89,19 @@ class _CustomersScreenState extends State<CustomersScreen> {
         icon: const Icon(Icons.person_add_alt_1_rounded),
         label: const Text('Add Customer'),
       ),
-      body: BlocConsumer<CustomerBloc,CustomerState>(
-        listener: (context, state){
-          // 🎯 Error State আসলে Pop-up Dialog শো করবে
-          if (state is CustomerErrorState) {
+      body: BlocConsumer<CustomerBloc, CustomerState>(
+        listenWhen: (previous, current) =>
+            current is CustomerOperationSuccessState || current is CustomerErrorState,
+        buildWhen: (previous, current) => current is! CustomerOperationSuccessState,
+        listener: (context, state) {
+          if (state is CustomerOperationSuccessState) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.green.shade700,
+              ),
+            );
+          } else if (state is CustomerErrorState) {
             showDialog(
               context: context,
               builder: (context) => AlertDialog(
@@ -257,35 +267,16 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
   // DELETE CUSTOMER
   void _deleteCustomer(CustomerEntity customer) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Delete Customer?'),
-          content: Text('Are you sure you want to delete ${customer.name}?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                context.read<CustomerBloc>().add(DeleteCustomerEvent(customer.id));
-
-                Navigator.pop(context);
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Customer deleted successfully'),
-                  ),
-                );
-              },
-              child: const Text('Delete'),
-            ),
-          ],
-        );
+    GlobalWarningDialog.show(
+      context,
+      title: 'Delete Customer?',
+      message: 'Are you sure you want to delete ${customer.name}?',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      icon: Icons.delete_forever_rounded,
+      confirmColor: Colors.red,
+      onConfirm: () {
+        context.read<CustomerBloc>().add(DeleteCustomerEvent(customer.id));
       },
     );
   }

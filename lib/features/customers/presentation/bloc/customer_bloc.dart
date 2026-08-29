@@ -129,7 +129,7 @@ class CustomerBloc extends Bloc<CustomerEvent, CustomerState> {
       emit(const CustomerOperationSuccessState('Customer deleted successfully!'));
       _emitLoadedState(emit);
     } catch (e) {
-      emit(CustomerErrorState(e.toString()));
+      emit(CustomerErrorState(e.toString(), previousCustomers: _allCustomers));
     }
   }
 
