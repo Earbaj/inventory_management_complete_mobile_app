@@ -68,57 +68,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 children: [
                   // Profile Avatar Card
-                  Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        children: [
-                          CircleAvatar(
-                            radius: 40,
-                            backgroundColor: colorScheme.primary,
-                            child: Text(
-                              _user!.name.isNotEmpty
-                                  ? _user!.name[0].toUpperCase()
-                                  : 'U',
-                              style: const TextStyle(
-                                fontSize: 32,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            _user!.name,
+                  Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 60,
+                          backgroundColor: colorScheme.primary,
+                          child: Text(
+                            _user!.name.isNotEmpty
+                                ? _user!.name[0].toUpperCase()
+                                : 'U',
                             style: const TextStyle(
-                              fontSize: 20,
+                              fontSize: 32,
+                              color: Colors.white,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Chip(
-                            label: Text(
-                              _user!.role.toUpperCase(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11,
-                              ),
-                            ),
-                            backgroundColor:
-                                _user!.role.toLowerCase() == 'superadmin'
-                                ? Colors.purple
-                                : _user!.role.toLowerCase() == 'admin'
-                                ? Colors.blue.shade700
-                                : Colors.teal,
-                            visualDensity: VisualDensity.compact,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _user!.name,
+                          style: const TextStyle(
+                            fontSize: 25,
+                            fontWeight: FontWeight.bold,
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 4),
+                        Chip(
+                          label: Text(
+                            _user!.role.toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                            ),
+                          ),
+                          backgroundColor:
+                          _user!.role.toLowerCase() == 'superadmin'
+                              ? Colors.purple
+                              : _user!.role.toLowerCase() == 'admin'
+                              ? Colors.blue.shade700
+                              : Colors.teal,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ],
                     ),
                   ),
 
@@ -137,7 +131,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Icons.email_outlined,
                             color: Colors.blue,
                           ),
-                          title: const Text('ইমেইল অ্যাড্রেস'),
+                          title: const Text('Email Address'),
                           subtitle: Text(_user!.email),
                         ),
                         const Divider(height: 1),
@@ -146,7 +140,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Icons.phone_outlined,
                             color: Colors.green,
                           ),
-                          title: const Text('মোবাইল নম্বর'),
+                          title: const Text('Mobile Number'),
                           subtitle: Text(
                             _user!.phone!.isNotEmpty ? _user!.phone! : 'N/A',
                           ),
@@ -159,7 +153,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               Icons.storefront_outlined,
                               color: Colors.orange,
                             ),
-                            title: const Text('দোকান / ব্যবসার নাম'),
+                            title: const Text('Shop / Business Name'),
                             subtitle: Text(_user!.shopName!),
                           ),
                         ],
@@ -189,7 +183,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               SizedBox(width: 8),
                               Text(
-                                'Danger Zone / অ্যাকাউন্ট ডিলিট',
+                                'Danger Zone / Account Delete',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: Colors.red,
@@ -200,7 +194,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'আপনার প্রোফাইল ও অ্যাকাউন্ট স্থায়ীভাবে ডিলিট করলে সকল অ্যাক্সেস বাতিল হবে।',
+                            "If you delete than your account delete permanently and all of it's data",
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.black87,
@@ -219,7 +213,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               icon: const Icon(Icons.delete_forever),
                               label: const Text(
-                                'প্রোফাইল অ্যাকাউন্ট ডিলিট করুন',
+                                'Delete Your Account',
                               ),
                               onPressed: () => _confirmDeleteAccount(context),
                             ),
