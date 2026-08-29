@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
+import '../../../../core/widgets/global_empty_placeholder.dart';
 import '../../../customers/domain/entities/customer_entity.dart';
 import '../../../customers/presentation/bloc/customer_event.dart';
 import '../../../customers/presentation/bloc/customer_state.dart';
@@ -20,7 +21,8 @@ class ReturnsScreen extends StatefulWidget {
   State<ReturnsScreen> createState() => _ReturnsScreenState();
 }
 
-class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProviderStateMixin {
+class _ReturnsScreenState extends State<ReturnsScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController searchController = TextEditingController();
   final TextEditingController reasonController = TextEditingController();
@@ -112,29 +114,40 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
         if (qty > 0) {
           final returnItem = ReturnItemEntity(
             id: '',
-            saleId: _selectedInvoice!.id.isNotEmpty ? _selectedInvoice!.id : _selectedInvoice!.invoiceNo,
+            saleId: _selectedInvoice!.id.isNotEmpty
+                ? _selectedInvoice!.id
+                : _selectedInvoice!.invoiceNo,
             invoiceNo: _selectedInvoice!.invoiceNo,
             itemId: item.item.id,
             itemName: item.item.name,
             customerId: _selectedCustomer?.id ?? _selectedInvoice!.customer?.id,
-            customerName: _selectedCustomer?.name ?? _selectedInvoice!.customer?.name ?? 'Walk-in Customer',
+            customerName:
+                _selectedCustomer?.name ??
+                _selectedInvoice!.customer?.name ??
+                'Walk-in Customer',
             returnQuantity: qty,
             unitPrice: item.item.retailSellPrice,
             totalRefundAmount: qty * item.item.retailSellPrice,
             refundMethod: _refundMethod,
             isRestocked: _isRestocked,
-            reason: reasonController.text.trim().isNotEmpty ? reasonController.text.trim() : 'Customer Return',
+            reason: reasonController.text.trim().isNotEmpty
+                ? reasonController.text.trim()
+                : 'Customer Return',
             createdAt: DateTime.now(),
           );
 
-          InjectionContainer.returnsBloc.add(ProcessReturnItemEvent(returnItem));
+          InjectionContainer.returnsBloc.add(
+            ProcessReturnItemEvent(returnItem),
+          );
           processedCount++;
         }
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Successfully processed return for $processedCount item(s) & restocked inventory!'),
+          content: Text(
+            'Successfully processed return for $processedCount item(s) & restocked inventory!',
+          ),
           backgroundColor: Colors.green[700],
         ),
       );
@@ -150,7 +163,10 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
     } catch (e) {
       setState(() => _isSubmitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to process return: $e'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('Failed to process return: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -200,22 +216,34 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
   // ==========================================
   // TAB 1: PROCESS RETURN & RESTOCK WORKFLOW
   // ==========================================
-  Widget _buildProcessReturnTab(BuildContext context, ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildProcessReturnTab(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
     // 1. Fetch Customers List
     final custSnapshot = InjectionContainer.customerBloc.state;
-    final List<CustomerEntity> customerList = custSnapshot is CustomerLoadedState ? custSnapshot.customers : [];
+    final List<CustomerEntity> customerList =
+        custSnapshot is CustomerLoadedState ? custSnapshot.customers : [];
 
     // 2. Fetch Sales Invoices List
     final reportsSnapshot = InjectionContainer.reportsBloc.state;
-    final List<SaleEntity> allInvoices = reportsSnapshot is ReportsLoadedState ? reportsSnapshot.invoiceLogs : [];
+    final List<SaleEntity> allInvoices = reportsSnapshot is ReportsLoadedState
+        ? reportsSnapshot.invoiceLogs
+        : [];
 
     // Filter invoices by selected customer
     final List<SaleEntity> filteredInvoices = allInvoices.where((sale) {
       if (_selectedCustomer == null) return true;
-      final matchId = sale.customer?.id.isNotEmpty == true && sale.customer!.id == _selectedCustomer!.id;
-      final matchName = sale.customer?.name.isNotEmpty == true &&
-          sale.customer!.name.trim().toLowerCase() == _selectedCustomer!.name.trim().toLowerCase();
-      final matchPhone = sale.customer?.phone.isNotEmpty == true &&
+      final matchId =
+          sale.customer?.id.isNotEmpty == true &&
+          sale.customer!.id == _selectedCustomer!.id;
+      final matchName =
+          sale.customer?.name.isNotEmpty == true &&
+          sale.customer!.name.trim().toLowerCase() ==
+              _selectedCustomer!.name.trim().toLowerCase();
+      final matchPhone =
+          sale.customer?.phone.isNotEmpty == true &&
           _selectedCustomer!.phone.isNotEmpty &&
           sale.customer!.phone.trim() == _selectedCustomer!.phone.trim();
       return matchId || matchName || matchPhone;
@@ -243,7 +271,10 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
           items: [
             const DropdownMenuItem<CustomerEntity?>(
               value: null,
-              child: Text('All Customers & Walk-in Invoices', style: TextStyle(fontWeight: FontWeight.w600)),
+              child: Text(
+                'All Customers & Walk-in Invoices',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
             ...customerList.map((customer) {
               return DropdownMenuItem<CustomerEntity?>(
@@ -280,24 +311,34 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
         Builder(
           builder: (context) {
             final SaleEntity? safeSelectedInvoice =
-                (filteredInvoices.contains(_selectedInvoice)) ? _selectedInvoice : null;
+                (filteredInvoices.contains(_selectedInvoice))
+                ? _selectedInvoice
+                : null;
 
             return DropdownButtonFormField<SaleEntity?>(
               value: safeSelectedInvoice,
               isExpanded: true,
               decoration: InputDecoration(
-                hintText: filteredInvoices.isEmpty ? 'No invoices found for this customer' : 'Choose an invoice',
+                hintText: filteredInvoices.isEmpty
+                    ? 'No invoices found for this customer'
+                    : 'Choose an invoice',
                 prefixIcon: const Icon(Icons.receipt_rounded),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 filled: true,
                 fillColor: colorScheme.surfaceContainerHighest,
               ),
               items: filteredInvoices.map((invoice) {
-                final dateStr = '${invoice.createdAt.day}/${invoice.createdAt.month}/${invoice.createdAt.year}';
+                final dateStr =
+                    '${invoice.createdAt.day}/${invoice.createdAt.month}/${invoice.createdAt.year}';
                 final hasDue = invoice.dueAmount > 0;
-                final isFullReturn = invoice.isReturned.toLowerCase().contains('full') ||
+                final isFullReturn =
+                    invoice.isReturned.toLowerCase().contains('full') ||
                     invoice.isReturned.toLowerCase() == 'returned';
-                final isPartialReturn = invoice.isReturned.toLowerCase().contains('parti');
+                final isPartialReturn = invoice.isReturned
+                    .toLowerCase()
+                    .contains('parti');
 
                 final String badgeText;
                 final Color badgeColor;
@@ -334,7 +375,10 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
                       ),
                       const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: badgeColor,
                           borderRadius: BorderRadius.circular(6),
@@ -363,7 +407,8 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
         if (_selectedInvoice != null) ...[
           Builder(
             builder: (context) {
-              final isFullyReturned = _selectedInvoice!.isReturned.toLowerCase().contains('full') ||
+              final isFullyReturned =
+                  _selectedInvoice!.isReturned.toLowerCase().contains('full') ||
                   _selectedInvoice!.isReturned.toLowerCase() == 'returned';
 
               return Column(
@@ -375,7 +420,9 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
                     decoration: BoxDecoration(
                       color: colorScheme.primary.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: colorScheme.primary.withValues(alpha: 0.2)),
+                      border: Border.all(
+                        color: colorScheme.primary.withValues(alpha: 0.2),
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -385,11 +432,17 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
                           children: [
                             Text(
                               'Invoice: ${_selectedInvoice!.invoiceNo}',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                             ),
                             Text(
                               'Total: ৳${_selectedInvoice!.netTotal.toStringAsFixed(0)}',
-                              style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.primary),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: colorScheme.primary,
+                              ),
                             ),
                           ],
                         ),
@@ -413,40 +466,66 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
                           children: [
                             Text(
                               'Paid: ৳${_selectedInvoice!.paidAmount.toStringAsFixed(0)}',
-                              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
                             ),
                             Row(
                               children: [
                                 if (isFullyReturned) ...[
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: Colors.red.withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
                                       'FULL RETURNED',
-                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.red[800]),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 11,
+                                        color: Colors.red[800],
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 6),
-                                ] else if (_selectedInvoice!.isReturned.toLowerCase() == 'partially_returned' ||
-                                    _selectedInvoice!.isReturned.toLowerCase() == 'partial') ...[
+                                ] else if (_selectedInvoice!.isReturned
+                                            .toLowerCase() ==
+                                        'partially_returned' ||
+                                    _selectedInvoice!.isReturned
+                                            .toLowerCase() ==
+                                        'partial') ...[
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: Colors.orange.withValues(alpha: 0.15),
+                                      color: Colors.orange.withValues(
+                                        alpha: 0.15,
+                                      ),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
                                       'PARTIAL RETURN',
-                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Colors.orange[900]),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 11,
+                                        color: Colors.orange[900],
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 6),
                                 ],
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 3,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: _selectedInvoice!.dueAmount > 0
                                         ? Colors.orange.withValues(alpha: 0.15)
@@ -460,7 +539,9 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 12,
-                                      color: _selectedInvoice!.dueAmount > 0 ? Colors.orange[800] : Colors.green[800],
+                                      color: _selectedInvoice!.dueAmount > 0
+                                          ? Colors.orange[800]
+                                          : Colors.green[800],
                                     ),
                                   ),
                                 ),
@@ -479,11 +560,17 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
                       decoration: BoxDecoration(
                         color: Colors.red.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.red.withValues(alpha: 0.4)),
+                        border: Border.all(
+                          color: Colors.red.withValues(alpha: 0.4),
+                        ),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
+                          const Icon(
+                            Icons.warning_amber_rounded,
+                            color: Colors.red,
+                            size: 28,
+                          ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
@@ -491,12 +578,19 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
                               children: [
                                 const Text(
                                   'Invoice Fully Returned!',
-                                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red, fontSize: 14),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.red,
+                                    fontSize: 14,
+                                  ),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
                                   'All items from Invoice #${_selectedInvoice!.invoiceNo} have already been returned & refunded.',
-                                  style: TextStyle(color: Colors.red[900], fontSize: 12),
+                                  style: TextStyle(
+                                    color: Colors.red[900],
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ],
                             ),
@@ -521,7 +615,8 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
             final itemId = cartItem.item.id;
             final purchasedQty = cartItem.quantity;
             final currentReturnQty = _returnQuantities[itemId] ?? 0;
-            final itemSubtotal = currentReturnQty * cartItem.item.retailSellPrice;
+            final itemSubtotal =
+                currentReturnQty * cartItem.item.retailSellPrice;
 
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
@@ -547,7 +642,11 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
                           color: colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Icon(Icons.inventory_2_outlined, color: colorScheme.primary, size: 22),
+                        child: Icon(
+                          Icons.inventory_2_outlined,
+                          color: colorScheme.primary,
+                          size: 22,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -556,7 +655,10 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
                           children: [
                             Text(
                               cartItem.item.name,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
                             ),
                             const SizedBox(height: 2),
                             Text(
@@ -582,38 +684,67 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
                   // STEPPER CONTROL FOR RETURN QUANTITY
                   Builder(
                     builder: (context) {
-                      final isFullyReturned = _selectedInvoice!.isReturned.toLowerCase().contains('full') ||
-                          _selectedInvoice!.isReturned.toLowerCase() == 'returned';
+                      final isFullyReturned =
+                          _selectedInvoice!.isReturned.toLowerCase().contains(
+                            'full',
+                          ) ||
+                          _selectedInvoice!.isReturned.toLowerCase() ==
+                              'returned';
 
                       return Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
                             'Return Quantity:',
-                            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
                           ),
                           Row(
                             children: [
                               IconButton.filledTonal(
-                                onPressed: !isFullyReturned && currentReturnQty > 0
-                                    ? () => _updateReturnQuantity(itemId, purchasedQty, -1)
+                                onPressed:
+                                    !isFullyReturned && currentReturnQty > 0
+                                    ? () => _updateReturnQuantity(
+                                        itemId,
+                                        purchasedQty,
+                                        -1,
+                                      )
                                     : null,
                                 icon: const Icon(Icons.remove, size: 18),
-                                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                                constraints: const BoxConstraints(
+                                  minWidth: 36,
+                                  minHeight: 36,
+                                ),
                               ),
                               Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 14),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                ),
                                 child: Text(
                                   '$currentReturnQty / $purchasedQty',
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
                                 ),
                               ),
                               IconButton.filledTonal(
-                                onPressed: !isFullyReturned && currentReturnQty < purchasedQty
-                                    ? () => _updateReturnQuantity(itemId, purchasedQty, 1)
+                                onPressed:
+                                    !isFullyReturned &&
+                                        currentReturnQty < purchasedQty
+                                    ? () => _updateReturnQuantity(
+                                        itemId,
+                                        purchasedQty,
+                                        1,
+                                      )
                                     : null,
                                 icon: const Icon(Icons.add, size: 18),
-                                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                                constraints: const BoxConstraints(
+                                  minWidth: 36,
+                                  minHeight: 36,
+                                ),
                               ),
                             ],
                           ),
@@ -634,7 +765,9 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: theme.dividerColor.withValues(alpha: 0.4)),
+              border: Border.all(
+                color: theme.dividerColor.withValues(alpha: 0.4),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -642,15 +775,27 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Total Return Items:', style: TextStyle(fontSize: 14)),
-                    Text('$_totalReturnItemsCount units', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Total Return Items:',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                    Text(
+                      '$_totalReturnItemsCount units',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Total Refund Amount:', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Total Refund Amount:',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     Text(
                       '৳${_calculatedRefundTotal.toStringAsFixed(2)}',
                       style: TextStyle(
@@ -666,7 +811,9 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
                 // RESTOCK INVENTORY SWITCH
                 SwitchListTile(
                   title: const Text('Restock Product(s) back into Inventory'),
-                  subtitle: const Text('Increases available stock in warehouse'),
+                  subtitle: const Text(
+                    'Increases available stock in warehouse',
+                  ),
                   value: _isRestocked,
                   contentPadding: EdgeInsets.zero,
                   onChanged: (val) => setState(() => _isRestocked = val),
@@ -675,7 +822,10 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
                 const SizedBox(height: 10),
 
                 // REFUND METHOD
-                const Text('Refund Method', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                const Text(
+                  'Refund Method',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
                 const SizedBox(height: 6),
                 Row(
                   children: [
@@ -718,12 +868,16 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
                   decoration: BoxDecoration(
                     color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: theme.dividerColor.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Row(
                     children: [
                       Icon(
-                        _refundMethod == 'due_adjust' ? Icons.account_balance_wallet_outlined : Icons.payments_outlined,
+                        _refundMethod == 'due_adjust'
+                            ? Icons.account_balance_wallet_outlined
+                            : Icons.payments_outlined,
                         size: 18,
                         color: colorScheme.primary,
                       ),
@@ -733,9 +887,11 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
                           _refundMethod == 'due_adjust'
                               ? 'Adjusts against customer\'s due balance or adds to Advance Store Credit.'
                               : (_refundMethod == 'bkash'
-                                  ? 'Money sent via bKash to customer. Customer due balance is not affected.'
-                                  : 'Cash given directly to customer. Customer due balance is not affected.'),
-                          style: theme.textTheme.bodySmall?.copyWith(fontSize: 12),
+                                    ? 'Money sent via bKash to customer. Customer due balance is not affected.'
+                                    : 'Cash given directly to customer. Customer due balance is not affected.'),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     ],
@@ -749,7 +905,9 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
                   controller: reasonController,
                   decoration: InputDecoration(
                     hintText: 'Reason for return (e.g. Damaged, Wrong size)',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     filled: true,
                     fillColor: colorScheme.surface,
                   ),
@@ -759,19 +917,33 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
 
                 // SUBMIT BUTTON
                 FilledButton.icon(
-                  onPressed: _totalReturnItemsCount == 0 || _isSubmitting ? null : _submitProductReturn,
+                  onPressed: _totalReturnItemsCount == 0 || _isSubmitting
+                      ? null
+                      : _submitProductReturn,
                   icon: _isSubmitting
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
                       : const Icon(Icons.check_circle_rounded),
                   label: Text(
                     _isSubmitting
                         ? 'Processing Return...'
                         : 'Submit Return & Restock (৳${_calculatedRefundTotal.toStringAsFixed(0)})',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
                   ),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(52),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                 ),
               ],
@@ -795,7 +967,11 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
   // ==========================================
   // TAB 2: RETURN TRANSACTION HISTORY LOGS
   // ==========================================
-  Widget _buildHistoryTab(BuildContext context, ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildHistoryTab(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
     return StreamBuilder<ReturnsState>(
       stream: InjectionContainer.returnsBloc.stream,
       initialData: InjectionContainer.returnsBloc.state,
@@ -810,10 +986,14 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
         final returnLogs = loadedState?.filteredLogs ?? [];
 
         final custSnapshot = InjectionContainer.customerBloc.state;
-        final List<CustomerEntity> customerList = custSnapshot is CustomerLoadedState ? custSnapshot.customers : [];
+        final List<CustomerEntity> customerList =
+            custSnapshot is CustomerLoadedState ? custSnapshot.customers : [];
 
         final reportsSnapshot = InjectionContainer.reportsBloc.state;
-        final List<SaleEntity> allInvoices = reportsSnapshot is ReportsLoadedState ? reportsSnapshot.invoiceLogs : [];
+        final List<SaleEntity> allInvoices =
+            reportsSnapshot is ReportsLoadedState
+            ? reportsSnapshot.invoiceLogs
+            : [];
 
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 30),
@@ -847,11 +1027,10 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
             ),
 
             if (returnLogs.isEmpty)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(32.0),
-                  child: Text('No return logs found.', style: TextStyle(color: Colors.grey)),
-                ),
+              const GlobalEmptyPlaceholder(
+                title: 'No return logs found.',
+                subtitle:
+                    'Next Time When You Return An Item You Found It Here.',
               )
             else
               ListView.separated(
@@ -861,12 +1040,15 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
                 separatorBuilder: (_, __) => const SizedBox(height: 10),
                 itemBuilder: (context, index) {
                   final item = returnLogs[index];
-                  final dateStr = '${item.createdAt.day}/${item.createdAt.month}/${item.createdAt.year}';
+                  final dateStr =
+                      '${item.createdAt.day}/${item.createdAt.month}/${item.createdAt.year}';
 
                   // Dynamic customer name resolution from loaded Bloc states
                   String resolvedCustomerName = item.customerName ?? '';
-                  if (resolvedCustomerName.isEmpty || resolvedCustomerName == 'Walk-in Customer') {
-                    if (item.customerId != null && item.customerId!.isNotEmpty) {
+                  if (resolvedCustomerName.isEmpty ||
+                      resolvedCustomerName == 'Walk-in Customer') {
+                    if (item.customerId != null &&
+                        item.customerId!.isNotEmpty) {
                       for (final cust in customerList) {
                         if (cust.id == item.customerId) {
                           resolvedCustomerName = cust.name;
@@ -874,9 +1056,11 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
                         }
                       }
                     }
-                    if (resolvedCustomerName.isEmpty || resolvedCustomerName == 'Walk-in Customer') {
+                    if (resolvedCustomerName.isEmpty ||
+                        resolvedCustomerName == 'Walk-in Customer') {
                       for (final inv in allInvoices) {
-                        if (inv.invoiceNo == item.invoiceNo || inv.id == item.saleId) {
+                        if (inv.invoiceNo == item.invoiceNo ||
+                            inv.id == item.saleId) {
                           if (inv.customer?.name.isNotEmpty == true) {
                             resolvedCustomerName = inv.customer!.name;
                             break;
@@ -894,7 +1078,9 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.5)),
+                      side: BorderSide(
+                        color: theme.dividerColor.withValues(alpha: 0.5),
+                      ),
                     ),
                     color: colorScheme.surface,
                     child: InkWell(
@@ -912,10 +1098,16 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
                               children: [
                                 Text(
                                   item.invoiceNo,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
                                 ),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: colorScheme.primaryContainer,
                                     borderRadius: BorderRadius.circular(8),
@@ -938,22 +1130,33 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
                                 Expanded(
                                   child: Text(
                                     'Item: ${item.itemName} (Qty: ${item.returnQuantity})',
-                                    style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: item.isRestocked ? Colors.green.withValues(alpha: 0.12) : Colors.orange.withValues(alpha: 0.12),
+                                    color: item.isRestocked
+                                        ? Colors.green.withValues(alpha: 0.12)
+                                        : Colors.orange.withValues(alpha: 0.12),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
-                                    item.isRestocked ? 'Restocked' : 'Not Restocked',
+                                    item.isRestocked
+                                        ? 'Restocked'
+                                        : 'Not Restocked',
                                     style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
-                                      color: item.isRestocked ? Colors.green[800] : Colors.orange[800],
+                                      color: item.isRestocked
+                                          ? Colors.green[800]
+                                          : Colors.orange[800],
                                     ),
                                   ),
                                 ),
@@ -965,16 +1168,23 @@ class _ReturnsScreenState extends State<ReturnsScreen> with SingleTickerProvider
                               children: [
                                 Text(
                                   'Customer: $resolvedCustomerName',
-                                  style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                                 Text(dateStr, style: theme.textTheme.bodySmall),
                               ],
                             ),
-                            if (item.reason != null && item.reason!.isNotEmpty) ...[
+                            if (item.reason != null &&
+                                item.reason!.isNotEmpty) ...[
                               const SizedBox(height: 4),
                               Text(
                                 'Reason: ${item.reason}',
-                                style: TextStyle(fontSize: 12, color: Colors.grey[700], fontStyle: FontStyle.italic),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[700],
+                                  fontStyle: FontStyle.italic,
+                                ),
                               ),
                             ],
                           ],
