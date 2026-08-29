@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/route/app_route.dart';
+import '../../../../core/widgets/global_empty_placeholder.dart';
 import '../../domain/entities/expense_entity.dart';
 import '../bloc/expenses_bloc.dart';
 import '../bloc/expenses_event.dart';
@@ -262,29 +263,9 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
 
                 // EXPENSES LIST
                 if (expenses.isEmpty)
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.receipt_long_outlined, size: 64, color: Colors.grey.shade400),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No Expenses Found',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey.shade700,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          const Text(
-                            'Tap + Record Expense button below to log shop expenses.',
-                            style: TextStyle(color: Colors.grey, fontSize: 13),
-                          ),
-                        ],
-                      ),
-                    ),
+                  GlobalEmptyPlaceholder.sliver(
+                    title: 'NO Shop Expenses Found',
+                    subtitle: 'Record Expenses To Start Your Business.',
                   )
                 else
                   SliverPadding(
