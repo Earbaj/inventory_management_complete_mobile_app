@@ -355,7 +355,7 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
 
                       // Role Dropdown
                       DropdownButtonFormField<StaffRole>(
-                        value: _selectedRole,
+                        initialValue: _selectedRole,
                         decoration: const InputDecoration(
                           labelText: 'Role *',
                           prefixIcon: Icon(Icons.badge_outlined),
@@ -390,7 +390,7 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
                         )
                       else if (_branches.isNotEmpty)
                         DropdownButtonFormField<String>(
-                          value: _selectedBranchId,
+                          initialValue: _selectedBranchId,
                           decoration: const InputDecoration(
                             labelText: 'Select Branch *',
                             prefixIcon: Icon(Icons.store_outlined),

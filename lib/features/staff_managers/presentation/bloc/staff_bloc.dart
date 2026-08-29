@@ -39,13 +39,15 @@ class StaffBloc extends Bloc<StaffEvent, StaffState> {
 
     if (_allStaffMembers.isEmpty) {
       emit(const StaffLoadingState());
+    } else {
+      _emitLoadedState(emit, isListLoading: true);
     }
 
     try {
       _allStaffMembers = await getStaffMembersUseCase();
-      _emitLoadedState(emit);
+      _emitLoadedState(emit, isListLoading: false);
     } catch (e) {
-      emit(StaffErrorState(e.toString()));
+      emit(StaffErrorState(e.toString(), previousStaff: _allStaffMembers));
     }
   }
 
@@ -71,7 +73,7 @@ class StaffBloc extends Bloc<StaffEvent, StaffState> {
       emit(const StaffOperationSuccessState('Staff member added successfully!'));
       _emitLoadedState(emit);
     } catch (e) {
-      emit(StaffErrorState(e.toString()));
+      emit(StaffErrorState(e.toString(), previousStaff: _allStaffMembers));
     }
   }
 
@@ -90,7 +92,7 @@ class StaffBloc extends Bloc<StaffEvent, StaffState> {
       emit(const StaffOperationSuccessState('Staff details updated successfully!'));
       _emitLoadedState(emit);
     } catch (e) {
-      emit(StaffErrorState(e.toString()));
+      emit(StaffErrorState(e.toString(), previousStaff: _allStaffMembers));
     }
   }
 
@@ -105,11 +107,11 @@ class StaffBloc extends Bloc<StaffEvent, StaffState> {
       emit(const StaffOperationSuccessState('Staff member deleted successfully!'));
       _emitLoadedState(emit);
     } catch (e) {
-      emit(StaffErrorState(e.toString()));
+      emit(StaffErrorState(e.toString(), previousStaff: _allStaffMembers));
     }
   }
 
-  void _emitLoadedState(Emitter<StaffState> emit) {
+  void _emitLoadedState(Emitter<StaffState> emit, {bool isListLoading = false}) {
     final query = _currentSearchQuery.trim().toLowerCase();
     final filtered = _allStaffMembers.where((staff) {
       final matchesSearch = query.isEmpty ||
@@ -125,6 +127,7 @@ class StaffBloc extends Bloc<StaffEvent, StaffState> {
       staffMembers: _allStaffMembers,
       filteredStaff: filtered,
       searchQuery: _currentSearchQuery,
+      isListLoading: isListLoading,
     ));
   }
 }
