@@ -108,27 +108,6 @@ class GlobalEmptyPlaceholder extends StatelessWidget {
             ),
           ),
         ],
-
-        // Action Button
-        if (actionButton != null) ...[
-          const SizedBox(height: 20),
-          actionButton!,
-        ] else if (actionText != null && onAction != null) ...[
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: onAction,
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text(
-              actionText!,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
       ],
     );
 

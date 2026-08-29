@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/route/app_route.dart';
+import '../../../../core/widgets/global_empty_placeholder.dart';
 import '../bloc/recycle_bin_bloc.dart';
 import '../bloc/recycle_bin_event.dart';
 import '../bloc/recycle_bin_state.dart';
@@ -307,40 +308,13 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
               // RECYCLE BIN LIST WITH PAGINATION
               Expanded(
                 child: trashItems.isEmpty
-                    ? RefreshIndicator(
-                        onRefresh: () => _onRefresh(context),
-                        child: SingleChildScrollView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          child: Container(
-                            height: MediaQuery.of(context).size.height * 0.5,
-                            alignment: Alignment.center,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.restore_from_trash_rounded,
-                                  size: 64,
-                                  color: Colors.grey.shade400,
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'Recycle Bin is Empty',
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.grey.shade700,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  'No soft-deleted records match your filter criteria.',
-                                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      )
-                    : RefreshIndicator(
+                    ? GlobalEmptyPlaceholder(
+          title: 'Recycle Bin is Empty',
+          subtitle: 'No soft-deleted records match your filter criteria.',
+          actionText: 'Add Product',
+          onAction: () {
+          },
+          ) : RefreshIndicator(
                         onRefresh: () => _onRefresh(context),
                         child: ListView.builder(
                           controller: _scrollController,
