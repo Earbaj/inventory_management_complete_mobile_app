@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
+import '../../../../core/widgets/global_empty_placeholder.dart';
 import '../../../customers/domain/entities/customer_entity.dart';
 import '../../../customers/presentation/bloc/customer_event.dart';
 import '../../../customers/presentation/bloc/customer_state.dart';
@@ -182,7 +183,10 @@ class _CustomersScreenState extends State<CustomersScreen> {
               // LIST
               Expanded(
                 child: filteredCustomers.isEmpty
-                    ? const EmptyCustomers()
+                    ? const GlobalEmptyPlaceholder(
+                  title: 'No customers found',
+                  subtitle: 'Tap Add Customer To Create Customer And Sell.',
+                )
                     : ListView.builder(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
                         itemCount: filteredCustomers.length,
