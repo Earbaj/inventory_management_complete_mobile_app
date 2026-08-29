@@ -14,6 +14,7 @@ import '../../../inventory/presentation/bloc/inventory_event.dart';
 import '../../../inventory/presentation/bloc/inventory_state.dart';
 import '../../../reports/presentation/bloc/reports_event.dart';
 import '../../../reports/presentation/bloc/reports_state.dart';
+import '../widgets/dashboard_shimmer.dart';
 import '../widgets/profit_chart.dart';
 import '../widgets/recent_transactions.dart';
 import '../widgets/sales_chart.dart';
@@ -33,6 +34,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
   String selectedPeriod = 'This Month';
   String? _selectedBranchId;
   List<BranchEntity> _branches = [];
+  bool _isLoading = false;
 
   @override
   bool get wantKeepAlive => true;
@@ -40,10 +42,23 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
   @override
   void initState() {
     super.initState();
-    context.read<ReportsBloc>().add(const FetchReportsEvent());
+    _fetchDashboardData();
+  }
+
+  Future<void> _fetchDashboardData() async {
+    setState(() {
+      _isLoading = true;
+    });
+    context.read<ReportsBloc>().add(FetchReportsEvent(branchId: _selectedBranchId));
     context.read<InventoryBloc>().add(const FetchInventoryItemsEvent());
     context.read<CustomerBloc>().add(const FetchCustomersEvent());
-    _loadBranches();
+    await _loadBranches();
+    await Future.delayed(const Duration(milliseconds: 600));
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _loadBranches() async {
@@ -83,120 +98,133 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
           },
         builder: (context, isAdmin) {
           return SafeArea(
-            child: CustomScrollView(
-              slivers: [
-                // HEADER WITH SHOP & USER PROFILE
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          onPressed: () {
-                            AppRoute.shellScaffoldKey.currentState?.openDrawer();
-                          },
-                          style: IconButton.styleFrom(
-                            backgroundColor: colorScheme.surface,
-                          ),
-                          icon: const Icon(Icons.menu_rounded),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: BlocBuilder<AuthBloc, AuthState>(
-                            builder: (context, authState) {
-                              final userName = authState is AuthenticatedState ? (authState.user?.name ?? 'Owner') : 'Owner';
-                              final shopName = authState is AuthenticatedState ? (authState.user?.shopName ?? 'Smart Inventory Store') : 'Smart Inventory Store';
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    getGreeting(),
-                                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    userName,
-                                    style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.w600),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () {
-                            // Event Dispatching via context
-                            context.read<ReportsBloc>().add(FetchReportsEvent(branchId: _selectedBranchId));
-                            context.read<InventoryBloc>().add(const FetchInventoryItemsEvent());
-                            context.read<CustomerBloc>().add(const FetchCustomersEvent());
-                          },
-                          icon: const Icon(Icons.refresh_rounded),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // ADMIN BRANCH FILTER DROPDOWN
-                if (isAdmin && _branches.isNotEmpty)
+            child: RefreshIndicator(
+              onRefresh: () => _fetchDashboardData(),
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  // HEADER WITH SHOP & USER PROFILE
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String?>(
-                            value: _selectedBranchId,
-                            isExpanded: true,
-                            hint: const Row(
-                              children: [
-                                Icon(Icons.store_rounded, size: 20, color: Colors.blue),
-                                SizedBox(width: 8),
-                                Text('All Branches (Shop Aggregate)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                              ],
-                            ),
-                            items: [
-                              const DropdownMenuItem<String?>(
-                                value: null,
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.store_rounded, size: 20, color: Colors.blue),
-                                    SizedBox(width: 8),
-                                    Text('All Branches (Shop Aggregate)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                                  ],
-                                ),
-                              ),
-                              ..._branches.map((b) {
-                                return DropdownMenuItem<String?>(
-                                  value: b.id,
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.location_on_outlined, size: 18, color: Colors.indigo),
-                                      const SizedBox(width: 8),
-                                      Text(b.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                                    ],
-                                  ),
-                                );
-                              }),
-                            ],
-                            onChanged: (branchId) {
-                              setState(() {
-                                _selectedBranchId = branchId;
-                              });
-                              context.read<ReportsBloc>().add(FetchReportsEvent(branchId: branchId));
+                      padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              AppRoute.shellScaffoldKey.currentState?.openDrawer();
                             },
+                            style: IconButton.styleFrom(
+                              backgroundColor: colorScheme.surface,
+                            ),
+                            icon: const Icon(Icons.menu_rounded),
                           ),
-                        ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: BlocBuilder<AuthBloc, AuthState>(
+                              builder: (context, authState) {
+                                final userName = authState is AuthenticatedState ? (authState.user?.name ?? 'Owner') : 'Owner';
+                                final shopName = authState is AuthenticatedState ? (authState.user?.shopName ?? 'Smart Inventory Store') : 'Smart Inventory Store';
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      getGreeting(),
+                                      style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      userName,
+                                      style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: _isLoading ? null : () => _fetchDashboardData(),
+                            icon: _isLoading
+                                ? SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.2,
+                                      color: colorScheme.primary,
+                                    ),
+                                  )
+                                : const Icon(Icons.refresh_rounded),
+                          ),
+                        ],
                       ),
                     ),
                   ),
 
-                // QUICK NAVIGATION ACTIONS
+                  // ADMIN BRANCH FILTER DROPDOWN
+                  if (isAdmin && _branches.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String?>(
+                              value: _selectedBranchId,
+                              isExpanded: true,
+                              hint: const Row(
+                                children: [
+                                  Icon(Icons.store_rounded, size: 20, color: Colors.blue),
+                                  SizedBox(width: 8),
+                                  Text('All Branches (Shop Aggregate)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                              items: [
+                                const DropdownMenuItem<String?>(
+                                  value: null,
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.store_rounded, size: 20, color: Colors.blue),
+                                      SizedBox(width: 8),
+                                      Text('All Branches (Shop Aggregate)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                    ],
+                                  ),
+                                ),
+                                ..._branches.map((b) {
+                                  return DropdownMenuItem<String?>(
+                                    value: b.id,
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.location_on_outlined, size: 18, color: Colors.indigo),
+                                        const SizedBox(width: 8),
+                                        Text(b.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                      ],
+                                    ),
+                                  );
+                                }),
+                              ],
+                              onChanged: (branchId) {
+                                setState(() {
+                                  _selectedBranchId = branchId;
+                                });
+                                _fetchDashboardData();
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  // SHIMMER LOADER OR DASHBOARD CONTENT
+                  if (_isLoading)
+                    SliverToBoxAdapter(
+                      child: DashboardShimmerView(isAdmin: isAdmin),
+                    )
+                  else ...[
+                    // QUICK NAVIGATION ACTIONS
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
@@ -423,8 +451,10 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                   ),
                 ),
               ],
-            ),
-          );
+            ],
+          ),
+        ),
+      );
         }
       ),
     );
