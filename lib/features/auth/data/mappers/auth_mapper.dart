@@ -12,15 +12,7 @@ class AuthMapper {
       role: model.role,
       shopName: model.shopName,
       phone: model.phone,
-      subscription: model.subscription != null
-          ? UserSubscriptionEntity(
-              planName: model.subscription!.planName,
-              status: model.subscription!.status,
-              expiresAt: model.subscription!.expiresAt != null
-                  ? DateTime.tryParse(model.subscription!.expiresAt!)
-                  : null,
-            )
-          : null,
+      subscription: model.subscription,
     );
   }
 

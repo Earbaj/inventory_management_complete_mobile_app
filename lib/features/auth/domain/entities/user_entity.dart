@@ -17,7 +17,7 @@ class UserEntity {
   final String role;
   final String? shopName;
   final String? phone;
-  final UserSubscriptionEntity? subscription;
+  final String? subscription;
 
   const UserEntity({
     required this.id,

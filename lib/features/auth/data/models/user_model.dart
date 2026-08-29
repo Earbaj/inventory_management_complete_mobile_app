@@ -33,7 +33,8 @@ class UserModel {
   final String role;
   final String? shopName;
   final String? phone;
-  final UserSubscriptionModel? subscription;
+  final String? subscription;
+  final String? subscriptionExpierAt;
 
   const UserModel({
     required this.id,
@@ -43,6 +44,7 @@ class UserModel {
     this.shopName,
     this.phone,
     this.subscription,
+    this.subscriptionExpierAt
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -53,9 +55,8 @@ class UserModel {
       role: json['role'] ?? 'shop_owner',
       shopName: json['shopName'] ?? json['shop_name'],
       phone: json['phone'],
-      subscription: json['subscription'] != null
-          ? UserSubscriptionModel.fromJson(json['subscription'])
-          : null,
+      subscription: json['subscriptionTier'] ?? "" ,
+      subscriptionExpierAt: json['subscriptionExpiresAt'] ?? "" ,
     );
   }
 
@@ -67,7 +68,8 @@ class UserModel {
       'role': role,
       'shopName': shopName,
       'phone': phone,
-      'subscription': subscription?.toJson(),
+      'subscription': subscription,
+      'subscriptionExpierAt':subscriptionExpierAt,
     };
   }
 }

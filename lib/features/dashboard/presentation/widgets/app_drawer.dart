@@ -46,8 +46,8 @@ class AppDrawer extends StatelessWidget {
         final isSuperAdmin = role == 'superadmin' || role == 'super_admin';
         final isOwnerOrAdmin = role == 'owner' || role == 'admin' || isSuperAdmin;
         final isManager = role == 'manager';
-        final planName = user?.subscription?.planName.toLowerCase() ?? 'free';
-        final isPremiumUser = planName != 'free';
+        final planName = user?.subscription ?? 'free';
+        final isPremiumUser = planName == 'premium';
 
         return Drawer(
           width: MediaQuery.sizeOf(context).width * 0.82,
