@@ -462,7 +462,6 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                                     ? 'Overall Discount (%)'
                                     : 'Overall Discount (৳)',
                                 hintText: _overallDiscountType == 'percent' ? 'e.g. 10' : 'e.g. 50',
-                                helperText: _getOverallDiscountHelperText(subtotalAfterItemDiscounts),
                                 helperMaxLines: 2,
                                 prefixIcon: Icon(
                                   _overallDiscountType == 'percent' ? Icons.percent_rounded : Icons.attach_money_rounded,
@@ -552,7 +551,8 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                           ),
                         ],
                       ),
-
+                      const SizedBox(height: 5),
+                      Text(_getOverallDiscountHelperText(subtotalAfterItemDiscounts)),
                       const SizedBox(height: 18),
 
                       // SUMMARY BREAKDOWN BOX
