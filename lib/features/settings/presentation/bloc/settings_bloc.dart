@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer' as developer;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/utils/money_util.dart';
 import '../../domain/entities/shop_profile_entity.dart';
 import '../../domain/entities/subscription_entity.dart';
 import '../../domain/usecases/get_shop_profile_usecase.dart';
@@ -43,7 +44,10 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       developer.log('⚙️ [SettingsBloc] Fetching shop profile...', name: 'SettingsBloc');
       final profile = await getShopProfileUseCase();
       _currentProfile = profile;
-      developer.log('✅ [SettingsBloc] Shop profile fetched successfully: ${profile.shopName}', name: 'SettingsBloc');
+      await MoneyUtil.persistCurrency(
+        profile.currencyCode.isNotEmpty ? profile.currencyCode : profile.currencySymbol,
+      );
+      developer.log('✅ [SettingsBloc] Shop profile fetched successfully: ${profile.shopName} (Currency: ${profile.currencySymbol})', name: 'SettingsBloc');
 
       developer.log('⚙️ [SettingsBloc] Fetching subscription status...', name: 'SettingsBloc');
       _currentSubscription = await getSubscriptionStatusUseCase();
@@ -66,6 +70,9 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     try {
       final updatedProfile = await updateShopProfileUseCase(event.profile);
       _currentProfile = updatedProfile;
+      await MoneyUtil.persistCurrency(
+        updatedProfile.currencyCode.isNotEmpty ? updatedProfile.currencyCode : updatedProfile.currencySymbol,
+      );
       emit(const SettingsOperationSuccessState('Shop settings updated successfully!'));
       if (_currentProfile != null && _currentSubscription != null) {
         emit(SettingsLoadedState(profile: _currentProfile!, subscription: _currentSubscription!));

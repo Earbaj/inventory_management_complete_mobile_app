@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 
 import '../../pos_product.dart';
 
@@ -62,7 +63,7 @@ class CheckoutProductRow
                 ),
 
                 Text(
-                  '৳ ${product.price.toStringAsFixed(0)}',
+                  '${MoneyUtil.currencySymbol} ${product.price.toStringAsFixed(0)}',
                   style: theme
                       .textTheme
                       .bodySmall,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/excel_export_service.dart';
@@ -400,7 +401,7 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
                           ),
                           const SizedBox(height: 5),
                           Text(
-                            '৳ ${displayBalance.toStringAsFixed(2)}',
+                            '${MoneyUtil.currencySymbol} ${displayBalance.toStringAsFixed(2)}',
                             style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: cardColor),
                           ),
                           const SizedBox(height: 4),

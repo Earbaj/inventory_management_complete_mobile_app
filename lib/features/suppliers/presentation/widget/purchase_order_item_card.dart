@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import '../../domain/entities/purchase_order_entity.dart';
 import '../../domain/entities/supplier_entity.dart';
 
@@ -152,7 +153,7 @@ class PurchaseOrderItemCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          '৳${item.totalPrice.toStringAsFixed(0)}',
+                          '${MoneyUtil.currencySymbol}${item.totalPrice.toStringAsFixed(0)}',
                           style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                         ),
                       ],
@@ -177,12 +178,12 @@ class PurchaseOrderItemCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Total: ৳${order.totalAmount.toStringAsFixed(0)}',
+                    'Total: ${MoneyUtil.currencySymbol}${order.totalAmount.toStringAsFixed(0)}',
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                   Text(
                     order.dueAmount > 0
-                        ? 'Due: ৳${order.dueAmount.toStringAsFixed(0)}'
+                        ? 'Due: ${MoneyUtil.currencySymbol}${order.dueAmount.toStringAsFixed(0)}'
                         : 'Paid in Full',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,

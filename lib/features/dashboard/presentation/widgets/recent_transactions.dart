@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../reports/presentation/bloc/reports_state.dart';
@@ -57,7 +58,7 @@ class RecentTransactions extends StatelessWidget {
                 ...logs.take(5).map((sale) {
                   final isDue = sale.dueAmount > 0;
                   final statusColor = isDue ? const Color(0xFFF97316) : const Color(0xFF10B981);
-                  final statusLabel = isDue ? 'Due (৳${sale.dueAmount.toStringAsFixed(0)})' : 'Paid';
+                  final statusLabel = isDue ? 'Due (${MoneyUtil.currencySymbol}${sale.dueAmount.toStringAsFixed(0)})' : 'Paid';
                   final customerName = sale.customer?.name.isNotEmpty == true ? sale.customer!.name : 'Walk-in Customer';
                   final dateStr = sale.createdAt.toString().split(' ').first;
 
@@ -95,7 +96,7 @@ class RecentTransactions extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              '৳ ${sale.netTotal.toStringAsFixed(0)}',
+                              '${MoneyUtil.currencySymbol} ${sale.netTotal.toStringAsFixed(0)}',
                               style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 3),

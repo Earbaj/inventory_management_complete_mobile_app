@@ -34,12 +34,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isSaving = false;
 
   final List<Map<String, String>> _currencies = [
-    {'symbol': '৳', 'name': 'BDT (৳)'},
-    {'symbol': '\$', 'name': 'USD (\$)'},
-    {'symbol': '€', 'name': 'EUR (€)'},
-    {'symbol': '£', 'name': 'GBP (£)'},
+    {'code': 'BDT', 'symbol': '৳', 'name': 'BDT (৳ - Taka)'},
+    {'code': 'USD', 'symbol': '\$', 'name': 'USD (\$ - US Dollar)'},
+    {'code': 'EUR', 'symbol': '€', 'name': 'EUR (€ - Euro)'},
+    {'code': 'GBP', 'symbol': '£', 'name': 'GBP (£ - Pound)'},
+    {'code': 'INR', 'symbol': '₹', 'name': 'INR (₹ - Rupee)'},
+    {'code': 'AED', 'symbol': 'AED ', 'name': 'AED (UAE Dirham)'},
+    {'code': 'SAR', 'symbol': 'SAR ', 'name': 'SAR (Saudi Riyal)'},
+    {'code': 'CAD', 'symbol': 'CA\$', 'name': 'CAD (CA Dollar)'},
+    {'code': 'AUD', 'symbol': 'AU\$', 'name': 'AUD (AU Dollar)'},
+    {'code': 'MYR', 'symbol': 'RM ', 'name': 'MYR (Ringgit)'},
+    {'code': 'SGD', 'symbol': 'SG\$', 'name': 'SGD (SG Dollar)'},
+    {'code': 'PKR', 'symbol': 'Rs ', 'name': 'PKR (PK Rupee)'},
   ];
-  String _selectedCurrencySymbol = '৳';
+  String _selectedCurrencyCode = 'BDT';
 
   @override
   void initState() {
@@ -48,7 +56,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _phoneController = TextEditingController();
     _emailController = TextEditingController();
     _addressController = TextEditingController();
-    _currencyController = TextEditingController(text: '৳');
+    _currencyController = TextEditingController(text: 'BDT');
     _vatRateController = TextEditingController(text: '0.0');
     _logoUrlController = TextEditingController();
 
@@ -95,21 +103,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _vatRateController.text = profile.defaultVatRate.toString();
       _logoUrlController.text = profile.logoUrl ?? '';
 
-      final symbol = profile.currencySymbol.isNotEmpty ? profile.currencySymbol : '৳';
-      _selectedCurrencySymbol = symbol;
-      _currencyController.text = symbol;
+      final code = profile.currencyCode.isNotEmpty
+          ? profile.currencyCode.toUpperCase()
+          : (profile.currencySymbol == '\$'
+              ? 'USD'
+              : (profile.currencySymbol == '€'
+                  ? 'EUR'
+                  : (profile.currencySymbol == '£' ? 'GBP' : 'BDT')));
+      _selectedCurrencyCode = code;
+      _currencyController.text = code;
     }
   }
 
   void _saveSettings(ShopProfileEntity currentProfile) {
     if (_formKey.currentState?.validate() ?? false) {
       setState(() => _isSaving = true);
+      final matchedCurrency = _currencies.firstWhere(
+        (c) => c['code'] == _selectedCurrencyCode,
+        orElse: () => {'code': _selectedCurrencyCode, 'symbol': '৳', 'name': _selectedCurrencyCode},
+      );
+
       final updated = currentProfile.copyWith(
         shopName: _shopNameController.text.trim(),
         phone: _phoneController.text.trim(),
         email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
         address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
-        currencySymbol: _currencyController.text.trim(),
+        currencyCode: matchedCurrency['code'] ?? 'BDT',
+        currencySymbol: matchedCurrency['symbol'] ?? '৳',
         defaultVatRate: double.tryParse(_vatRateController.text.trim()) ?? 0.0,
         logoUrl: _logoUrlController.text.trim().isEmpty ? null : _logoUrlController.text.trim(),
       );
@@ -286,9 +306,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          initialValue: _currencies.any((c) => c['symbol'] == _selectedCurrencySymbol)
-                              ? _selectedCurrencySymbol
-                              : '৳',
+                          value: _currencies.any((c) => c['code'] == _selectedCurrencyCode)
+                              ? _selectedCurrencyCode
+                              : 'BDT',
                           decoration: InputDecoration(
                             labelText: 'Currency',
                             prefixIcon: const Icon(Icons.attach_money_rounded),
@@ -296,21 +316,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           items: _currencies.map((c) {
                             return DropdownMenuItem<String>(
-                              value: c['symbol'],
+                              value: c['code'],
                               child: Text(c['name']!),
                             );
                           }).toList(),
                           onChanged: (val) {
                             if (val != null) {
                               setState(() {
-                                _selectedCurrencySymbol = val;
+                                _selectedCurrencyCode = val;
                                 _currencyController.text = val;
                               });
                             }
                           },
                         ),
                       ),
-                      const SizedBox(width: 12),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
                       Expanded(
                         child: TextFormField(
                           controller: _vatRateController,

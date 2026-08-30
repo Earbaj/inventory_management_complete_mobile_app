@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection_container.dart';
@@ -443,7 +444,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                     children: [
                       _buildMetricCard(
                         title: 'Gross Revenue',
-                        value: '৳${summary.totalRevenue.toStringAsFixed(0)}',
+                        value: '${MoneyUtil.currencySymbol}${summary.totalRevenue.toStringAsFixed(0)}',
                         icon: Icons.attach_money_rounded,
                         color: colorScheme.primary,
                       ),
@@ -457,7 +458,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                       const SizedBox(width: 8),
                       _buildMetricCard(
                         title: 'Total Dues',
-                        value: '৳${summary.totalDue.toStringAsFixed(0)}',
+                        value: '${MoneyUtil.currencySymbol}${summary.totalDue.toStringAsFixed(0)}',
                         icon: Icons.money_off_rounded,
                         color: Colors.red,
                       ),

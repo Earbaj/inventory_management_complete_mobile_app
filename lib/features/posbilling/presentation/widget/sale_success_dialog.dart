@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import '../../../../core/services/bluetooth_printer_service.dart';
 import '../../domain/entities/sale_entity.dart';
 
@@ -46,7 +47,7 @@ class SaleSuccessDialog extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             dueAmount > 0
-                ? '৳${dueAmount.toStringAsFixed(2)} added to customer due balance.'
+                ? '${MoneyUtil.currencySymbol}${dueAmount.toStringAsFixed(2)} added to customer due balance.'
                 : 'Payment received in full.',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -93,7 +94,7 @@ class SaleSuccessDialog extends StatelessWidget {
                   children: [
                     const Text('Net Total:', style: TextStyle(fontSize: 13)),
                     Text(
-                      '৳${netTotal.toStringAsFixed(2)}',
+                      '${MoneyUtil.currencySymbol}${netTotal.toStringAsFixed(2)}',
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                     ),
                   ],
@@ -104,7 +105,7 @@ class SaleSuccessDialog extends StatelessWidget {
                   children: [
                     const Text('Paid Amount:', style: TextStyle(fontSize: 13, color: Colors.green)),
                     Text(
-                      '৳${paidAmount.toStringAsFixed(2)}',
+                      '${MoneyUtil.currencySymbol}${paidAmount.toStringAsFixed(2)}',
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.green),
                     ),
                   ],
@@ -122,7 +123,7 @@ class SaleSuccessDialog extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '৳${dueAmount.toStringAsFixed(2)}',
+                      '${MoneyUtil.currencySymbol}${dueAmount.toStringAsFixed(2)}',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,

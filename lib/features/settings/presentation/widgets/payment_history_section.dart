@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import '../../../subscription/data/models/payment_model.dart';
 
 class PaymentHistorySection extends StatelessWidget {
@@ -112,7 +113,7 @@ class PaymentHistorySection extends StatelessWidget {
                             style: theme.textTheme.bodySmall,
                           ),
                           Text(
-                            '৳${payment.amount.toStringAsFixed(0)}',
+                            '${MoneyUtil.currencySymbol}${payment.amount.toStringAsFixed(0)}',
                             style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green[700]),
                           ),
                         ],

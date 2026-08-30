@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/pdf_export_service.dart';
 import '../../../settings/domain/entities/shop_profile_entity.dart';
@@ -326,7 +327,7 @@ class _PurchaseOrderReceiptDialogState extends State<PurchaseOrderReceiptDialog>
                                   Expanded(
                                     flex: 3,
                                     child: Text(
-                                      '৳${item.unitCost.toStringAsFixed(0)}',
+                                      '${MoneyUtil.currencySymbol}${item.unitCost.toStringAsFixed(0)}',
                                       textAlign: TextAlign.right,
                                       style: const TextStyle(fontSize: 12),
                                     ),
@@ -334,7 +335,7 @@ class _PurchaseOrderReceiptDialogState extends State<PurchaseOrderReceiptDialog>
                                   Expanded(
                                     flex: 3,
                                     child: Text(
-                                      '৳${item.totalPrice.toStringAsFixed(0)}',
+                                      '${MoneyUtil.currencySymbol}${item.totalPrice.toStringAsFixed(0)}',
                                       textAlign: TextAlign.right,
                                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                                     ),
@@ -358,13 +359,13 @@ class _PurchaseOrderReceiptDialogState extends State<PurchaseOrderReceiptDialog>
                       ),
                       child: Column(
                         children: [
-                          _buildSummaryRow('Total Bill Amount:', '৳ ${order.totalAmount.toStringAsFixed(2)}', isBold: true),
+                          _buildSummaryRow('Total Bill Amount:', '${MoneyUtil.currencySymbol} ${order.totalAmount.toStringAsFixed(2)}', isBold: true),
                           const SizedBox(height: 6),
-                          _buildSummaryRow('Paid Amount:', '৳ ${order.paidAmount.toStringAsFixed(2)}'),
+                          _buildSummaryRow('Paid Amount:', '${MoneyUtil.currencySymbol} ${order.paidAmount.toStringAsFixed(2)}'),
                           const Divider(height: 12),
                           _buildSummaryRow(
                             'Balance Due:',
-                            '৳ ${order.dueAmount.toStringAsFixed(2)}',
+                            '${MoneyUtil.currencySymbol} ${order.dueAmount.toStringAsFixed(2)}',
                             isBold: true,
                             valueColor: order.dueAmount > 0 ? Colors.red.shade700 : Colors.green.shade700,
                           ),

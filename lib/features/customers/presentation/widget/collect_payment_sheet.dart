@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../bloc/customer_event.dart';
@@ -68,7 +69,7 @@ class _CollectPaymentSheetState extends State<CollectPaymentSheet> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Payment of ৳${amount.toStringAsFixed(0)} received for ${_selectedCustomer!.name}',
+              'Payment of ${MoneyUtil.currencySymbol}${amount.toStringAsFixed(0)} received for ${_selectedCustomer!.name}',
             ),
             backgroundColor: Colors.green[700],
           ),
@@ -188,9 +189,9 @@ class _CollectPaymentSheetState extends State<CollectPaymentSheet> {
                             ),
                             Text(
                               customer.isAdvanceCredit
-                                  ? 'Credit: ৳${customer.advanceCredit.toStringAsFixed(0)}'
+                                  ? 'Credit: ${MoneyUtil.currencySymbol}${customer.advanceCredit.toStringAsFixed(0)}'
                                   : (customer.hasDue
-                                      ? 'Due: ৳${customer.totalDue.toStringAsFixed(0)}'
+                                      ? 'Due: ${MoneyUtil.currencySymbol}${customer.totalDue.toStringAsFixed(0)}'
                                       : 'Clear'),
                               style: TextStyle(
                                 fontSize: 12,
@@ -247,7 +248,7 @@ class _CollectPaymentSheetState extends State<CollectPaymentSheet> {
                             children: [
                               const Text('Opening Balance:', style: TextStyle(fontSize: 13)),
                               Text(
-                                '৳${_selectedCustomer!.openingBalance.toStringAsFixed(2)}',
+                                '${MoneyUtil.currencySymbol}${_selectedCustomer!.openingBalance.toStringAsFixed(2)}',
                                 style: const TextStyle(fontWeight: FontWeight.w600),
                               ),
                             ],
@@ -259,7 +260,7 @@ class _CollectPaymentSheetState extends State<CollectPaymentSheet> {
                               children: [
                                 const Text('Advance Store Credit:', style: TextStyle(fontSize: 13, color: Colors.green, fontWeight: FontWeight.bold)),
                                 Text(
-                                  '৳${advanceCredit.toStringAsFixed(2)}',
+                                  '${MoneyUtil.currencySymbol}${advanceCredit.toStringAsFixed(2)}',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 15,
@@ -274,7 +275,7 @@ class _CollectPaymentSheetState extends State<CollectPaymentSheet> {
                               children: [
                                 const Text('Current Total Due:', style: TextStyle(fontSize: 13, color: Colors.orange, fontWeight: FontWeight.bold)),
                                 Text(
-                                  '৳${currentDue.toStringAsFixed(2)}',
+                                  '${MoneyUtil.currencySymbol}${currentDue.toStringAsFixed(2)}',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 15,
@@ -289,7 +290,7 @@ class _CollectPaymentSheetState extends State<CollectPaymentSheet> {
                               children: [
                                 const Text('Current Balance:', style: TextStyle(fontSize: 13)),
                                 Text(
-                                  '৳0.00 (No Due)',
+                                  '${MoneyUtil.currencySymbol}0.00 (No Due)',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
@@ -306,10 +307,10 @@ class _CollectPaymentSheetState extends State<CollectPaymentSheet> {
                               const Text('Estimated New Balance:', style: TextStyle(fontSize: 13)),
                               Text(
                                 estimatedNetBal > 0
-                                    ? 'Credit: ৳${estimatedNetBal.toStringAsFixed(2)}'
+                                    ? 'Credit: ${MoneyUtil.currencySymbol}${estimatedNetBal.toStringAsFixed(2)}'
                                     : (estimatedNetBal < 0
-                                        ? 'Due: ৳${estimatedNetBal.abs().toStringAsFixed(2)}'
-                                        : '৳0.00 (Clear)'),
+                                        ? 'Due: ${MoneyUtil.currencySymbol}${estimatedNetBal.abs().toStringAsFixed(2)}'
+                                        : '${MoneyUtil.currencySymbol}0.00 (Clear)'),
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
@@ -327,9 +328,9 @@ class _CollectPaymentSheetState extends State<CollectPaymentSheet> {
                   ],
 
                   // 3. PAYMENT AMOUNT INPUT
-                  const Text(
-                    'Payment Amount (৳)',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  Text(
+                    'Payment Amount (${MoneyUtil.currencySymbol})',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                   const SizedBox(height: 8),
                   TextField(
@@ -338,7 +339,7 @@ class _CollectPaymentSheetState extends State<CollectPaymentSheet> {
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
                       hintText: 'Enter amount to receive',
-                      prefixText: '৳ ',
+                      prefixText: '${MoneyUtil.currencySymbol} ',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       suffixIcon: _selectedCustomer != null && _selectedCustomer!.totalDue > 0
                           ? TextButton(
@@ -443,7 +444,7 @@ class _CollectPaymentSheetState extends State<CollectPaymentSheet> {
                           const SizedBox(width: 8),
                           Text(
                             _selectedCustomer != null
-                                ? 'Collect ৳${enteredAmount.toStringAsFixed(0)} from ${_selectedCustomer!.name}'
+                                ? 'Collect ${MoneyUtil.currencySymbol}${enteredAmount.toStringAsFixed(0)} from ${_selectedCustomer!.name}'
                                 : 'Process Payment',
                             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                           ),

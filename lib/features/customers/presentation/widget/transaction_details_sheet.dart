@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import '../../../posbilling/domain/entities/sale_entity.dart';
 import '../../customer_transaction.dart';
 import '../../../returnandrestoke/domain/entities/return_item_entity.dart';
@@ -163,11 +164,11 @@ class TransactionDetailsSheet extends StatelessWidget {
                 const SizedBox(height: 8),
                 _buildDetailRow('Return Quantity', '${item.returnQuantity} units'),
                 const SizedBox(height: 8),
-                _buildDetailRow('Unit Price', '৳ ${item.unitPrice.toStringAsFixed(2)}'),
+                _buildDetailRow('Unit Price', '${MoneyUtil.currencySymbol} ${item.unitPrice.toStringAsFixed(2)}'),
                 const Divider(height: 16),
                 _buildDetailRow(
                   'Total Refund Amount',
-                  '৳ ${item.totalRefundAmount.toStringAsFixed(2)}',
+                  '${MoneyUtil.currencySymbol} ${item.totalRefundAmount.toStringAsFixed(2)}',
                   isBold: true,
                   valueColor: Colors.red[700],
                 ),
@@ -306,7 +307,7 @@ class TransactionDetailsSheet extends StatelessWidget {
                       Text('Transaction Amount', style: theme.textTheme.bodySmall),
                       const SizedBox(height: 2),
                       Text(
-                        '৳ ${tx.amount.toStringAsFixed(2)}',
+                        '${MoneyUtil.currencySymbol} ${tx.amount.toStringAsFixed(2)}',
                         style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: iconColor),
                       ),
                     ],
@@ -354,9 +355,9 @@ class TransactionDetailsSheet extends StatelessWidget {
                         ),
                       ),
                       title: Text(cartItem.item.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                      subtitle: Text('৳ ${cartItem.item.retailSellPrice.toStringAsFixed(0)} each'),
+                      subtitle: Text('${MoneyUtil.currencySymbol} ${cartItem.item.retailSellPrice.toStringAsFixed(0)} each'),
                       trailing: Text(
-                        '৳ ${itemTotal.toStringAsFixed(2)}',
+                        '${MoneyUtil.currencySymbol} ${itemTotal.toStringAsFixed(2)}',
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     );
@@ -374,23 +375,23 @@ class TransactionDetailsSheet extends StatelessWidget {
             _buildDetailRow(
               'Running Balance',
               tx.runningBalance < 0
-                  ? '৳ ${tx.runningBalance.abs().toStringAsFixed(2)} (Due)'
+                  ? '${MoneyUtil.currencySymbol} ${tx.runningBalance.abs().toStringAsFixed(2)} (Due)'
                   : (tx.runningBalance > 0
-                      ? '৳ ${tx.runningBalance.toStringAsFixed(2)} (Credit)'
-                      : '৳ 0.00'),
+                      ? '${MoneyUtil.currencySymbol} ${tx.runningBalance.toStringAsFixed(2)} (Credit)'
+                      : '${MoneyUtil.currencySymbol} 0.00'),
               isBold: true,
               valueColor: tx.runningBalance < 0 ? Colors.orange[800] : Colors.green[700],
             ),
             if (saleInvoice != null && !isOpening) ...[
               if (saleInvoice!.originalGrandTotal > 0) ...[
                 const SizedBox(height: 8),
-                _buildDetailRow('Original Price', '৳ ${saleInvoice!.originalGrandTotal.toStringAsFixed(2)}'),
+                _buildDetailRow('Original Price', '${MoneyUtil.currencySymbol} ${saleInvoice!.originalGrandTotal.toStringAsFixed(2)}'),
               ],
               if (saleInvoice!.totalRefunded > 0 || saleInvoice!.isReturned != 'none') ...[
                 const SizedBox(height: 8),
                 _buildDetailRow(
                   'Returned Amount',
-                  '৳ ${saleInvoice!.totalRefunded.toStringAsFixed(2)} (${saleInvoice!.isReturned.replaceAll('_', ' ').toUpperCase()})',
+                  '${MoneyUtil.currencySymbol} ${saleInvoice!.totalRefunded.toStringAsFixed(2)} (${saleInvoice!.isReturned.replaceAll('_', ' ').toUpperCase()})',
                   valueColor: Colors.red[700],
                   isBold: true,
                 ),
@@ -398,15 +399,15 @@ class TransactionDetailsSheet extends StatelessWidget {
               const SizedBox(height: 8),
               _buildDetailRow(
                 'Net Payable Total',
-                '৳ ${(saleInvoice!.netGrandTotal > 0 ? saleInvoice!.netGrandTotal : saleInvoice!.netTotal).toStringAsFixed(2)}',
+                '${MoneyUtil.currencySymbol} ${(saleInvoice!.netGrandTotal > 0 ? saleInvoice!.netGrandTotal : saleInvoice!.netTotal).toStringAsFixed(2)}',
                 isBold: true,
               ),
               const SizedBox(height: 8),
-              _buildDetailRow('Paid Amount', '৳ ${saleInvoice!.paidAmount.toStringAsFixed(2)}', valueColor: Colors.green[700]),
+              _buildDetailRow('Paid Amount', '${MoneyUtil.currencySymbol} ${saleInvoice!.paidAmount.toStringAsFixed(2)}', valueColor: Colors.green[700]),
               const SizedBox(height: 8),
               _buildDetailRow(
                 'Due Amount',
-                '৳ ${saleInvoice!.dueAmount.toStringAsFixed(2)}',
+                '${MoneyUtil.currencySymbol} ${saleInvoice!.dueAmount.toStringAsFixed(2)}',
                 valueColor: saleInvoice!.dueAmount > 0 ? Colors.orange[800] : Colors.grey[700],
                 isBold: saleInvoice!.dueAmount > 0,
               ),

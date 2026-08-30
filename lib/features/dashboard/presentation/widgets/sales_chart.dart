@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../reports/presentation/bloc/reports_state.dart';
 import '../../../posbilling/domain/entities/sale_entity.dart';
@@ -119,7 +120,7 @@ class _SalesChartState extends State<SalesChart> {
                 textBaseline: TextBaseline.alphabetic,
                 children: [
                   Text(
-                    '৳ ${totalPeriodRevenue.toStringAsFixed(0)}',
+                    '${MoneyUtil.currencySymbol} ${totalPeriodRevenue.toStringAsFixed(0)}',
                     style: theme.textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                       color: colorScheme.primary,
@@ -134,7 +135,7 @@ class _SalesChartState extends State<SalesChart> {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      'Avg ৳${avgDailyRevenue.toStringAsFixed(0)}/d',
+                      'Avg ${MoneyUtil.currencySymbol}${avgDailyRevenue.toStringAsFixed(0)}/d',
                       style: const TextStyle(
                         color: Colors.blue,
                         fontSize: 11,
@@ -179,7 +180,7 @@ class _SalesChartState extends State<SalesChart> {
                             ),
                             children: [
                               TextSpan(
-                                text: '৳${point.totalRevenue.toStringAsFixed(0)} ',
+                                text: '${MoneyUtil.currencySymbol}${point.totalRevenue.toStringAsFixed(0)} ',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
@@ -392,11 +393,11 @@ class _SalesChartState extends State<SalesChart> {
 
   String _formatCompactCurrency(double value) {
     if (value >= 1000000) {
-      return '৳${(value / 1000000).toStringAsFixed(1)}M';
+      return '${MoneyUtil.currencySymbol}${(value / 1000000).toStringAsFixed(1)}M';
     } else if (value >= 1000) {
-      return '৳${(value / 1000).toStringAsFixed(0)}k';
+      return '${MoneyUtil.currencySymbol}${(value / 1000).toStringAsFixed(0)}k';
     }
-    return '৳${value.toInt()}';
+    return '${MoneyUtil.currencySymbol}${value.toInt()}';
   }
 }
 

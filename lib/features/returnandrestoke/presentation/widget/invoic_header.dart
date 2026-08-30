@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 
 import '../../return_models.dart';
 
@@ -110,7 +111,7 @@ class InvoiceHeader
           ),
 
           Text(
-            '৳ ${invoice.total.toStringAsFixed(0)}',
+            '${MoneyUtil.currencySymbol} ${invoice.total.toStringAsFixed(0)}',
 
             style:
             const TextStyle(

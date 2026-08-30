@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import '../../../../core/di/injection_container.dart';
 import '../bloc/subscription_event.dart';
 import '../bloc/subscription_state.dart';
@@ -271,7 +272,7 @@ class _PaymentCheckoutModalState extends State<PaymentCheckoutModal> {
                             textBaseline: TextBaseline.alphabetic,
                             children: [
                               Text(
-                                pkg.price > 0 ? '৳${pkg.price.toStringAsFixed(0)}' : 'FREE',
+                                pkg.price > 0 ? '${MoneyUtil.currencySymbol}${pkg.price.toStringAsFixed(0)}' : 'FREE',
                                 style: TextStyle(
                                   fontSize: 26,
                                   fontWeight: FontWeight.w900,
@@ -368,7 +369,7 @@ class _PaymentCheckoutModalState extends State<PaymentCheckoutModal> {
                     ],
                   ),
                   Text(
-                    '৳${_selectedPackage!.price.toStringAsFixed(0)}',
+                    '${MoneyUtil.currencySymbol}${_selectedPackage!.price.toStringAsFixed(0)}',
                     style: TextStyle(
                       fontWeight: FontWeight.w900,
                       fontSize: 20,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/services/barcode_scanner_service.dart';
@@ -353,11 +354,11 @@ class _AddItemSheetState extends State<AddItemSheet> {
                     TextFormField(
                       controller: purchasePriceController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Purchase / Buy Price *',
                         hintText: 'e.g. 650',
-                        prefixText: '৳ ',
-                        prefixIcon: Icon(Icons.shopping_cart_outlined),
+                        prefixText: '${MoneyUtil.currencySymbol} ',
+                        prefixIcon: const Icon(Icons.shopping_cart_outlined),
                       ),
                       validator: _validatePrice,
                     ),
@@ -367,11 +368,11 @@ class _AddItemSheetState extends State<AddItemSheet> {
                     TextFormField(
                       controller: sellPriceController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Retail Sell Price *',
                         hintText: 'e.g. 850',
-                        prefixText: '৳ ',
-                        prefixIcon: Icon(Icons.sell_outlined),
+                        prefixText: '${MoneyUtil.currencySymbol} ',
+                        prefixIcon: const Icon(Icons.sell_outlined),
                       ),
                       validator: _validatePrice,
                     ),

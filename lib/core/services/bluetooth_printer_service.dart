@@ -1,5 +1,6 @@
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
+import '../utils/money_util.dart';
 import '../../features/posbilling/domain/entities/sale_entity.dart';
 
 /// Bluetooth POS 58mm / 80mm ESC/POS Thermal Receipt Printing Service.
@@ -41,14 +42,15 @@ class BluetoothPrinterService {
       buffer.writeln('$name $qty $price $total');
     }
 
+    final symbol = MoneyUtil.currencySymbol;
     buffer.writeln(subDivider);
-    buffer.writeln('Subtotal:       ৳ ${sale.subtotal.toStringAsFixed(2)}');
-    buffer.writeln('Discount:      -৳ ${sale.discountAmount.toStringAsFixed(2)}');
-    buffer.writeln('VAT:           +৳ ${sale.vatAmount.toStringAsFixed(2)}');
+    buffer.writeln('Subtotal:       $symbol ${sale.subtotal.toStringAsFixed(2)}');
+    buffer.writeln('Discount:      -$symbol ${sale.discountAmount.toStringAsFixed(2)}');
+    buffer.writeln('VAT:           +$symbol ${sale.vatAmount.toStringAsFixed(2)}');
     buffer.writeln(divider);
-    buffer.writeln('NET TOTAL:      ৳ ${sale.netTotal.toStringAsFixed(2)}');
-    buffer.writeln('Paid Amount:    ৳ ${sale.paidAmount.toStringAsFixed(2)}');
-    buffer.writeln('Due Amount:     ৳ ${sale.dueAmount.toStringAsFixed(2)}');
+    buffer.writeln('NET TOTAL:      $symbol ${sale.netTotal.toStringAsFixed(2)}');
+    buffer.writeln('Paid Amount:    $symbol ${sale.paidAmount.toStringAsFixed(2)}');
+    buffer.writeln('Due Amount:     $symbol ${sale.dueAmount.toStringAsFixed(2)}');
     buffer.writeln('Method:         ${sale.paymentMethod.toUpperCase()}');
     buffer.writeln(divider);
     buffer.writeln('[CENTER] Thank You! Visit Again.');

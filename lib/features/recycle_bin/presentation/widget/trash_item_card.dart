@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import '../../../../core/widgets/global_warning_dialog.dart';
 import '../../domain/entities/trash_item_entity.dart';
 
@@ -101,7 +102,7 @@ class TrashItemCard extends StatelessWidget {
                           if (item.amount != null) ...[
                             const SizedBox(width: 8),
                             Text(
-                              '৳${item.amount!.toStringAsFixed(2)}',
+                              '${MoneyUtil.currencySymbol}${item.amount!.toStringAsFixed(2)}',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: colorScheme.primary,

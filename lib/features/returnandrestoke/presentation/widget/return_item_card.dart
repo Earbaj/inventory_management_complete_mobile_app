@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import 'package:inventory_management_complete/features/returnandrestoke/presentation/widget/quantity_controll.dart';
 
 import '../../return_models.dart';
@@ -145,7 +146,7 @@ class ReturnItemCard
                     ),
 
                     Text(
-                      '৳ ${item.price.toStringAsFixed(2)} / item',
+                      '${MoneyUtil.currencySymbol} ${item.price.toStringAsFixed(2)} / item',
 
                       style:
                       theme.textTheme
@@ -263,7 +264,7 @@ class ReturnItemCard
               Alignment.centerRight,
 
               child: Text(
-                'Return: ৳ ${subtotal.toStringAsFixed(2)}',
+                'Return: ${MoneyUtil.currencySymbol} ${subtotal.toStringAsFixed(2)}',
 
                 style:
                 TextStyle(

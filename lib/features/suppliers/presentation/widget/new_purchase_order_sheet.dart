@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../inventory/data/models/inventory_item_model.dart';
 import '../../../inventory/presentation/widget/inventory_add_item_bottom_sheet.dart';
@@ -464,7 +465,7 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
                                   controller: _costCtrl,
                                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                   decoration: InputDecoration(
-                                    labelText: 'Buy Price / Unit Cost (৳) *',
+                                    labelText: 'Buy Price / Unit Cost (${MoneyUtil.currencySymbol}) *',
                                     prefixIcon: const Icon(Icons.attach_money_rounded, size: 20),
                                     isDense: true,
                                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -554,7 +555,7 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
                                   children: [
                                     const Text('Total Bill:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                                     Text(
-                                      '৳ ${total.toStringAsFixed(0)}',
+                                      '${MoneyUtil.currencySymbol} ${total.toStringAsFixed(0)}',
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
@@ -568,7 +569,7 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
                                   controller: _paidCtrl,
                                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                   decoration: InputDecoration(
-                                    labelText: 'Paid Amount (৳)',
+                                    labelText: 'Paid Amount (${MoneyUtil.currencySymbol})',
                                     prefixIcon: const Icon(Icons.payments_outlined, size: 18),
                                     isDense: true,
                                     contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -601,7 +602,7 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
                                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                                     ),
                                     Text(
-                                      due > 0 ? '৳ ${due.toStringAsFixed(0)} (Due)' : 'Fully Paid',
+                                      due > 0 ? '${MoneyUtil.currencySymbol} ${due.toStringAsFixed(0)} (Due)' : 'Fully Paid',
                                       style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,

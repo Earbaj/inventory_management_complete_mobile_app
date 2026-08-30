@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import '../../customer_transaction.dart';
 
 class TransactionCard extends StatelessWidget {
@@ -116,7 +117,7 @@ class TransactionCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      '${isReturn || isPayment ? '+৳' : '৳'} ${transaction.amount.toStringAsFixed(2)}${isReturn ? ' (Return)' : ''}',
+                      '${isReturn || isPayment ? '+${MoneyUtil.currencySymbol}' : MoneyUtil.currencySymbol} ${transaction.amount.toStringAsFixed(2)}${isReturn ? ' (Return)' : ''}',
                       style: TextStyle(
                         fontWeight: FontWeight.w800,
                         color: iconColor,

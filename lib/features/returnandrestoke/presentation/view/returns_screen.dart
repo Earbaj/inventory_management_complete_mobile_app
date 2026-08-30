@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../../core/widgets/global_empty_placeholder.dart';
@@ -353,11 +354,11 @@ class _ReturnsScreenState extends State<ReturnsScreen>
                   badgeColor = Colors.orange.withValues(alpha: 0.15);
                   textColor = Colors.orange[900]!;
                 } else if (hasDue) {
-                  badgeText = 'Due: ৳${invoice.dueAmount.toStringAsFixed(0)}';
+                  badgeText = 'Due: ${MoneyUtil.currencySymbol}${invoice.dueAmount.toStringAsFixed(0)}';
                   badgeColor = Colors.orange.withValues(alpha: 0.15);
                   textColor = Colors.orange[900]!;
                 } else {
-                  badgeText = 'Paid: ৳${invoice.netTotal.toStringAsFixed(0)}';
+                  badgeText = 'Paid: ${MoneyUtil.currencySymbol}${invoice.netTotal.toStringAsFixed(0)}';
                   badgeColor = Colors.green.withValues(alpha: 0.15);
                   textColor = Colors.green[800]!;
                 }
@@ -438,7 +439,7 @@ class _ReturnsScreenState extends State<ReturnsScreen>
                               ),
                             ),
                             Text(
-                              'Total: ৳${_selectedInvoice!.netTotal.toStringAsFixed(0)}',
+                              'Total: ${MoneyUtil.currencySymbol}${_selectedInvoice!.netTotal.toStringAsFixed(0)}',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: colorScheme.primary,
@@ -465,7 +466,7 @@ class _ReturnsScreenState extends State<ReturnsScreen>
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Paid: ৳${_selectedInvoice!.paidAmount.toStringAsFixed(0)}',
+                              'Paid: ${MoneyUtil.currencySymbol}${_selectedInvoice!.paidAmount.toStringAsFixed(0)}',
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.green,
@@ -534,7 +535,7 @@ class _ReturnsScreenState extends State<ReturnsScreen>
                                   ),
                                   child: Text(
                                     _selectedInvoice!.dueAmount > 0
-                                        ? 'Due: ৳${_selectedInvoice!.dueAmount.toStringAsFixed(0)}'
+                                        ? 'Due: ${MoneyUtil.currencySymbol}${_selectedInvoice!.dueAmount.toStringAsFixed(0)}'
                                         : 'Fully Paid',
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
@@ -662,7 +663,7 @@ class _ReturnsScreenState extends State<ReturnsScreen>
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'Price: ৳${cartItem.item.retailSellPrice.toStringAsFixed(0)} | Purchased: $purchasedQty',
+                              'Price: ${MoneyUtil.currencySymbol}${cartItem.item.retailSellPrice.toStringAsFixed(0)} | Purchased: $purchasedQty',
                               style: theme.textTheme.bodySmall,
                             ),
                           ],
@@ -670,7 +671,7 @@ class _ReturnsScreenState extends State<ReturnsScreen>
                       ),
                       if (currentReturnQty > 0)
                         Text(
-                          'Refund: ৳${itemSubtotal.toStringAsFixed(0)}',
+                          'Refund: ${MoneyUtil.currencySymbol}${itemSubtotal.toStringAsFixed(0)}',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: colorScheme.primary,
@@ -797,7 +798,7 @@ class _ReturnsScreenState extends State<ReturnsScreen>
                       ),
                     ),
                     Text(
-                      '৳${_calculatedRefundTotal.toStringAsFixed(2)}',
+                      '${MoneyUtil.currencySymbol}${_calculatedRefundTotal.toStringAsFixed(2)}',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
@@ -933,7 +934,7 @@ class _ReturnsScreenState extends State<ReturnsScreen>
                   label: Text(
                     _isSubmitting
                         ? 'Processing Return...'
-                        : 'Submit Return & Restock (৳${_calculatedRefundTotal.toStringAsFixed(0)})',
+                        : 'Submit Return & Restock (${MoneyUtil.currencySymbol}${_calculatedRefundTotal.toStringAsFixed(0)})',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
@@ -1111,7 +1112,7 @@ class _ReturnsScreenState extends State<ReturnsScreen>
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                'Refund: ৳${item.totalRefundAmount.toStringAsFixed(0)} (${item.refundMethod.toUpperCase()})',
+                                'Refund: ${MoneyUtil.currencySymbol}${item.totalRefundAmount.toStringAsFixed(0)} (${item.refundMethod.toUpperCase()})',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 11,

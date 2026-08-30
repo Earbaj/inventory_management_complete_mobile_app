@@ -13,6 +13,7 @@ class SettingsMapper {
       email: model.email,
       address: model.address,
       currencySymbol: model.currencySymbol,
+      currencyCode: model.currencyCode,
       defaultVatRate: model.defaultVatRate,
       logoUrl: model.logoUrl,
     );
@@ -26,6 +27,7 @@ class SettingsMapper {
       email: entity.email,
       address: entity.address,
       currencySymbol: entity.currencySymbol,
+      currencyCode: entity.currencyCode,
       defaultVatRate: entity.defaultVatRate,
       logoUrl: entity.logoUrl,
     );

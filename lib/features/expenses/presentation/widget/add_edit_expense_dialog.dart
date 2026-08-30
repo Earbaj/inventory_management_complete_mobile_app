@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import '../../domain/entities/expense_entity.dart';
 
 class AddEditExpenseDialog extends StatefulWidget {
@@ -182,10 +183,10 @@ class _AddEditExpenseDialogState extends State<AddEditExpenseDialog> {
                       TextFormField(
                         controller: _amountController,
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        decoration: const InputDecoration(
-                          labelText: 'Amount (৳) *',
+                        decoration: InputDecoration(
+                          labelText: 'Amount (${MoneyUtil.currencySymbol}) *',
                           hintText: 'e.g. 1500.00',
-                          prefixIcon: Icon(Icons.attach_money_rounded),
+                          prefixIcon: const Icon(Icons.attach_money_rounded),
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import '../../domain/entities/expense_entity.dart';
 
 class ExpenseCard extends StatelessWidget {
@@ -119,7 +120,7 @@ class ExpenseCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '৳ ${expense.amount.toStringAsFixed(2)}',
+                  '${MoneyUtil.currencySymbol} ${expense.amount.toStringAsFixed(2)}',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,

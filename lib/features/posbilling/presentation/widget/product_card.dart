@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 
 import '../../pos_product.dart';
 
@@ -80,7 +81,7 @@ class ProductCard extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      '৳ ${product.price.toStringAsFixed(0)}',
+                      '${MoneyUtil.currencySymbol} ${product.price.toStringAsFixed(0)}',
                       style: TextStyle(
                         color: colorScheme.primary,
                         fontWeight: FontWeight.w700,

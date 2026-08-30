@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/route/app_route.dart';
@@ -257,7 +258,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            '৳ ${totalAmount.toStringAsFixed(2)}',
+                            '${MoneyUtil.currencySymbol} ${totalAmount.toStringAsFixed(2)}',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 28,

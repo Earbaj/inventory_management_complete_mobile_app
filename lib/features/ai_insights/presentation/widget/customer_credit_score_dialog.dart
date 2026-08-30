@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import '../../domain/entities/customer_credit_score_entity.dart';
 
 class CustomerCreditScoreDialog extends StatelessWidget {
@@ -157,7 +158,7 @@ class CustomerCreditScoreDialog extends StatelessWidget {
                           const Text('Recommended Due Limit', style: TextStyle(fontSize: 11, color: Colors.grey)),
                           const SizedBox(height: 4),
                           Text(
-                            '৳ ${creditScore.maxRecommendedDueLimit.toStringAsFixed(0)}',
+                            '${MoneyUtil.currencySymbol} ${creditScore.maxRecommendedDueLimit.toStringAsFixed(0)}',
                             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: colorScheme.primary),
                           ),
                         ],

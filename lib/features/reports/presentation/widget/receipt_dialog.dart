@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/pdf_export_service.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
@@ -252,7 +253,7 @@ class ReceiptDialog extends StatelessWidget {
                                       style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                                     ),
                                     Text(
-                                      '৳${item.unitPrice.toStringAsFixed(2)} each',
+                                      '${MoneyUtil.currencySymbol}${item.unitPrice.toStringAsFixed(2)} each',
                                       style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                                     ),
                                   ],
@@ -269,7 +270,7 @@ class ReceiptDialog extends StatelessWidget {
                               Expanded(
                                 flex: 2,
                                 child: Text(
-                                  '৳${item.totalRevenue.toStringAsFixed(2)}',
+                                  '${MoneyUtil.currencySymbol}${item.totalRevenue.toStringAsFixed(2)}',
                                   textAlign: TextAlign.end,
                                   style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                                 ),
@@ -284,9 +285,9 @@ class ReceiptDialog extends StatelessWidget {
                       const SizedBox(height: 8),
 
                       // Totals Summary
-                      _buildSummaryRow('Total Amount', '৳${invoice.totalAmount.toStringAsFixed(2)}', isLarge: true),
-                      _buildSummaryRow('Paid Amount', '৳${invoice.paidAmount.toStringAsFixed(2)}'),
-                      _buildSummaryRow('Due Amount', '৳${invoice.dueAmount.toStringAsFixed(2)}',
+                      _buildSummaryRow('Total Amount', '${MoneyUtil.currencySymbol}${invoice.totalAmount.toStringAsFixed(2)}', isLarge: true),
+                      _buildSummaryRow('Paid Amount', '${MoneyUtil.currencySymbol}${invoice.paidAmount.toStringAsFixed(2)}'),
+                      _buildSummaryRow('Due Amount', '${MoneyUtil.currencySymbol}${invoice.dueAmount.toStringAsFixed(2)}',
                           color: invoice.dueAmount > 0 ? Colors.red : Colors.green),
 
                       const SizedBox(height: 10),

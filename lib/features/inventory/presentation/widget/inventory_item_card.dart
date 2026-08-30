@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
@@ -179,13 +180,13 @@ class InventoryItemCard extends StatelessWidget {
                   Expanded(
                     child: ItemDetail(
                       title: 'Sell Price',
-                      value: '৳ ${item.retailSellPrice.toStringAsFixed(0)}',
+                      value: '${MoneyUtil.currencySymbol} ${item.retailSellPrice.toStringAsFixed(0)}',
                     ),
                   ),
                   isAdmin ? Expanded(
                     child: ItemDetail(
                       title: 'Purchase',
-                      value: '৳ ${item.purchasePrice.toStringAsFixed(0)}',
+                      value: '${MoneyUtil.currencySymbol} ${item.purchasePrice.toStringAsFixed(0)}',
                     ),
                   ):SizedBox(),
                 ],

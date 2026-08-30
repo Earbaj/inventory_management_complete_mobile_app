@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../../../../core/utils/money_util.dart';
 import '../../return_models.dart';
 
 class ReturnSummary
@@ -120,7 +120,7 @@ class ReturnSummary
               ),
 
               Text(
-                '৳ ${returnTotal.toStringAsFixed(2)}',
+                '${MoneyUtil.currencySymbol} ${returnTotal.toStringAsFixed(2)}',
 
                 style:
                 TextStyle(

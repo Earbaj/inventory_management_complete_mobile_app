@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 
 class StatementSummaryCard
     extends StatelessWidget {
@@ -60,7 +61,7 @@ class StatementSummaryCard
           ),
 
           Text(
-            '৳ ${value.toStringAsFixed(0)}',
+            '${MoneyUtil.currencySymbol} ${value.toStringAsFixed(0)}',
 
             maxLines: 1,
 

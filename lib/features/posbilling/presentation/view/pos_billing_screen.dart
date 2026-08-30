@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/route/app_route.dart';
@@ -411,7 +412,7 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              '৳${cartState.netTotal.toStringAsFixed(2)}',
+                              '${MoneyUtil.currencySymbol}${cartState.netTotal.toStringAsFixed(2)}',
                               style: const TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,

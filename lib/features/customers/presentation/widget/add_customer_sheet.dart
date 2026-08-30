@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../customer.dart';
@@ -203,11 +204,11 @@ class _AddCustomerSheetState extends State<AddCustomerSheet> {
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: 'Opening Balance',
                               hintText: 'e.g. 2500',
-                              prefixText: '৳ ',
-                              prefixIcon: Icon(Icons.account_balance_wallet_outlined),
+                              prefixText: '${MoneyUtil.currencySymbol} ',
+                              prefixIcon: const Icon(Icons.account_balance_wallet_outlined),
                             ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {

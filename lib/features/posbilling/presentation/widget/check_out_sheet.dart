@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inventory_management_complete/features/posbilling/presentation/bloc/pos_bloc.dart';
 
@@ -133,15 +134,15 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
     if (text.isEmpty) {
       return _overallDiscountType == 'percent'
           ? 'Enter % (e.g. 10 for 10% discount)'
-          : 'Enter flat amount in ৳ (e.g. 50)';
+          : 'Enter flat amount in ${MoneyUtil.currencySymbol} (e.g. 50)';
     }
     final parsed = _parseDiscount(text, _overallDiscountType);
     if (parsed.value <= 0) return 'Invalid discount format';
     if (parsed.type == 'percent') {
       final tkVal = _calculateOverallDiscountTk(baseSubtotal);
-      return '${parsed.value.toStringAsFixed(parsed.value % 1 == 0 ? 0 : 1)}% discount = ৳ ${tkVal.toStringAsFixed(2)} off';
+      return '${parsed.value.toStringAsFixed(parsed.value % 1 == 0 ? 0 : 1)}% discount = ${MoneyUtil.currencySymbol} ${tkVal.toStringAsFixed(2)} off';
     }
-    return 'Fixed ৳ ${parsed.value.toStringAsFixed(2)} discount off';
+    return 'Fixed ${MoneyUtil.currencySymbol} ${parsed.value.toStringAsFixed(2)} discount off';
   }
 
   void _showProductDiscountDialog(BuildContext context, CartItemEntity cartItem) {
@@ -170,12 +171,12 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Unit Price: ৳${cartItem.item.retailSellPrice.toStringAsFixed(2)} | Qty: ${cartItem.quantity}',
+                  'Unit Price: ${MoneyUtil.currencySymbol}${cartItem.item.retailSellPrice.toStringAsFixed(2)} | Qty: ${cartItem.quantity}',
                   style: const TextStyle(fontSize: 13, color: Colors.grey),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Total Item Raw Price: ৳${cartItem.rawSubtotal.toStringAsFixed(2)}',
+                  'Total Item Raw Price: ${MoneyUtil.currencySymbol}${cartItem.rawSubtotal.toStringAsFixed(2)}',
                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 14),
@@ -183,8 +184,8 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                   controller: discCtrl,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
-                    labelText: selectedType == 'percent' ? 'Item Discount (%)' : 'Item Discount (৳)',
-                    hintText: selectedType == 'percent' ? 'e.g. 10 for 10%' : 'e.g. 50 for ৳50 off',
+                    labelText: selectedType == 'percent' ? 'Item Discount (%)' : 'Item Discount (${MoneyUtil.currencySymbol})',
+                    hintText: selectedType == 'percent' ? 'e.g. 10 for 10%' : 'e.g. 50 for ${MoneyUtil.currencySymbol}50 off',
                     border: const OutlineInputBorder(),
                     suffixIcon: Padding(
                       padding: const EdgeInsets.only(right: 6),
@@ -204,7 +205,7 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                '৳',
+                                MoneyUtil.currencySymbol,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12,
@@ -384,15 +385,15 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                                   style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                                 ),
                                 subtitle: Text(
-                                  'Qty: ${cItem.quantity} x ৳${cItem.item.retailSellPrice.toStringAsFixed(0)}'
-                                  '${cItem.discount > 0 ? " | Item Disc: ${cItem.discountType == 'percent' ? '${cItem.discount.toStringAsFixed(0)}%' : '৳${cItem.discount.toStringAsFixed(0)}'}" : ""}',
+                                  'Qty: ${cItem.quantity} x ${MoneyUtil.currencySymbol}${cItem.item.retailSellPrice.toStringAsFixed(0)}'
+                                  '${cItem.discount > 0 ? " | Item Disc: ${cItem.discountType == 'percent' ? '${cItem.discount.toStringAsFixed(0)}%' : '${MoneyUtil.currencySymbol}${cItem.discount.toStringAsFixed(0)}'}" : ""}',
                                   style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
                                 ),
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      '৳${cItem.totalPrice.toStringAsFixed(0)}',
+                                      '${MoneyUtil.currencySymbol}${cItem.totalPrice.toStringAsFixed(0)}',
                                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                                     ),
                                     IconButton(
@@ -402,7 +403,7 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                                         color: cItem.discount > 0 ? colorScheme.primary : Colors.grey,
                                       ),
                                       onPressed: () => _showProductDiscountDialog(context, cItem),
-                                      tooltip: 'Item Discount (৳ or %)',
+                                      tooltip: 'Item Discount (${MoneyUtil.currencySymbol} or %)',
                                     ),
                                   ],
                                 ),
@@ -477,7 +478,7 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                               decoration: InputDecoration(
                                 labelText: _overallDiscountType == 'percent'
                                     ? 'Overall Discount (%)'
-                                    : 'Overall Discount (৳)',
+                                    : 'Overall Discount (${MoneyUtil.currencySymbol})',
                                 hintText: _overallDiscountType == 'percent' ? 'e.g. 10' : 'e.g. 50',
                                 helperMaxLines: 2,
                                 prefixIcon: Icon(
@@ -504,7 +505,7 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                                             borderRadius: BorderRadius.circular(8),
                                           ),
                                           child: Text(
-                                            '৳',
+                                            MoneyUtil.currencySymbol,
                                             style: TextStyle(
                                               fontWeight: FontWeight.bold,
                                               fontSize: 12,
@@ -559,7 +560,7 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                               },
                               decoration: InputDecoration(
                                 labelText: 'Paid Amount',
-                                hintText: '৳ 0',
+                                hintText: '${MoneyUtil.currencySymbol} 0',
                                 prefixIcon: const Icon(Icons.attach_money_rounded, size: 20),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -583,13 +584,13 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                           children: [
                             SummaryRow(
                               title: 'Subtotal',
-                              value: '৳ ${rawSubtotal.toStringAsFixed(0)}',
+                              value: '${MoneyUtil.currencySymbol} ${rawSubtotal.toStringAsFixed(0)}',
                             ),
                             if (totalDiscounts > 0) ...[
                               const SizedBox(height: 8),
                               SummaryRow(
                                 title: 'Total Discount',
-                                value: '- ৳ ${totalDiscounts.toStringAsFixed(0)}',
+                                value: '- ${MoneyUtil.currencySymbol} ${totalDiscounts.toStringAsFixed(0)}',
                                 valueColor: Colors.red,
                               ),
                             ],
@@ -599,19 +600,19 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                             ),
                             SummaryRow(
                               title: 'Net Total',
-                              value: '৳ ${calcNetTotal.toStringAsFixed(0)}',
+                              value: '${MoneyUtil.currencySymbol} ${calcNetTotal.toStringAsFixed(0)}',
                               large: true,
                             ),
                             const SizedBox(height: 8),
                             SummaryRow(
                               title: 'Paid Amount',
-                              value: '৳ ${paidAmountInput.toStringAsFixed(0)}',
+                              value: '${MoneyUtil.currencySymbol} ${paidAmountInput.toStringAsFixed(0)}',
                               valueColor: Colors.green[700],
                             ),
                             const SizedBox(height: 8),
                             SummaryRow(
                               title: 'Due Amount',
-                              value: '৳ ${dueAmount.toStringAsFixed(0)}',
+                              value: '${MoneyUtil.currencySymbol} ${dueAmount.toStringAsFixed(0)}',
                               valueColor: dueAmount > 0 ? Colors.orange[800] : Colors.grey,
                               large: dueAmount > 0,
                             ),
@@ -683,12 +684,12 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                             children: [
                               Expanded(
                                 child: Text(
-                                  dueAmount > 0 ? 'Checkout with ৳${dueAmount.toStringAsFixed(0)} Due' : 'Complete Checkout',
+                                  dueAmount > 0 ? 'Checkout with ${MoneyUtil.currencySymbol}${dueAmount.toStringAsFixed(0)} Due' : 'Complete Checkout',
                                   style: const TextStyle(fontWeight: FontWeight.w700),
                                 ),
                               ),
                               Text(
-                                '৳ ${calcNetTotal.toStringAsFixed(0)}',
+                                '${MoneyUtil.currencySymbol} ${calcNetTotal.toStringAsFixed(0)}',
                                 style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
                               ),
                             ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import '../../reports_models.dart';
 
 class ItemsSoldTab extends StatelessWidget {
@@ -115,7 +116,7 @@ class ItemsSoldTab extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '৳${totalRevenue.toStringAsFixed(0)}',
+                      '${MoneyUtil.currencySymbol}${totalRevenue.toStringAsFixed(0)}',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
@@ -212,7 +213,7 @@ class ItemsSoldTab extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '৳${item.totalRevenue.toStringAsFixed(2)}',
+                      '${MoneyUtil.currencySymbol}${item.totalRevenue.toStringAsFixed(2)}',
                       style: TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 15,
@@ -221,7 +222,7 @@ class ItemsSoldTab extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${item.quantity} units (৳${item.unitPrice.toStringAsFixed(0)}/ea)',
+                      '${item.quantity} units (${MoneyUtil.currencySymbol}${item.unitPrice.toStringAsFixed(0)}/ea)',
                       style: TextStyle(
                         fontSize: 11,
                         color: Colors.grey[600],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../customer.dart';
@@ -246,7 +247,7 @@ class CustomerCard extends StatelessWidget {
               Expanded(
                 child: CustomerInfo(
                   title: 'Opening Balance',
-                  value: '৳ ${customer.openingBalance.toStringAsFixed(0)}',
+                  value: '${MoneyUtil.currencySymbol} ${customer.openingBalance.toStringAsFixed(0)}',
                 ),
               ),
               Expanded(
@@ -254,7 +255,7 @@ class CustomerCard extends StatelessWidget {
                   title: customer.isAdvanceCredit
                       ? 'Advance Credit'
                       : (customer.hasDue ? 'Current Due' : 'Balance'),
-                  value: '৳ ${(customer.isAdvanceCredit ? customer.advanceCredit : customer.totalDue).toStringAsFixed(0)}',
+                  value: '${MoneyUtil.currencySymbol} ${(customer.isAdvanceCredit ? customer.advanceCredit : customer.totalDue).toStringAsFixed(0)}',
                   valueColor: customer.isAdvanceCredit
                       ? Colors.green[700]
                       : (customer.hasDue ? Colors.orange[900] : Colors.grey),

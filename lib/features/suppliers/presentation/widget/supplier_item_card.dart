@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import '../../domain/entities/supplier_entity.dart';
 
 class SupplierItemCard extends StatelessWidget {
@@ -178,7 +179,7 @@ class SupplierItemCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '৳${supplier.totalPurchases.toStringAsFixed(0)}',
+                            '${MoneyUtil.currencySymbol}${supplier.totalPurchases.toStringAsFixed(0)}',
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
@@ -214,7 +215,7 @@ class SupplierItemCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '৳${supplier.dueAmount.toStringAsFixed(0)}',
+                            '${MoneyUtil.currencySymbol}${supplier.dueAmount.toStringAsFixed(0)}',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,

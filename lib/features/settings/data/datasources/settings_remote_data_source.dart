@@ -24,12 +24,16 @@ class SettingsRemoteDataSourceImpl implements SettingsRemoteDataSource {
     try {
       dynamic response;
       try {
-        response = await apiClient.get('${EnvConfig.apiBaseUrl}/api/auth/me');
+        response = await apiClient.get('${EnvConfig.apiBaseUrl}/api/shop/settings');
       } catch (_) {
         try {
-          response = await apiClient.get('${EnvConfig.apiBaseUrl}/api/shop/profile');
+          response = await apiClient.get('${EnvConfig.apiBaseUrl}/api/auth/me');
         } catch (_) {
-          response = await apiClient.get('${EnvConfig.apiBaseUrl}/api/users/profile');
+          try {
+            response = await apiClient.get('${EnvConfig.apiBaseUrl}/api/shop/profile');
+          } catch (_) {
+            response = await apiClient.get('${EnvConfig.apiBaseUrl}/api/users/profile');
+          }
         }
       }
 
@@ -37,11 +41,13 @@ class SettingsRemoteDataSourceImpl implements SettingsRemoteDataSource {
       if (response is Map<String, dynamic>) {
         final Map<String, dynamic> dataMap = response['data'] is Map<String, dynamic>
             ? response['data']
-            : (response['user'] is Map<String, dynamic> ? response['user'] : response);
+            : (response['user'] is Map<String, dynamic>
+                ? response['user']
+                : (response['settings'] is Map<String, dynamic> ? response['settings'] : response));
         
         // Cache subscription details from profile API response
-        _cachedTier = dataMap['subscriptionTier']?.toString();
-        _cachedExpiresAt = dataMap['subscriptionExpiresAt']?.toString();
+        _cachedTier = dataMap['subscriptionTier']?.toString() ?? dataMap['tier']?.toString();
+        _cachedExpiresAt = dataMap['subscriptionExpiresAt']?.toString() ?? dataMap['expiresAt']?.toString();
         developer.log('📦 [SettingsRemoteDataSource] Cached subscription from profile: tier=$_cachedTier, expiresAt=$_cachedExpiresAt', name: 'SettingsRemoteDataSource');
 
         return ShopProfileModel.fromJson(dataMap);
@@ -57,6 +63,7 @@ class SettingsRemoteDataSourceImpl implements SettingsRemoteDataSource {
       email: 'earbaj@gmail.com',
       address: 'Dhaka, Bangladesh',
       currencySymbol: '৳',
+      currencyCode: 'BDT',
     );
   }
 
@@ -65,38 +72,49 @@ class SettingsRemoteDataSourceImpl implements SettingsRemoteDataSource {
     developer.log('⚙️ [SettingsRemoteDataSource] updateShopProfile() called for shopName: "${profile.shopName}"', name: 'SettingsRemoteDataSource');
     try {
       final body = {
+        'shopId': profile.id,
         'name': profile.shopName,
         'shopName': profile.shopName,
         'phone': profile.phone,
+        if (profile.email != null) 'email': profile.email,
         if (profile.address != null) 'address': profile.address,
         if (profile.logoUrl != null) 'logoUrl': profile.logoUrl,
+        'currency': profile.currencyCode.isNotEmpty ? profile.currencyCode : profile.currencySymbol,
         'currencySymbol': profile.currencySymbol,
+        'vatRate': profile.defaultVatRate,
         'defaultVatRate': profile.defaultVatRate,
       };
 
       dynamic response;
       try {
         response = await apiClient.put(
-          '${EnvConfig.apiBaseUrl}/api/auth/profile',
+          '${EnvConfig.apiBaseUrl}/api/shop/settings',
           body: body,
         );
       } catch (_) {
         try {
-          response = await apiClient.put(
-            '${EnvConfig.apiBaseUrl}/api/shop/profile',
+          response = await apiClient.patch(
+            '${EnvConfig.apiBaseUrl}/api/shop/settings',
             body: body,
           );
         } catch (_) {
           try {
-            response = await apiClient.post(
-              '${EnvConfig.apiBaseUrl}/api/shop/profile',
+            response = await apiClient.put(
+              '${EnvConfig.apiBaseUrl}/api/auth/profile',
               body: body,
             );
           } catch (_) {
-            response = await apiClient.put(
-              '${EnvConfig.apiBaseUrl}/api/users/profile',
-              body: body,
-            );
+            try {
+              response = await apiClient.put(
+                '${EnvConfig.apiBaseUrl}/api/shop/profile',
+                body: body,
+              );
+            } catch (_) {
+              response = await apiClient.put(
+                '${EnvConfig.apiBaseUrl}/api/users/profile',
+                body: body,
+              );
+            }
           }
         }
       }
@@ -105,7 +123,9 @@ class SettingsRemoteDataSourceImpl implements SettingsRemoteDataSource {
       final Map<String, dynamic> responseMap = response is Map<String, dynamic> ? response : {};
       final Map<String, dynamic> dataMap = responseMap['data'] is Map<String, dynamic>
           ? responseMap['data']
-          : (responseMap['user'] is Map<String, dynamic> ? responseMap['user'] : responseMap);
+          : (responseMap['user'] is Map<String, dynamic>
+              ? responseMap['user']
+              : (responseMap['settings'] is Map<String, dynamic> ? responseMap['settings'] : responseMap));
 
       return ShopProfileModel.fromJson(dataMap.isEmpty ? profile.toJson() : dataMap);
     } catch (e) {

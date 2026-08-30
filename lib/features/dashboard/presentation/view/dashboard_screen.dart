@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inventory_management_complete/features/reports/presentation/bloc/reports_bloc.dart';
 
@@ -282,7 +283,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
 
                           return StatCard(
                             title: 'Total Sell',
-                            value: '৳ ${revenue.toStringAsFixed(0)}',
+                            value: '${MoneyUtil.currencySymbol} ${revenue.toStringAsFixed(0)}',
                             icon: Icons.shopping_bag_outlined,
                             iconBackground: const Color(0xFFE8F0FF),
                             iconColor: const Color(0xFF2563EB),
@@ -334,7 +335,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
 
                           return StatCard(
                             title: 'Outstanding Due',
-                            value: '৳ ${due.toStringAsFixed(0)}',
+                            value: '${MoneyUtil.currencySymbol} ${due.toStringAsFixed(0)}',
                             icon: Icons.account_balance_wallet_outlined,
                             iconBackground: const Color(0xFFFFF2E5),
                             iconColor: const Color(0xFFF97316),

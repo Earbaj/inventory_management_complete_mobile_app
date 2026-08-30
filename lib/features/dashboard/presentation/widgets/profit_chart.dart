@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../reports/presentation/bloc/reports_state.dart';
 import '../../../posbilling/domain/entities/sale_entity.dart';
@@ -126,7 +127,7 @@ class _ProfitChartState extends State<ProfitChart> {
                 textBaseline: TextBaseline.alphabetic,
                 children: [
                   Text(
-                    '৳ ${totalPeriodProfit.toStringAsFixed(0)}',
+                    '${MoneyUtil.currencySymbol} ${totalPeriodProfit.toStringAsFixed(0)}',
                     style: theme.textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                       color: profitColor,
@@ -141,7 +142,7 @@ class _ProfitChartState extends State<ProfitChart> {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      'Avg ৳${avgDailyProfit.toStringAsFixed(0)}/d',
+                      'Avg ${MoneyUtil.currencySymbol}${avgDailyProfit.toStringAsFixed(0)}/d',
                       style: const TextStyle(
                         color: profitColor,
                         fontSize: 11,
@@ -151,7 +152,7 @@ class _ProfitChartState extends State<ProfitChart> {
                   ),
                   const Spacer(),
                   Text(
-                    'Revenue: ৳${totalPeriodRevenue.toStringAsFixed(0)}',
+                    'Revenue: ${MoneyUtil.currencySymbol}${totalPeriodRevenue.toStringAsFixed(0)}',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -163,26 +164,42 @@ class _ProfitChartState extends State<ProfitChart> {
 
               const SizedBox(height: 10),
               // Timeframe Segmented Control
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(10),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: isDark ? colorScheme.surfaceContainerHighest : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildTimeframeTab(
+                        label: 'Last 7 Days',
+                        selected: _timeframe == ProfitTimeframe.last7Days,
+                        onTap: () => setState(() {
+                          _timeframe = ProfitTimeframe.last7Days;
+                          _touchedIndex = null;
+                        }),
+                        activeColor: profitColor,
+                      ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _buildTimeframePill('7D', ProfitTimeframe.last7Days),
-                        _buildTimeframePill('30D', ProfitTimeframe.last30Days),
-                      ],
+                    Expanded(
+                      child: _buildTimeframeTab(
+                        label: 'Last 30 Days',
+                        selected: _timeframe == ProfitTimeframe.last30Days,
+                        onTap: () => setState(() {
+                          _timeframe = ProfitTimeframe.last30Days;
+                          _touchedIndex = null;
+                        }),
+                        activeColor: profitColor,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              const SizedBox(height: 10),
+
+              const SizedBox(height: 16),
               // Bar Chart
               SizedBox(
                 height: 190,
@@ -206,7 +223,7 @@ class _ProfitChartState extends State<ProfitChart> {
                             ),
                             children: [
                               TextSpan(
-                                text: 'Profit: ৳${point.estimatedProfit.toStringAsFixed(0)}\n',
+                                text: 'Profit: ${MoneyUtil.currencySymbol}${point.estimatedProfit.toStringAsFixed(0)}\n',
                                 style: const TextStyle(
                                   color: Color(0xFF34D399),
                                   fontWeight: FontWeight.bold,
@@ -214,7 +231,7 @@ class _ProfitChartState extends State<ProfitChart> {
                                 ),
                               ),
                               TextSpan(
-                                text: 'Rev: ৳${point.totalRevenue.toStringAsFixed(0)} (${point.orderCount} inv)',
+                                text: 'Rev: ${MoneyUtil.currencySymbol}${point.totalRevenue.toStringAsFixed(0)} (${point.orderCount} inv)',
                                 style: TextStyle(
                                   color: colorScheme.onInverseSurface.withValues(alpha: 0.7),
                                   fontSize: 11,
@@ -334,34 +351,44 @@ class _ProfitChartState extends State<ProfitChart> {
     );
   }
 
-  Widget _buildTimeframePill(String title, ProfitTimeframe timeframe) {
-    final isSelected = _timeframe == timeframe;
-    final colorScheme = Theme.of(context).colorScheme;
-    const profitColor = Color(0xFF10B981);
+  Widget _buildTimeframeTab({
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+    required Color activeColor,
+  }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return GestureDetector(
-      onTap: () => setState(() => _timeframe = timeframe),
+      onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: const EdgeInsets.symmetric(vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? colorScheme.surface : Colors.transparent,
+          color: selected
+              ? (isDark ? activeColor.withValues(alpha: 0.2) : Colors.white)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
-          boxShadow: isSelected
+          boxShadow: selected && !isDark
               ? [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 4,
                     offset: const Offset(0, 1),
                   ),
                 ]
               : null,
         ),
-        child: Text(
-          title,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-            color: isSelected ? profitColor : colorScheme.onSurfaceVariant,
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: selected ? FontWeight.bold : FontWeight.w600,
+              color: selected
+                  ? activeColor
+                  : theme.textTheme.bodySmall?.color,
+            ),
           ),
         ),
       ),
@@ -445,11 +472,11 @@ class _ProfitChartState extends State<ProfitChart> {
 
   String _formatCompactCurrency(double value) {
     if (value >= 1000000) {
-      return '৳${(value / 1000000).toStringAsFixed(1)}M';
+      return '${MoneyUtil.currencySymbol}${(value / 1000000).toStringAsFixed(1)}M';
     } else if (value >= 1000) {
-      return '৳${(value / 1000).toStringAsFixed(0)}k';
+      return '${MoneyUtil.currencySymbol}${(value / 1000).toStringAsFixed(0)}k';
     }
-    return '৳${value.toInt()}';
+    return '${MoneyUtil.currencySymbol}${value.toInt()}';
   }
 }
 

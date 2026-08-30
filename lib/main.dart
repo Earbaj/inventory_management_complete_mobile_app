@@ -30,8 +30,11 @@ import 'features/settings/presentation/bloc/settings_event.dart';
 import 'features/staff_managers/presentation/bloc/staff_event.dart';
 import 'features/suppliers/presentation/bloc/supplier_bloc.dart';
 
-void main() {
+import 'core/utils/money_util.dart';
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await MoneyUtil.loadSavedCurrency();
   InjectionContainer.init();
   runApp(const MyApp());
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import '../../../../core/widgets/global_empty_placeholder.dart';
 import '../../reports_models.dart';
 import 'receipt_dialog.dart';
@@ -226,7 +227,7 @@ class _InvoiceCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '৳${invoice.totalAmount.toStringAsFixed(2)}',
+                      '${MoneyUtil.currencySymbol}${invoice.totalAmount.toStringAsFixed(2)}',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
@@ -236,7 +237,7 @@ class _InvoiceCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       invoice.dueAmount > 0
-                          ? 'Due: ৳${invoice.dueAmount.toStringAsFixed(2)}'
+                          ? 'Due: ${MoneyUtil.currencySymbol}${invoice.dueAmount.toStringAsFixed(2)}'
                           : 'Paid Full',
                       style: TextStyle(
                         fontSize: 12,

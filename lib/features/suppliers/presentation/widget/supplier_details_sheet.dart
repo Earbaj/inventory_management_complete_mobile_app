@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../domain/entities/purchase_order_entity.dart';
 import '../../domain/entities/supplier_entity.dart';
@@ -157,7 +158,7 @@ class _SupplierDetailsSheetState extends State<SupplierDetailsSheet> {
                         const Text('Total Purchases', style: TextStyle(fontSize: 11, color: Colors.grey)),
                         const SizedBox(height: 2),
                         Text(
-                          '৳ ${_supplier.totalPurchases.toStringAsFixed(0)}',
+                          '${MoneyUtil.currencySymbol} ${_supplier.totalPurchases.toStringAsFixed(0)}',
                           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -187,7 +188,7 @@ class _SupplierDetailsSheetState extends State<SupplierDetailsSheet> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '৳ ${_supplier.dueAmount.toStringAsFixed(0)}',
+                          '${MoneyUtil.currencySymbol} ${_supplier.dueAmount.toStringAsFixed(0)}',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
@@ -291,16 +292,16 @@ class _SupplierDetailsSheetState extends State<SupplierDetailsSheet> {
                                 ),
                                 const SizedBox(height: 6),
                                 ...po.items.map((i) => Text(
-                                  '• ${i.itemName} (x${i.quantity}) - ৳${i.totalPrice.toStringAsFixed(0)}',
+                                  '• ${i.itemName} (x${i.quantity}) - ${MoneyUtil.currencySymbol}${i.totalPrice.toStringAsFixed(0)}',
                                   style: const TextStyle(fontSize: 12),
                                 )),
                                 const SizedBox(height: 6),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text('Total: ৳${po.totalAmount.toStringAsFixed(0)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                    Text('Total: ${MoneyUtil.currencySymbol}${po.totalAmount.toStringAsFixed(0)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                                     Text(
-                                      po.dueAmount > 0 ? 'Due: ৳${po.dueAmount.toStringAsFixed(0)}' : 'Paid',
+                                      po.dueAmount > 0 ? 'Due: ${MoneyUtil.currencySymbol}${po.dueAmount.toStringAsFixed(0)}' : 'Paid',
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.bold,

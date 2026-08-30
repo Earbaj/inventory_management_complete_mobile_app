@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
@@ -544,7 +545,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> with SingleTickerPr
                             const SizedBox(width: 10),
                             _MetricCard(
                               title: 'Subscription Revenue',
-                              value: '৳ ${metrics.totalSubscriptionRevenue.toStringAsFixed(0)}',
+                              value: '${MoneyUtil.currencySymbol} ${metrics.totalSubscriptionRevenue.toStringAsFixed(0)}',
                               icon: Icons.payments_rounded,
                               color: Colors.green,
                             ),
@@ -743,7 +744,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> with SingleTickerPr
                       label: Text(payment.method.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
                     ),
                     Text(
-                      '৳ ${payment.amount.toStringAsFixed(0)}',
+                      '${MoneyUtil.currencySymbol} ${payment.amount.toStringAsFixed(0)}',
                       style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.green.shade700),
                     ),
                   ],

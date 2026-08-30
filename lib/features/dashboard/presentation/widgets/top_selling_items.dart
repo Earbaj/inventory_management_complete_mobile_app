@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/utils/money_util.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../reports/presentation/bloc/reports_state.dart';
@@ -100,7 +101,7 @@ class TopSellingItems extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              '৳ ${revenue.toStringAsFixed(0)}',
+                              '${MoneyUtil.currencySymbol} ${revenue.toStringAsFixed(0)}',
                               style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             Text('Revenue', style: theme.textTheme.bodySmall?.copyWith(fontSize: 10)),
@@ -150,7 +151,7 @@ class TopSellingItems extends StatelessWidget {
                                   ],
                                 ),
                               ),
-                              Text('৳ ${item.sellPrice.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                              Text('${MoneyUtil.currencySymbol} ${item.sellPrice.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold)),
                             ],
                           ),
                         );
