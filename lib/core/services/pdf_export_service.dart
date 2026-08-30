@@ -8,6 +8,8 @@ import 'package:printing/printing.dart';
 import '../../features/customers/domain/entities/customer_entity.dart';
 import '../../features/customers/customer_transaction.dart';
 import '../../features/posbilling/domain/entities/sale_entity.dart';
+import '../../features/suppliers/domain/entities/purchase_order_entity.dart';
+import '../../features/suppliers/domain/entities/supplier_entity.dart';
 import '../../features/settings/domain/entities/shop_profile_entity.dart';
 import '../di/injection_container.dart';
 import '../../features/settings/presentation/bloc/settings_state.dart';
@@ -49,6 +51,294 @@ class PdfExportService {
       },
       name: 'Statement_${customer.name.replaceAll(' ', '_')}',
     );
+  }
+
+  /// Opens Interactive Native PDF Print Preview & Device Save / Share dialog for a Purchase Order Voucher.
+  static Future<void> printOrSavePurchaseOrderPdf(
+    BuildContext context, {
+    required PurchaseOrderEntity order,
+    SupplierEntity? supplier,
+    ShopProfileEntity? shopProfile,
+  }) async {
+    developer.log('📄 [PdfExportService] Opening PDF Print Preview for Purchase Order ${order.poNumber.isNotEmpty ? order.poNumber : order.id}', name: 'PdfExportService');
+
+    ShopProfileEntity profile = shopProfile ?? const ShopProfileEntity(
+      id: 'default',
+      shopName: 'INVENTORY POS STORE',
+      phone: 'N/A',
+      currencySymbol: '৳',
+    );
+    if (shopProfile == null) {
+      try {
+        final settingsState = InjectionContainer.settingsBloc.state;
+        if (settingsState is SettingsLoadedState) {
+          profile = settingsState.profile;
+        }
+      } catch (_) {}
+    }
+
+    final poName = order.poNumber.isNotEmpty ? order.poNumber : 'PO_${order.id.length > 8 ? order.id.substring(order.id.length - 6) : order.id}';
+
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async {
+        return generatePurchaseOrderPdfBytes(order: order, supplier: supplier, shopProfile: profile);
+      },
+      name: 'Purchase_Order_$poName',
+    );
+  }
+
+  /// Generates Uint8List PDF Bytes for a Single Purchase Order Voucher.
+  static Future<Uint8List> generatePurchaseOrderPdfBytes({
+    required PurchaseOrderEntity order,
+    SupplierEntity? supplier,
+    required ShopProfileEntity shopProfile,
+  }) async {
+    final font = await PdfGoogleFonts.notoSansBengaliRegular();
+    final boldFont = await PdfGoogleFonts.notoSansBengaliBold();
+    final pdf = pw.Document(
+      theme: pw.ThemeData.withFont(
+        base: font,
+        bold: boldFont,
+      ),
+    );
+
+    final currency = (shopProfile.currencySymbol == '৳' || shopProfile.currencySymbol.isEmpty) ? 'Tk ' : '${shopProfile.currencySymbol} ';
+    final shopName = shopProfile.shopName.isNotEmpty ? shopProfile.shopName : 'INVENTORY POS STORE';
+    final shopPhone = shopProfile.phone.isNotEmpty ? shopProfile.phone : 'N/A';
+    final shopAddress = shopProfile.address?.isNotEmpty == true ? shopProfile.address! : '';
+    final shopEmail = shopProfile.email?.isNotEmpty == true ? shopProfile.email! : '';
+
+    final dateStr = '${order.createdAt.day.toString().padLeft(2, '0')}/'
+        '${order.createdAt.month.toString().padLeft(2, '0')}/'
+        '${order.createdAt.year} ${order.createdAt.hour.toString().padLeft(2, '0')}:${order.createdAt.minute.toString().padLeft(2, '0')}';
+
+    final poNo = order.poNumber.isNotEmpty ? order.poNumber : '#${order.id.length > 8 ? order.id.substring(order.id.length - 6) : order.id}';
+    final supplierName = order.supplierName.isNotEmpty ? order.supplierName : (supplier?.name ?? 'Supplier');
+    final companyName = supplier?.companyName ?? '';
+    final supplierPhone = supplier?.phone ?? '';
+    final supplierAddress = supplier?.address ?? '';
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              // 1. SHOP HEADER
+              pw.Center(
+                child: pw.Column(
+                  children: [
+                    pw.Text(
+                      shopName.toUpperCase(),
+                      style: pw.TextStyle(
+                        fontSize: 20,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                    if (shopAddress.isNotEmpty) ...[
+                      pw.SizedBox(height: 4),
+                      pw.Text(
+                        shopAddress,
+                        style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+                      ),
+                    ],
+                    pw.SizedBox(height: 2),
+                    pw.Text(
+                      'Phone: $shopPhone${shopEmail.isNotEmpty ? ' | Email: $shopEmail' : ''}',
+                      style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+                    ),
+                    pw.SizedBox(height: 12),
+                    pw.Container(
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      decoration: pw.BoxDecoration(
+                        color: PdfColors.indigo800,
+                        borderRadius: pw.BorderRadius.circular(4),
+                      ),
+                      child: pw.Text(
+                        'PURCHASE ORDER VOUCHER',
+                        style: pw.TextStyle(
+                          color: PdfColors.white,
+                          fontSize: 12,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    pw.SizedBox(height: 16),
+                  ],
+                ),
+              ),
+
+              // 2. VOUCHER & SUPPLIER INFO ROW
+              pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  // PO Details
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('PO Number: $poNo', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
+                      pw.SizedBox(height: 4),
+                      pw.Text('Date: $dateStr', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+                      pw.SizedBox(height: 4),
+                      pw.Row(
+                        children: [
+                          pw.Text('Status: ', style: const pw.TextStyle(fontSize: 10)),
+                          pw.Text(
+                            order.dueAmount > 0 ? 'DUE / PENDING' : 'PAID',
+                            style: pw.TextStyle(
+                              fontWeight: pw.FontWeight.bold,
+                              fontSize: 10,
+                              color: order.dueAmount > 0 ? PdfColors.red800 : PdfColors.green800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  // Supplier Details
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
+                    children: [
+                      pw.Text('Supplier: $supplierName', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
+                      if (companyName.isNotEmpty) ...[
+                        pw.SizedBox(height: 2),
+                        pw.Text('Company: $companyName', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+                      ],
+                      if (supplierPhone.isNotEmpty) ...[
+                        pw.SizedBox(height: 2),
+                        pw.Text('Phone: $supplierPhone', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+                      ],
+                      if (supplierAddress.isNotEmpty) ...[
+                        pw.SizedBox(height: 2),
+                        pw.Text('Address: $supplierAddress', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+              pw.SizedBox(height: 16),
+
+              // 3. ITEMS TABLE
+              pw.TableHelper.fromTextArray(
+                headers: ['SL', 'Item Name / Description', 'Qty', 'Unit Cost', 'Total Amount'],
+                data: order.items.asMap().entries.map((entry) {
+                  final idx = entry.key + 1;
+                  final item = entry.value;
+                  return [
+                    '$idx',
+                    item.itemName,
+                    '${item.quantity}',
+                    '$currency${item.unitCost.toStringAsFixed(2)}',
+                    '$currency${item.totalPrice.toStringAsFixed(2)}',
+                  ];
+                }).toList(),
+                border: const pw.TableBorder(
+                  horizontalInside: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
+                  bottom: pw.BorderSide(color: PdfColors.grey500, width: 1),
+                ),
+                headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: PdfColors.white),
+                headerDecoration: const pw.BoxDecoration(color: PdfColors.indigo900),
+                cellStyle: const pw.TextStyle(fontSize: 9),
+                columnWidths: {
+                  0: const pw.FixedColumnWidth(25),
+                  1: const pw.FlexColumnWidth(3),
+                  2: const pw.FixedColumnWidth(40),
+                  3: const pw.FixedColumnWidth(70),
+                  4: const pw.FixedColumnWidth(80),
+                },
+              ),
+              pw.SizedBox(height: 16),
+
+              // 4. FINANCIAL SUMMARY
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.end,
+                children: [
+                  pw.Container(
+                    width: 200,
+                    padding: const pw.EdgeInsets.all(10),
+                    decoration: pw.BoxDecoration(
+                      border: pw.Border.all(color: PdfColors.grey400),
+                      borderRadius: pw.BorderRadius.circular(6),
+                      color: PdfColors.grey100,
+                    ),
+                    child: pw.Column(
+                      children: [
+                        pw.Row(
+                          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                          children: [
+                            pw.Text('Total Amount:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
+                            pw.Text('$currency${order.totalAmount.toStringAsFixed(2)}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
+                          ],
+                        ),
+                        pw.SizedBox(height: 4),
+                        pw.Row(
+                          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                          children: [
+                            pw.Text('Paid Amount:', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey800)),
+                            pw.Text('$currency${order.paidAmount.toStringAsFixed(2)}', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey800)),
+                          ],
+                        ),
+                        pw.Divider(height: 8, color: PdfColors.grey400),
+                        pw.Row(
+                          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                          children: [
+                            pw.Text('Balance Due:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: order.dueAmount > 0 ? PdfColors.red800 : PdfColors.green800)),
+                            pw.Text(
+                              '$currency${order.dueAmount.toStringAsFixed(2)}',
+                              style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: order.dueAmount > 0 ? PdfColors.red800 : PdfColors.green800),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              if (order.note.isNotEmpty) ...[
+                pw.SizedBox(height: 14),
+                pw.Text('Note / Remarks: ${order.note}', style: pw.TextStyle(fontSize: 9, fontStyle: pw.FontStyle.italic, color: PdfColors.grey700)),
+              ],
+
+              pw.Spacer(),
+
+              // 5. SIGNATURE FOOTER
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Column(
+                    children: [
+                      pw.Container(width: 140, height: 1, color: PdfColors.grey500),
+                      pw.SizedBox(height: 4),
+                      pw.Text("Supplier's Signature", style: const pw.TextStyle(fontSize: 9)),
+                    ],
+                  ),
+                  pw.Column(
+                    children: [
+                      pw.Container(width: 140, height: 1, color: PdfColors.grey500),
+                      pw.SizedBox(height: 4),
+                      pw.Text('Authorized Signature', style: const pw.TextStyle(fontSize: 9)),
+                    ],
+                  ),
+                ],
+              ),
+              pw.SizedBox(height: 12),
+              pw.Center(
+                child: pw.Text(
+                  'Generated automatically by Smart Inventory & POS Management System',
+                  style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    return pdf.save();
   }
 
   /// Generates Uint8List PDF Bytes for a Single Sales Invoice.

@@ -43,8 +43,8 @@ class SupplierModel {
       double calcTotal = 0.0;
       double calcDue = 0.0;
       for (final po in poList) {
-        if (po is Map<String, dynamic>) {
-          final order = PurchaseOrderModel.fromJson(po);
+        if (po is Map) {
+          final order = PurchaseOrderModel.fromJson(Map<String, dynamic>.from(po));
           orders.add(order);
           calcTotal += order.totalAmount;
           calcDue += order.dueAmount;

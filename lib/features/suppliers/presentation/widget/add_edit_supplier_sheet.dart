@@ -160,14 +160,14 @@ class _AddEditSupplierSheetState extends State<AddEditSupplierSheet> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                isEditing ? 'মহাজনের তথ্য আপডেট' : 'নতুন মহাজন প্রোফাইল',
+                                isEditing ? 'Edit Supplier Profile' : 'New Supplier Profile',
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                isEditing ? 'সাপ্লায়ার তথ্য সংশোধন করুন' : 'নতুন পাইকারি মহাজন বা সাপ্লায়ার যুক্ত করুন',
+                                isEditing ? 'Modify supplier information' : 'Add new wholesale vendor or supplier',
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: colorScheme.onSurfaceVariant,
                                 ),
@@ -191,8 +191,8 @@ class _AddEditSupplierSheetState extends State<AddEditSupplierSheet> {
                       controller: _nameCtrl,
                       textCapitalization: TextCapitalization.words,
                       decoration: InputDecoration(
-                        labelText: 'মহাজনের নাম (Supplier Name) *',
-                        hintText: 'e.g. মো: রফিকুল ইসলাম',
+                        labelText: 'Supplier Name *',
+                        hintText: 'e.g. John Doe',
                         prefixIcon: const Icon(Icons.person_outline_rounded),
                         filled: true,
                         fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
@@ -203,7 +203,7 @@ class _AddEditSupplierSheetState extends State<AddEditSupplierSheet> {
                       ),
                       validator: (val) {
                         if (val == null || val.trim().isEmpty) {
-                          return 'মহাজনের নাম দেওয়া আবশ্যক';
+                          return 'Supplier name is required';
                         }
                         return null;
                       },
@@ -215,8 +215,8 @@ class _AddEditSupplierSheetState extends State<AddEditSupplierSheet> {
                       controller: _companyCtrl,
                       textCapitalization: TextCapitalization.words,
                       decoration: InputDecoration(
-                        labelText: 'কোম্পানি / ব্যবসার নাম',
-                        hintText: 'e.g. মেসার্স ইসলাম ট্রেডার্স',
+                        labelText: 'Company / Business Name',
+                        hintText: 'e.g. ABC Trading Co.',
                         prefixIcon: const Icon(Icons.business_outlined),
                         filled: true,
                         fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
@@ -233,7 +233,7 @@ class _AddEditSupplierSheetState extends State<AddEditSupplierSheet> {
                       controller: _phoneCtrl,
                       keyboardType: TextInputType.phone,
                       decoration: InputDecoration(
-                        labelText: 'মোবাইল নম্বর (Phone) *',
+                        labelText: 'Phone Number *',
                         hintText: 'e.g. 01712345678',
                         prefixIcon: const Icon(Icons.phone_outlined),
                         filled: true,
@@ -245,7 +245,7 @@ class _AddEditSupplierSheetState extends State<AddEditSupplierSheet> {
                       ),
                       validator: (val) {
                         if (val == null || val.trim().isEmpty) {
-                          return 'মোবাইল নম্বর দেওয়া আবশ্যক';
+                          return 'Phone number is required';
                         }
                         return null;
                       },
@@ -257,7 +257,7 @@ class _AddEditSupplierSheetState extends State<AddEditSupplierSheet> {
                       controller: _emailCtrl,
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
-                        labelText: 'ইমেইল (Email - ঐচ্ছিক)',
+                        labelText: 'Email Address (Optional)',
                         hintText: 'e.g. supplier@example.com',
                         prefixIcon: const Icon(Icons.email_outlined),
                         filled: true,
@@ -275,8 +275,8 @@ class _AddEditSupplierSheetState extends State<AddEditSupplierSheet> {
                       controller: _addressCtrl,
                       textCapitalization: TextCapitalization.sentences,
                       decoration: InputDecoration(
-                        labelText: 'ঠিকানা (Address - ঐচ্ছিক)',
-                        hintText: 'e.g. চকবাজার, ঢাকা',
+                        labelText: 'Address (Optional)',
+                        hintText: 'e.g. 123 Main St, Dhaka',
                         prefixIcon: const Icon(Icons.location_on_outlined),
                         filled: true,
                         fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
@@ -300,7 +300,7 @@ class _AddEditSupplierSheetState extends State<AddEditSupplierSheet> {
                               padding: const EdgeInsets.symmetric(vertical: 14),
                             ),
                             onPressed: _isSubmitting ? null : () => Navigator.pop(context),
-                            child: const Text('বাতিল'),
+                            child: const Text('Cancel'),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -324,7 +324,7 @@ class _AddEditSupplierSheetState extends State<AddEditSupplierSheet> {
                                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                     ),
                                   )
-                                : Text(isEditing ? 'আপডেট করুন' : 'সংরক্ষণ করুন'),
+                                : Text(isEditing ? 'Update Supplier' : 'Save Supplier'),
                           ),
                         ),
                       ],

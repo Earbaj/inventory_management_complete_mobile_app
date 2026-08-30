@@ -3,6 +3,7 @@ import '../../../../core/di/injection_container.dart';
 import '../../domain/entities/purchase_order_entity.dart';
 import '../../domain/entities/supplier_entity.dart';
 import '../../data/mappers/supplier_mapper.dart';
+import 'purchase_order_receipt_dialog.dart';
 
 class SupplierDetailsSheet extends StatefulWidget {
   final SupplierEntity supplier;
@@ -121,7 +122,7 @@ class _SupplierDetailsSheetState extends State<SupplierDetailsSheet> {
                         ),
                       ),
                       Text(
-                        _supplier.companyName.isNotEmpty ? _supplier.companyName : 'ব্যক্তিগত মহাজন',
+                        _supplier.companyName.isNotEmpty ? _supplier.companyName : 'Individual Supplier',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),
@@ -153,7 +154,7 @@ class _SupplierDetailsSheetState extends State<SupplierDetailsSheet> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('মোট কেনাকাটা', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                        const Text('Total Purchases', style: TextStyle(fontSize: 11, color: Colors.grey)),
                         const SizedBox(height: 2),
                         Text(
                           '৳ ${_supplier.totalPurchases.toStringAsFixed(0)}',
@@ -178,7 +179,7 @@ class _SupplierDetailsSheetState extends State<SupplierDetailsSheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'বর্তমান বাকি (Due)',
+                          'Current Due',
                           style: TextStyle(
                             fontSize: 11,
                             color: _supplier.dueAmount > 0 ? Colors.red.shade700 : Colors.green.shade700,
@@ -207,11 +208,11 @@ class _SupplierDetailsSheetState extends State<SupplierDetailsSheet> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildInfoRow(Icons.phone_outlined, 'মোবাইল নম্বর', _supplier.phone),
+                    _buildInfoRow(Icons.phone_outlined, 'Phone Number', _supplier.phone),
                     if (_supplier.email.isNotEmpty)
-                      _buildInfoRow(Icons.email_outlined, 'ইমেইল', _supplier.email),
+                      _buildInfoRow(Icons.email_outlined, 'Email Address', _supplier.email),
                     if (_supplier.address.isNotEmpty)
-                      _buildInfoRow(Icons.location_on_outlined, 'ঠিকানা', _supplier.address),
+                      _buildInfoRow(Icons.location_on_outlined, 'Address', _supplier.address),
 
                     const SizedBox(height: 10),
                     const Divider(height: 1),
@@ -219,13 +220,13 @@ class _SupplierDetailsSheetState extends State<SupplierDetailsSheet> {
 
                     // Order History Header
                     Text(
-                      'ক্রয় মেমোর তালিকা (${_orders.length})',
+                      'Purchase Orders History (${_orders.length})',
                       style: theme.textTheme.labelMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: colorScheme.onSurfaceVariant,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
 
                     if (_isLoading)
                       const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator()))
@@ -234,54 +235,82 @@ class _SupplierDetailsSheetState extends State<SupplierDetailsSheet> {
                         padding: const EdgeInsets.all(16),
                         alignment: Alignment.center,
                         child: Text(
-                          'এই মহাজনের আন্ডারে কোনো মেমো তৈরি করা হয়নি।',
+                          'No purchase orders found for this supplier.',
                           style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                         ),
                       )
                     else
                       ..._orders.map((po) {
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: theme.dividerColor.withValues(alpha: 0.4)),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    po.poNumber.isNotEmpty ? po.poNumber : '#${po.id.length > 8 ? po.id.substring(po.id.length - 6) : po.id}',
-                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue),
-                                  ),
-                                  Text(
-                                    '${po.createdAt.day}/${po.createdAt.month}/${po.createdAt.year}',
-                                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              ...po.items.map((i) => Text('${i.itemName} (x${i.quantity}) - ৳${i.totalPrice.toStringAsFixed(0)}', style: const TextStyle(fontSize: 12))),
-                              const SizedBox(height: 4),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text('মোট: ৳${po.totalAmount.toStringAsFixed(0)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                                  Text(
-                                    po.dueAmount > 0 ? 'বাকি: ৳${po.dueAmount.toStringAsFixed(0)}' : 'পরিশোধিত',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: po.dueAmount > 0 ? Colors.red.shade700 : Colors.green.shade700,
+                        final poNum = po.poNumber.isNotEmpty
+                            ? po.poNumber
+                            : '#${po.id.length > 8 ? po.id.substring(po.id.length - 6) : po.id}';
+
+                        return InkWell(
+                          onTap: () {
+                            PurchaseOrderReceiptDialog.show(
+                              context,
+                              order: po,
+                              supplier: _supplier,
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: theme.dividerColor.withValues(alpha: 0.4)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      poNum,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: colorScheme.primary,
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          '${po.createdAt.day}/${po.createdAt.month}/${po.createdAt.year}',
+                                          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Icon(Icons.chevron_right_rounded, size: 16, color: colorScheme.primary),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                ...po.items.map((i) => Text(
+                                  '• ${i.itemName} (x${i.quantity}) - ৳${i.totalPrice.toStringAsFixed(0)}',
+                                  style: const TextStyle(fontSize: 12),
+                                )),
+                                const SizedBox(height: 6),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text('Total: ৳${po.totalAmount.toStringAsFixed(0)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                    Text(
+                                      po.dueAmount > 0 ? 'Due: ৳${po.dueAmount.toStringAsFixed(0)}' : 'Paid',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: po.dueAmount > 0 ? Colors.red.shade700 : Colors.green.shade700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         );
                       }),
@@ -298,7 +327,7 @@ class _SupplierDetailsSheetState extends State<SupplierDetailsSheet> {
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
               onPressed: () => Navigator.pop(context),
-              child: const Text('বন্ধ করুন'),
+              child: const Text('Close'),
             ),
           ],
         ),

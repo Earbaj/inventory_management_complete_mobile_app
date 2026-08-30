@@ -255,14 +255,14 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'নতুন মালামাল ক্রয় মেমো',
+                              'New Purchase Order',
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
                               ),
                             ),
                             Text(
-                              'সাপ্লায়ার থেকে পাইকারি কেনাকাটা ও স্টক যোগ',
+                              'Purchase items from supplier and add stock',
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: colorScheme.onSurfaceVariant,
                                 fontSize: 11,
@@ -294,7 +294,7 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
                           DropdownButtonFormField<SupplierEntity>(
                             initialValue: _selectedSupplier,
                             decoration: InputDecoration(
-                              labelText: 'মহাজন নির্বাচন করুন *',
+                              labelText: 'Select Supplier *',
                               prefixIcon: const Icon(Icons.business_outlined, size: 20),
                               isDense: true,
                               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -309,7 +309,7 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
                               return DropdownMenuItem(
                                 value: sup,
                                 child: Text(
-                                  '${sup.name} (${sup.companyName.isNotEmpty ? sup.companyName : "ব্যক্তিগত"})',
+                                  '${sup.name} (${sup.companyName.isNotEmpty ? sup.companyName : "Individual"})',
                                   style: const TextStyle(fontSize: 13),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -325,12 +325,12 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
                           ),
                           const SizedBox(height: 12),
 
-                          // 2. Product Item Header + "+ নতুন আইটেম" Button
+                          // 2. Product Item Header + "+ Add New Product" Button
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'পণ্য নির্বাচন (Product Item):',
+                                'Select Product Item:',
                                 style: theme.textTheme.labelMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color: colorScheme.onSurfaceVariant,
@@ -347,7 +347,7 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
                                       Icon(Icons.add_circle_outline_rounded, size: 15, color: colorScheme.primary),
                                       const SizedBox(width: 4),
                                       Text(
-                                        '+ নতুন পণ্য যুক্ত করুন',
+                                        '+ Add New Product',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w600,
@@ -370,7 +370,7 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
                               initialValue: _selectedItemId,
                               isExpanded: true,
                               decoration: InputDecoration(
-                                hintText: 'ইনভেন্টরি পণ্য বাছাই করুন',
+                                hintText: 'Choose inventory item',
                                 prefixIcon: const Icon(Icons.inventory_2_outlined, size: 20),
                                 isDense: true,
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -385,7 +385,7 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
                                 return DropdownMenuItem(
                                   value: item.id,
                                   child: Text(
-                                    '${item.name} (${item.stockQuantity} ${item.unit} মজুদ)',
+                                    '${item.name} (${item.stockQuantity} ${item.unit} in stock)',
                                     style: const TextStyle(fontSize: 13),
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -410,8 +410,8 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
                           else
                             TextFormField(
                               decoration: InputDecoration(
-                                labelText: 'মালামালের নাম *',
-                                hintText: 'e.g. চিনি ৫০ কেজি বস্তা',
+                                labelText: 'Item Name *',
+                                hintText: 'e.g. Sugar 50kg bag',
                                 prefixIcon: const Icon(Icons.inventory_2_outlined, size: 20),
                                 isDense: true,
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -424,7 +424,7 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
                               ),
                               onChanged: (val) => _selectedItemName = val,
                               validator: (val) {
-                                if (val == null || val.trim().isEmpty) return 'মালামালের নাম দিন';
+                                if (val == null || val.trim().isEmpty) return 'Enter item name';
                                 return null;
                               },
                             ),
@@ -438,7 +438,7 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
                                   controller: _qtyCtrl,
                                   keyboardType: TextInputType.number,
                                   decoration: InputDecoration(
-                                    labelText: 'পরিমাণ (Qty) *',
+                                    labelText: 'Quantity (Qty) *',
                                     prefixIcon: const Icon(Icons.format_list_numbered_rounded, size: 20),
                                     isDense: true,
                                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -451,9 +451,9 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
                                   ),
                                   onChanged: (_) => _updateCalculations(),
                                   validator: (val) {
-                                    if (val == null || val.trim().isEmpty) return 'পরিমাণ দিন';
+                                    if (val == null || val.trim().isEmpty) return 'Enter quantity';
                                     final parsed = int.tryParse(val.trim());
-                                    if (parsed == null || parsed <= 0) return 'সংখ্যা দিন';
+                                    if (parsed == null || parsed <= 0) return 'Enter a valid number';
                                     return null;
                                   },
                                 ),
@@ -464,7 +464,7 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
                                   controller: _costCtrl,
                                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                   decoration: InputDecoration(
-                                    labelText: 'পাইকারি দর (৳) *',
+                                    labelText: 'Buy Price / Unit Cost (৳) *',
                                     prefixIcon: const Icon(Icons.attach_money_rounded, size: 20),
                                     isDense: true,
                                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -477,9 +477,9 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
                                   ),
                                   onChanged: (_) => _updateCalculations(),
                                   validator: (val) {
-                                    if (val == null || val.trim().isEmpty) return 'দর দিন';
+                                    if (val == null || val.trim().isEmpty) return 'Enter unit price';
                                     final parsed = double.tryParse(val.trim());
-                                    if (parsed == null || parsed <= 0) return 'সঠিক দর দিন';
+                                    if (parsed == null || parsed <= 0) return 'Enter a valid price';
                                     return null;
                                   },
                                 ),
@@ -493,7 +493,7 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
                             children: [
                               Expanded(
                                 child: ChoiceChip(
-                                  label: const Text('সম্পূর্ণ বাকি (Due)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                  label: const Text('Full Due', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                                   selected: _paymentType == 'due',
                                   selectedColor: Colors.red.shade100,
                                   visualDensity: VisualDensity.compact,
@@ -515,7 +515,7 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
                               const SizedBox(width: 8),
                               Expanded(
                                 child: ChoiceChip(
-                                  label: const Text('নগদ পরিশোধ (Paid)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                  label: const Text('Full Paid', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                                   selected: _paymentType == 'paid',
                                   selectedColor: Colors.green.shade100,
                                   visualDensity: VisualDensity.compact,
@@ -552,7 +552,7 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text('মোট বিল (Total):', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                    const Text('Total Bill:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                                     Text(
                                       '৳ ${total.toStringAsFixed(0)}',
                                       style: TextStyle(
@@ -568,7 +568,7 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
                                   controller: _paidCtrl,
                                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                   decoration: InputDecoration(
-                                    labelText: 'পরিশোধিত টাকা (Paid) ৳',
+                                    labelText: 'Paid Amount (৳)',
                                     prefixIcon: const Icon(Icons.payments_outlined, size: 18),
                                     isDense: true,
                                     contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -597,11 +597,11 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      due > 0 ? 'বাকি হিসাব (Due):' : 'পরিশোধ স্ট্যাটাস:',
+                                      due > 0 ? 'Due Amount:' : 'Payment Status:',
                                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                                     ),
                                     Text(
-                                      due > 0 ? '৳ ${due.toStringAsFixed(0)} (বাকি)' : 'সম্পূর্ণ পরিশোধিত (Paid)',
+                                      due > 0 ? '৳ ${due.toStringAsFixed(0)} (Due)' : 'Fully Paid',
                                       style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
@@ -619,8 +619,8 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
                           TextFormField(
                             controller: _noteCtrl,
                             decoration: InputDecoration(
-                              labelText: 'নোট / ভাউচার নং (ঐচ্ছিক)',
-                              hintText: 'e.g. চালান ভাউচার #1042',
+                              labelText: 'Note / Voucher No (Optional)',
+                              hintText: 'e.g. Invoice / PO #1042',
                               prefixIcon: const Icon(Icons.note_alt_outlined, size: 20),
                               isDense: true,
                               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -650,7 +650,7 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
                           onPressed: _isSubmitting ? null : () => Navigator.pop(context),
-                          child: const Text('বাতিল'),
+                          child: const Text('Cancel'),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -674,7 +674,7 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
                                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                   ),
                                 )
-                              : const Text('মেমো সেভ & স্টক বৃদ্ধি', style: TextStyle(fontWeight: FontWeight.bold)),
+                              : const Text('Save Purchase Order', style: TextStyle(fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],

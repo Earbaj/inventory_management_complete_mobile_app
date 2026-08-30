@@ -99,7 +99,7 @@ class PurchaseOrderModel {
     }
 
     final itemsList = (json['items'] as List?)
-            ?.map((e) => PurchaseOrderItemModel.fromJson(e as Map<String, dynamic>))
+            ?.map((e) => PurchaseOrderItemModel.fromJson(e is Map ? Map<String, dynamic>.from(e) : <String, dynamic>{}))
             .toList() ??
         [];
 
