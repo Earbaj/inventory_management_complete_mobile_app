@@ -123,7 +123,6 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                             child: BlocBuilder<AuthBloc, AuthState>(
                               builder: (context, authState) {
                                 final userName = authState is AuthenticatedState ? (authState.user?.name ?? 'Owner') : 'Owner';
-                                final shopName = authState is AuthenticatedState ? (authState.user?.shopName ?? 'Smart Inventory Store') : 'Smart Inventory Store';
                                 return Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -326,10 +325,10 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
 
                           if (due == 0.0) {
                             final reportsState = InjectionContainer.reportsBloc.state;
-                            if (reportsState is ReportsLoadedState && reportsState.summary != null) {
-                              due = reportsState.summary!.totalDue > 0
-                                  ? reportsState.summary!.totalDue
-                                  : reportsState.summary!.dueRevenue;
+                            if (reportsState is ReportsLoadedState) {
+                              due = reportsState.summary.totalDue > 0
+                                  ? reportsState.summary.totalDue
+                                  : reportsState.summary.dueRevenue;
                             }
                           }
 
