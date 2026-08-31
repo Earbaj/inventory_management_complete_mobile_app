@@ -254,6 +254,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             case InvoicePdfFormat.modern:
               icon = Icons.auto_awesome_mosaic_rounded;
               break;
+            case InvoicePdfFormat.fullWidth:
+              icon = Icons.table_chart_rounded;
+              break;
             case InvoicePdfFormat.thermalPos:
               icon = Icons.point_of_sale_rounded;
               break;
