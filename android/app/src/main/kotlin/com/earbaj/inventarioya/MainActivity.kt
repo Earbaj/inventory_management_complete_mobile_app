@@ -1,4 +1,4 @@
-package com.example.inventory_management_complete
+package com.earbaj.inventarioya
 
 import io.flutter.embedding.android.FlutterActivity
 
