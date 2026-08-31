@@ -144,6 +144,9 @@ class ApiClient {
         ),
       );
 
+      // Invalidate memory cache on data mutation
+      await _cacheStore.clean();
+
       return _handleResponse(response);
     } on DioException catch (e) {
       throw _handleDioError(e);
@@ -250,6 +253,9 @@ class ApiClient {
         ),
       );
 
+      // Invalidate memory cache on data mutation
+      await _cacheStore.clean();
+
       return _handleResponse(response);
     } on DioException catch (e) {
       throw _handleDioError(e);
@@ -275,6 +281,9 @@ class ApiClient {
           extra: {'isPublic': isPublic},
         ),
       );
+
+      // Invalidate memory cache on data mutation
+      await _cacheStore.clean();
 
       return _handleResponse(response);
     } on DioException catch (e) {
@@ -303,6 +312,9 @@ class ApiClient {
           extra: {'isPublic': isPublic},
         ),
       );
+
+      // Invalidate memory cache on data mutation
+      await _cacheStore.clean();
 
       return _handleResponse(response);
     } on DioException catch (e) {

@@ -62,30 +62,46 @@ class InvoiceLogsTab extends StatelessWidget {
   void _confirmDelete(BuildContext context, InvoiceLog invoice) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Invoice Log'),
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+            ),
+            const SizedBox(width: 12),
+            const Text('Delete Invoice'),
+          ],
+        ),
         content: Text(
-          'Are you sure you want to delete ${invoice.invoiceNumber} for ${invoice.customerName}?\n\n'
-          'This action will remove the record from sales reports.',
+          'Are you sure you want to delete invoice "${invoice.invoiceNumber}" for ${invoice.customerName}?\n\n'
+          'This will remove the invoice record from sales reports and move it to the Recycle Bin.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogCtx),
             child: const Text('Cancel'),
           ),
-          FilledButton(
+          FilledButton.icon(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            icon: const Icon(Icons.delete_rounded, size: 18),
+            label: const Text('Delete Invoice'),
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(dialogCtx);
               onDeleteInvoice?.call(invoice);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('${invoice.invoiceNumber} deleted successfully.'),
+                  content: Text('Deleting ${invoice.invoiceNumber}...'),
                   behavior: SnackBarBehavior.floating,
+                  duration: const Duration(seconds: 2),
                 ),
               );
             },
-            child: const Text('Delete'),
           ),
         ],
       ),

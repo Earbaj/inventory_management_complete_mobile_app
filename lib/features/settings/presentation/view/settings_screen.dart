@@ -4,6 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
+import '../../../../core/services/pdf_export_service.dart';
+import '../../../customers/domain/entities/customer_entity.dart';
+import '../../../inventory/domain/entities/inventory_item_entity.dart';
+import '../../../posbilling/domain/entities/cart_item_entity.dart';
+import '../../../posbilling/domain/entities/sale_entity.dart';
 import '../bloc/settings_bloc.dart';
 import '../bloc/settings_event.dart';
 import '../bloc/settings_state.dart';
@@ -32,6 +37,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   List<PaymentModel> _myPayments = [];
   bool _isLoadingPayments = false;
   bool _isSaving = false;
+  InvoicePdfFormat _selectedPdfFormat = InvoicePdfFormat.classic;
 
   final List<Map<String, String>> _currencies = [
     {'code': 'BDT', 'symbol': '৳', 'name': 'BDT (৳ - Taka)'},
@@ -60,11 +66,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _vatRateController = TextEditingController(text: '0.0');
     _logoUrlController = TextEditingController();
 
-    // Fetch Initial Settings and Payment History using Bloc context and local load
+    // Fetch Initial Settings, Saved PDF Format, and Payment History
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<SettingsBloc>().add(const FetchSettingsEvent());
+      _loadSavedPdfFormat();
       _fetchPaymentHistory();
     });
+  }
+
+  Future<void> _loadSavedPdfFormat() async {
+    final format = await PdfExportService.getSavedInvoicePdfFormat();
+    if (mounted) {
+      setState(() {
+        _selectedPdfFormat = format;
+      });
+    }
   }
 
   Future<void> _fetchPaymentHistory() async {
@@ -134,13 +150,216 @@ class _SettingsScreenState extends State<SettingsScreen> {
         logoUrl: _logoUrlController.text.trim().isEmpty ? null : _logoUrlController.text.trim(),
       );
 
+      PdfExportService.saveInvoicePdfFormat(_selectedPdfFormat);
       context.read<SettingsBloc>().add(UpdateShopProfileEvent(updated));
     }
+  }
+
+  void _previewPdfFormat(InvoicePdfFormat format, ShopProfileEntity profile) {
+    final sampleSale = SaleEntity(
+      id: 'sample-001',
+      invoiceNo: 'INV-SAMPLE-2026',
+      customer: const CustomerEntity(
+        id: 'cust-1',
+        name: 'Rahim Chowdhury',
+        phone: '01812345678',
+        openingBalance: 0.0,
+      ),
+      items: [
+        CartItemEntity(
+          item: const InventoryItemEntity(
+            id: 'item-1',
+            name: 'Wireless Bluetooth Mouse',
+            sku: 'MOU-001',
+            category: 'Electronics',
+            unit: 'pcs',
+            stockQuantity: 45,
+            lowStockQuantity: 5,
+            retailSellPrice: 850.0,
+            purchasePrice: 600.0,
+          ),
+          quantity: 2,
+        ),
+        CartItemEntity(
+          item: const InventoryItemEntity(
+            id: 'item-2',
+            name: 'Mechanical RGB Keyboard',
+            sku: 'KEY-002',
+            category: 'Electronics',
+            unit: 'pcs',
+            stockQuantity: 20,
+            lowStockQuantity: 3,
+            retailSellPrice: 3200.0,
+            purchasePrice: 2400.0,
+          ),
+          quantity: 1,
+        ),
+      ],
+      subtotal: 4900.0,
+      discountAmount: 100.0,
+      vatAmount: 0.0,
+      netTotal: 4800.0,
+      paidAmount: 4800.0,
+      dueAmount: 0.0,
+      paymentMethod: 'cash',
+      servedBy: 'Staff Cashier',
+      createdAt: DateTime.now(),
+    );
+
+    PdfExportService.printOrSaveInvoicePdf(
+      context,
+      sale: sampleSale,
+      shopProfile: profile,
+      format: format,
+    );
+  }
+
+  Widget _buildPdfFormatSection(ThemeData theme, ColorScheme colorScheme, ShopProfileEntity profile) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Invoice PDF Print Template',
+              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: colorScheme.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '${InvoicePdfFormat.values.length} Formats Available',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: colorScheme.primary),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Select your preferred invoice PDF layout used for printing and saving receipts.',
+          style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+        ),
+        const SizedBox(height: 12),
+        ...InvoicePdfFormat.values.map((format) {
+          final isSelected = _selectedPdfFormat == format;
+          IconData icon;
+          switch (format) {
+            case InvoicePdfFormat.classic:
+              icon = Icons.receipt_long_rounded;
+              break;
+            case InvoicePdfFormat.modern:
+              icon = Icons.auto_awesome_mosaic_rounded;
+              break;
+            case InvoicePdfFormat.thermalPos:
+              icon = Icons.point_of_sale_rounded;
+              break;
+          }
+
+          return Card(
+            margin: const EdgeInsets.only(bottom: 10),
+            elevation: isSelected ? 2 : 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+              side: BorderSide(
+                color: isSelected ? colorScheme.primary : colorScheme.outlineVariant.withValues(alpha: 0.5),
+                width: isSelected ? 2 : 1,
+              ),
+            ),
+            color: isSelected ? colorScheme.primaryContainer.withValues(alpha: 0.25) : colorScheme.surface,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: () {
+                setState(() => _selectedPdfFormat = format);
+                PdfExportService.saveInvoicePdfFormat(format);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Selected print format: ${format.title}'),
+                    duration: const Duration(seconds: 2),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: isSelected ? colorScheme.primary : colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        icon,
+                        color: isSelected ? Colors.white : colorScheme.onSurfaceVariant,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                format.title,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: isSelected ? colorScheme.primary : null,
+                                ),
+                              ),
+                              if (isSelected) ...[
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.primary,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Text(
+                                    'ACTIVE',
+                                    style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            format.subtitle,
+                            style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    IconButton(
+                      onPressed: () => _previewPdfFormat(format, profile),
+                      icon: const Icon(Icons.visibility_outlined, size: 20),
+                      tooltip: 'Preview ${format.title}',
+                      color: colorScheme.primary,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -220,6 +439,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 24),
                   ],
+
+                  // INVOICE PDF PRINT TEMPLATES SECTION
+                  _buildPdfFormatSection(theme, colorScheme, profile),
+                  const SizedBox(height: 24),
 
                   // PAYMENT REQUEST HISTORY SECTION
                   PaymentHistorySection(

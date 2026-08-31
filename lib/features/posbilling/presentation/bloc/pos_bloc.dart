@@ -139,7 +139,7 @@ class PosBloc extends Bloc<PosEvent, PosState> {
 
       // Refresh other blocs immediately
       try {
-        InjectionContainer.reportsBloc.add(const FetchReportsEvent());
+        InjectionContainer.reportsBloc.add(const FetchReportsEvent(forceRefresh: true));
         InjectionContainer.customerBloc.add(const FetchCustomersEvent());
         InjectionContainer.inventoryBloc.add(const FetchInventoryItemsEvent());
       } catch (_) {}

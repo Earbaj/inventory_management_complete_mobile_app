@@ -8,4 +8,7 @@ abstract class ReportsRepository {
 
   /// Fetches sales invoice transaction logs (GET /api/sales).
   Future<List<SaleEntity>> getInvoiceLogs({String? invoiceNoQuery, DateTime? startDate, DateTime? endDate, String? branchId});
+
+  /// Deletes a sales invoice record from backend (DELETE /api/sales/:id).
+  Future<void> deleteInvoice(String invoiceId);
 }

@@ -2,7 +2,10 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../posbilling/domain/entities/sale_entity.dart';
+import '../../../../core/di/injection_container.dart';
+import '../../../recyclebin/presentation/bloc/recycle_bin_event.dart';
 import '../../domain/entities/report_summary_entity.dart';
+import '../../domain/usecases/delete_invoice_usecase.dart';
 import '../../domain/usecases/get_invoice_logs_usecase.dart';
 import '../../domain/usecases/get_reports_summary_usecase.dart';
 import '../../reports_models.dart';
@@ -12,6 +15,7 @@ import 'reports_state.dart';
 class ReportsBloc extends Bloc<ReportsEvent, ReportsState> {
   final GetReportsSummaryUseCase getReportsSummaryUseCase;
   final GetInvoiceLogsUseCase getInvoiceLogsUseCase;
+  final DeleteInvoiceUseCase deleteInvoiceUseCase;
 
   ReportSummaryEntity? _cachedSummary;
   List<SaleEntity> _allLogs = [];
@@ -24,10 +28,12 @@ class ReportsBloc extends Bloc<ReportsEvent, ReportsState> {
   ReportsBloc({
     required this.getReportsSummaryUseCase,
     required this.getInvoiceLogsUseCase,
+    required this.deleteInvoiceUseCase,
   }) : super(const ReportsInitialState()) {
     on<FetchReportsEvent>(_onFetchReports);
     on<FilterReportsByDateRangeEvent>(_onFilterByDateRange);
     on<SearchReportsEvent>(_onSearchReports);
+    on<DeleteInvoiceEvent>(_onDeleteInvoice);
   }
 
   Future<void> _onFetchReports(
@@ -152,6 +158,52 @@ class ReportsBloc extends Bloc<ReportsEvent, ReportsState> {
       }
     } else {
       _emitLoadedState(emit, overrideFilteredLogs: []);
+    }
+  }
+
+  Future<void> _onDeleteInvoice(
+      DeleteInvoiceEvent event,
+      Emitter<ReportsState> emit,
+      ) async {
+    final targetIndex = _allLogs.indexWhere((s) => s.id == event.invoiceId);
+    SaleEntity? removedSale;
+    if (targetIndex != -1) {
+      removedSale = _allLogs[targetIndex];
+      _allLogs.removeAt(targetIndex);
+    }
+
+    _emitLoadedState(emit, isListLoading: true);
+
+    try {
+      await deleteInvoiceUseCase(event.invoiceId);
+
+      // Re-fetch reports summary & logs to guarantee 100% accuracy with backend
+      final summary = await getReportsSummaryUseCase(
+        startDate: _currentStartDate,
+        endDate: _currentEndDate,
+        branchId: _currentBranchId,
+      );
+      final logs = await getInvoiceLogsUseCase(
+        invoiceNoQuery: null,
+        startDate: _currentStartDate,
+        endDate: _currentEndDate,
+        branchId: _currentBranchId,
+      );
+
+      _cachedSummary = summary;
+      _allLogs = logs;
+      _emitLoadedState(emit, isListLoading: false);
+
+      // Sync recycle bin bloc so deleted sale appears in trash
+      try {
+        InjectionContainer.recycleBinBloc.add(const FetchTrashItemsEvent());
+      } catch (_) {}
+    } catch (e) {
+      if (removedSale != null && targetIndex != -1) {
+        _allLogs.insert(targetIndex, removedSale);
+      }
+      _emitLoadedState(emit, isListLoading: false);
+      emit(ReportsErrorState('Failed to delete invoice: ${e.toString()}'));
     }
   }
 

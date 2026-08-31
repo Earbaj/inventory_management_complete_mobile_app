@@ -8,6 +8,7 @@ import '../models/report_summary_model.dart';
 abstract class ReportsRemoteDataSource {
   Future<ReportSummaryModel> getReportsSummary({DateTime? startDate, DateTime? endDate, String? branchId});
   Future<List<SaleModel>> getInvoiceLogs({int page = 1, int limit = 100, String? query, DateTime? startDate, DateTime? endDate, String? branchId});
+  Future<void> deleteInvoice(String invoiceId);
 }
 
 class ReportsRemoteDataSourceImpl implements ReportsRemoteDataSource {
@@ -21,8 +22,7 @@ class ReportsRemoteDataSourceImpl implements ReportsRemoteDataSource {
     try {
       final response = await apiClient.get(
         ApiEndpoints.reportsSales,
-        cache: true,
-        maxStale: const Duration(minutes: 2),
+        cache: false,
         queryParameters: {
           if (startDate != null) 'startDate': startDate.toIso8601String(),
           if (endDate != null) 'endDate': endDate.toIso8601String(),
@@ -37,8 +37,7 @@ class ReportsRemoteDataSourceImpl implements ReportsRemoteDataSource {
       try {
         final response = await apiClient.get(
           ApiEndpoints.dashboardStats,
-          cache: true,
-          maxStale: const Duration(minutes: 2),
+          cache: false,
           queryParameters: {
             if (branchId != null && branchId.isNotEmpty) 'branchId': branchId,
           },
@@ -98,6 +97,18 @@ class ReportsRemoteDataSourceImpl implements ReportsRemoteDataSource {
       return list.map((json) => SaleModel.fromJson(json)).toList();
     } catch (e, stackTrace) {
       developer.log('❌ [ReportsRemoteDataSource] getInvoiceLogs() API Error: $e', name: 'ReportsRemoteDataSource', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> deleteInvoice(String invoiceId) async {
+    developer.log('🗑️ [ReportsRemoteDataSource] deleteInvoice() called for invoiceId: "$invoiceId"', name: 'ReportsRemoteDataSource');
+    try {
+      await apiClient.delete('${EnvConfig.apiBaseUrl}/api/sales/$invoiceId');
+      developer.log('✅ [ReportsRemoteDataSource] deleteInvoice() success for invoiceId "$invoiceId".', name: 'ReportsRemoteDataSource');
+    } catch (e, stackTrace) {
+      developer.log('❌ [ReportsRemoteDataSource] deleteInvoice() API Error: $e', name: 'ReportsRemoteDataSource', error: e, stackTrace: stackTrace);
       rethrow;
     }
   }

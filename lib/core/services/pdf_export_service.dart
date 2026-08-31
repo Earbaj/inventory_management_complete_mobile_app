@@ -4,6 +4,7 @@ import 'package:flutter/material.dart' show BuildContext;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../features/customers/domain/entities/customer_entity.dart';
 import '../../features/customers/customer_transaction.dart';
@@ -14,19 +15,95 @@ import '../../features/settings/domain/entities/shop_profile_entity.dart';
 import '../di/injection_container.dart';
 import '../../features/settings/presentation/bloc/settings_state.dart';
 
+/// Available Invoice PDF Print Template Formats
+enum InvoicePdfFormat {
+  classic,
+  modern,
+  thermalPos;
+
+  String get id {
+    switch (this) {
+      case InvoicePdfFormat.classic:
+        return 'classic';
+      case InvoicePdfFormat.modern:
+        return 'modern';
+      case InvoicePdfFormat.thermalPos:
+        return 'thermal_pos';
+    }
+  }
+
+  String get title {
+    switch (this) {
+      case InvoicePdfFormat.classic:
+        return 'Classic Standard (A4)';
+      case InvoicePdfFormat.modern:
+        return 'Modern Minimal (A4)';
+      case InvoicePdfFormat.thermalPos:
+        return 'Compact POS Thermal (80mm)';
+    }
+  }
+
+  String get subtitle {
+    switch (this) {
+      case InvoicePdfFormat.classic:
+        return 'Traditional structured A4 invoice with standard tables & official header';
+      case InvoicePdfFormat.modern:
+        return 'Contemporary layout with brand accent, status badges & clean typography';
+      case InvoicePdfFormat.thermalPos:
+        return '80mm receipt roll layout formatted for thermal slip printers';
+    }
+  }
+
+  static InvoicePdfFormat fromString(String? val) {
+    if (val == 'modern') return InvoicePdfFormat.modern;
+    if (val == 'thermal_pos' || val == 'thermalPos' || val == 'pos') return InvoicePdfFormat.thermalPos;
+    return InvoicePdfFormat.classic;
+  }
+}
+
 /// Professional PDF Export & Print Service for Sales Invoices and Customer Statements.
 class PdfExportService {
+  static const String _prefFormatKey = 'selected_invoice_pdf_format';
+  static InvoicePdfFormat _cachedFormat = InvoicePdfFormat.classic;
+  static bool _hasLoadedFormat = false;
+
+  /// Loads saved PDF template format preference from SharedPreferences.
+  static Future<InvoicePdfFormat> getSavedInvoicePdfFormat() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedStr = prefs.getString(_prefFormatKey);
+      _cachedFormat = InvoicePdfFormat.fromString(savedStr);
+      _hasLoadedFormat = true;
+      return _cachedFormat;
+    } catch (_) {
+      return _cachedFormat;
+    }
+  }
+
+  /// Saves user's chosen PDF template format preference to SharedPreferences.
+  static Future<void> saveInvoicePdfFormat(InvoicePdfFormat format) async {
+    _cachedFormat = format;
+    _hasLoadedFormat = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_prefFormatKey, format.id);
+      developer.log('📄 [PdfExportService] Saved Invoice PDF Format preference: ${format.title}', name: 'PdfExportService');
+    } catch (_) {}
+  }
+
   /// Opens Interactive Native PDF Print Preview & Device Save / Share dialog for an Invoice.
   static Future<void> printOrSaveInvoicePdf(
     BuildContext context, {
     required SaleEntity sale,
     required ShopProfileEntity shopProfile,
+    InvoicePdfFormat? format,
   }) async {
-    developer.log('📄 [PdfExportService] Opening PDF Print Preview for Invoice ${sale.invoiceNo}', name: 'PdfExportService');
+    final activeFormat = format ?? await getSavedInvoicePdfFormat();
+    developer.log('📄 [PdfExportService] Opening PDF Print Preview for Invoice ${sale.invoiceNo} (Format: ${activeFormat.title})', name: 'PdfExportService');
 
     await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async {
-        return generateInvoicePdfBytes(sale: sale, shopProfile: shopProfile);
+      onLayout: (PdfPageFormat pageFormat) async {
+        return generateInvoicePdfBytes(sale: sale, shopProfile: shopProfile, format: activeFormat);
       },
       name: 'Invoice_${sale.invoiceNo}',
     );
@@ -341,8 +418,25 @@ class PdfExportService {
     return pdf.save();
   }
 
-  /// Generates Uint8List PDF Bytes for a Single Sales Invoice.
+  /// Generates Uint8List PDF Bytes for a Single Sales Invoice in the specified or saved template format.
   static Future<Uint8List> generateInvoicePdfBytes({
+    required SaleEntity sale,
+    required ShopProfileEntity shopProfile,
+    InvoicePdfFormat? format,
+  }) async {
+    final activeFormat = format ?? await getSavedInvoicePdfFormat();
+    switch (activeFormat) {
+      case InvoicePdfFormat.classic:
+        return _generateClassicInvoicePdf(sale: sale, shopProfile: shopProfile);
+      case InvoicePdfFormat.modern:
+        return _generateModernInvoicePdf(sale: sale, shopProfile: shopProfile);
+      case InvoicePdfFormat.thermalPos:
+        return _generateThermalPosInvoicePdf(sale: sale, shopProfile: shopProfile);
+    }
+  }
+
+  /// FORMAT 1: Classic Standard Structured A4 Invoice
+  static Future<Uint8List> _generateClassicInvoicePdf({
     required SaleEntity sale,
     required ShopProfileEntity shopProfile,
   }) async {
@@ -438,6 +532,8 @@ class PdfExportService {
                     children: [
                       pw.Text('Invoice No: ${sale.invoiceNo}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
                       pw.Text('Date: $dateStr', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey800)),
+                      if (sale.servedBy.isNotEmpty)
+                        pw.Text('Served By: ${sale.servedBy}', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
                     ],
                   ),
                   pw.Column(
@@ -533,6 +629,36 @@ class PdfExportService {
                   ),
                 ],
               ),
+
+              pw.Spacer(),
+
+              // 5. SIGNATURE & FOOTER
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Column(
+                    children: [
+                      pw.Container(width: 140, height: 1, color: PdfColors.grey500),
+                      pw.SizedBox(height: 4),
+                      pw.Text("Customer's Signature", style: const pw.TextStyle(fontSize: 9)),
+                    ],
+                  ),
+                  pw.Column(
+                    children: [
+                      pw.Container(width: 140, height: 1, color: PdfColors.grey500),
+                      pw.SizedBox(height: 4),
+                      pw.Text('Authorized Signature', style: const pw.TextStyle(fontSize: 9)),
+                    ],
+                  ),
+                ],
+              ),
+              pw.SizedBox(height: 12),
+              pw.Center(
+                child: pw.Text(
+                  'Thank you for your business! Generated by Smart Inventory & POS',
+                  style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+                ),
+              ),
             ],
           );
         },
@@ -540,6 +666,500 @@ class PdfExportService {
     );
 
     return pdf.save();
+  }
+
+  /// FORMAT 2: Modern Minimal / Elegant Clean Corporate A4 Invoice
+  static Future<Uint8List> _generateModernInvoicePdf({
+    required SaleEntity sale,
+    required ShopProfileEntity shopProfile,
+  }) async {
+    final font = await PdfGoogleFonts.notoSansBengaliRegular();
+    final boldFont = await PdfGoogleFonts.notoSansBengaliBold();
+    final pdf = pw.Document(
+      theme: pw.ThemeData.withFont(
+        base: font,
+        bold: boldFont,
+      ),
+    );
+
+    final currency = (shopProfile.currencySymbol == '৳' || shopProfile.currencySymbol.isEmpty) ? 'Tk ' : '${shopProfile.currencySymbol} ';
+    final shopName = shopProfile.shopName.isNotEmpty ? shopProfile.shopName : 'INVENTORY POS STORE';
+    final shopPhone = shopProfile.phone.isNotEmpty ? shopProfile.phone : 'N/A';
+    final shopAddress = shopProfile.address?.isNotEmpty == true ? shopProfile.address! : '';
+    final shopEmail = shopProfile.email?.isNotEmpty == true ? shopProfile.email! : '';
+
+    final dateStr = '${sale.createdAt.day.toString().padLeft(2, '0')}/'
+        '${sale.createdAt.month.toString().padLeft(2, '0')}/'
+        '${sale.createdAt.year}';
+    final timeStr = '${sale.createdAt.hour.toString().padLeft(2, '0')}:${sale.createdAt.minute.toString().padLeft(2, '0')}';
+
+    final isPaid = sale.dueAmount <= 0;
+    final primaryColor = PdfColor.fromInt(0xFF1E3A8A); // Deep Royal Indigo
+    final lightAccent = PdfColor.fromInt(0xFFF1F5F9);  // Slate 100
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(36),
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              // 1. MODERN TOP HEADER BAR
+              pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  // Left: Store branding with stylish vertical accent bar
+                  pw.Row(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Container(
+                        width: 4,
+                        height: 48,
+                        decoration: pw.BoxDecoration(
+                          color: primaryColor,
+                          borderRadius: pw.BorderRadius.circular(2),
+                        ),
+                      ),
+                      pw.SizedBox(width: 12),
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            shopName,
+                            style: pw.TextStyle(
+                              fontSize: 18,
+                              fontWeight: pw.FontWeight.bold,
+                              color: primaryColor,
+                            ),
+                          ),
+                          if (sale.branchName != null && sale.branchName!.isNotEmpty) ...[
+                            pw.SizedBox(height: 2),
+                            pw.Text(
+                              'Branch: ${sale.branchName}',
+                              style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
+                            ),
+                          ],
+                          if (shopAddress.isNotEmpty) ...[
+                            pw.SizedBox(height: 2),
+                            pw.Text(shopAddress, style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
+                          ],
+                          pw.SizedBox(height: 2),
+                          pw.Text('Tel: $shopPhone${shopEmail.isNotEmpty ? ' • $shopEmail' : ''}', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  // Right: Invoice Title, Number & Status Badge
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
+                    children: [
+                      pw.Text(
+                        'INVOICE',
+                        style: pw.TextStyle(
+                          fontSize: 22,
+                          fontWeight: pw.FontWeight.bold,
+                          color: primaryColor,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                      pw.SizedBox(height: 4),
+                      pw.Text(
+                        '#${sale.invoiceNo}',
+                        style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.grey800),
+                      ),
+                      pw.SizedBox(height: 2),
+                      pw.Text('Date: $dateStr • $timeStr', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
+                      pw.SizedBox(height: 6),
+                      // Payment Status Pill
+                      pw.Container(
+                        padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: pw.BoxDecoration(
+                          color: isPaid ? PdfColor.fromInt(0xFFDCFCE7) : PdfColor.fromInt(0xFFFEE2E2),
+                          borderRadius: pw.BorderRadius.circular(12),
+                        ),
+                        child: pw.Text(
+                          isPaid ? 'PAID IN FULL' : 'PAYMENT DUE',
+                          style: pw.TextStyle(
+                            color: isPaid ? PdfColor.fromInt(0xFF166534) : PdfColor.fromInt(0xFF991B1B),
+                            fontSize: 9,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+
+              pw.SizedBox(height: 20),
+
+              // 2. CLIENT & TRANSACTION INFO CARD
+              pw.Container(
+                padding: const pw.EdgeInsets.all(12),
+                decoration: pw.BoxDecoration(
+                  color: lightAccent,
+                  borderRadius: pw.BorderRadius.circular(8),
+                ),
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text('BILLED TO', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.grey600)),
+                        pw.SizedBox(height: 3),
+                        pw.Text(
+                          sale.customer?.name.isNotEmpty == true ? sale.customer!.name : 'Walk-in Customer',
+                          style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold),
+                        ),
+                        if (sale.customer?.phone.isNotEmpty == true) ...[
+                          pw.SizedBox(height: 2),
+                          pw.Text('Phone: ${sale.customer!.phone}', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
+                        ],
+                      ],
+                    ),
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.end,
+                      children: [
+                        pw.Text('PAYMENT METHOD', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.grey600)),
+                        pw.SizedBox(height: 3),
+                        pw.Text(
+                          sale.paymentMethod.toUpperCase(),
+                          style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: primaryColor),
+                        ),
+                        if (sale.servedBy.isNotEmpty) ...[
+                          pw.SizedBox(height: 2),
+                          pw.Text('Cashier: ${sale.servedBy}', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              pw.SizedBox(height: 18),
+
+              // 3. MODERN MINIMALIST ITEMS TABLE
+              pw.TableHelper.fromTextArray(
+                context: context,
+                border: const pw.TableBorder(
+                  horizontalInside: pw.BorderSide(color: PdfColors.grey200, width: 0.5),
+                  bottom: pw.BorderSide(color: PdfColors.grey300, width: 1),
+                ),
+                headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: PdfColors.white),
+                headerDecoration: pw.BoxDecoration(
+                  color: primaryColor,
+                ),
+                cellStyle: const pw.TextStyle(fontSize: 9),
+                rowDecoration: const pw.BoxDecoration(),
+                oddRowDecoration: pw.BoxDecoration(color: lightAccent),
+                headerAlignments: {
+                  0: pw.Alignment.center,
+                  1: pw.Alignment.centerLeft,
+                  2: pw.Alignment.centerRight,
+                  3: pw.Alignment.center,
+                  4: pw.Alignment.centerRight,
+                },
+                cellAlignments: {
+                  0: pw.Alignment.center,
+                  1: pw.Alignment.centerLeft,
+                  2: pw.Alignment.centerRight,
+                  3: pw.Alignment.center,
+                  4: pw.Alignment.centerRight,
+                },
+                columnWidths: {
+                  0: const pw.FixedColumnWidth(24),
+                  1: const pw.FlexColumnWidth(4),
+                  2: const pw.FixedColumnWidth(70),
+                  3: const pw.FixedColumnWidth(40),
+                  4: const pw.FixedColumnWidth(80),
+                },
+                headers: ['#', 'Item Description', 'Unit Price', 'Qty', 'Amount'],
+                data: sale.items.asMap().entries.map((entry) {
+                  final idx = entry.key + 1;
+                  final item = entry.value;
+                  final total = item.quantity * item.item.retailSellPrice;
+                  return [
+                    '$idx',
+                    item.item.name,
+                    '$currency${item.item.retailSellPrice.toStringAsFixed(2)}',
+                    '${item.quantity}',
+                    '$currency${total.toStringAsFixed(2)}',
+                  ];
+                }).toList(),
+              ),
+
+              pw.SizedBox(height: 18),
+
+              // 4. FINANCIAL SUMMARY & TERMS
+              pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  // Left: Notes & Terms
+                  pw.Expanded(
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text('Terms & Conditions:', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)),
+                        pw.SizedBox(height: 4),
+                        pw.Text(
+                          '1. Goods sold can be exchanged with valid invoice within 7 days.\n'
+                          '2. For any inquiries, please contact our support phone.\n'
+                          '3. Thank you for choosing our store!',
+                          style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600, lineSpacing: 1.5),
+                        ),
+                      ],
+                    ),
+                  ),
+                  pw.SizedBox(width: 24),
+                  // Right: Total Calculation Card
+                  pw.Container(
+                    width: 220,
+                    padding: const pw.EdgeInsets.all(12),
+                    decoration: pw.BoxDecoration(
+                      color: lightAccent,
+                      borderRadius: pw.BorderRadius.circular(8),
+                      border: pw.Border.all(color: PdfColors.grey300),
+                    ),
+                    child: pw.Column(
+                      children: [
+                        _buildPdfSummaryRow('Subtotal:', '$currency${sale.subtotal.toStringAsFixed(2)}'),
+                        if (sale.discountAmount > 0)
+                          _buildPdfSummaryRow('Discount:', '-$currency${sale.discountAmount.toStringAsFixed(2)}', color: PdfColors.green800),
+                        if (sale.vatAmount > 0)
+                          _buildPdfSummaryRow('VAT / Tax:', '+$currency${sale.vatAmount.toStringAsFixed(2)}'),
+                        pw.Divider(height: 8, color: PdfColors.grey400),
+                        // Grand Total Highlight
+                        pw.Container(
+                          padding: const pw.EdgeInsets.symmetric(vertical: 4),
+                          child: pw.Row(
+                            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                            children: [
+                              pw.Text('Total Due:', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: primaryColor)),
+                              pw.Text(
+                                '$currency${sale.netTotal.toStringAsFixed(2)}',
+                                style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold, color: primaryColor),
+                              ),
+                            ],
+                          ),
+                        ),
+                        pw.Divider(height: 8, color: PdfColors.grey400),
+                        _buildPdfSummaryRow('Paid Amount:', '$currency${sale.paidAmount.toStringAsFixed(2)}', color: PdfColors.green800),
+                        _buildPdfSummaryRow(
+                          'Balance Due:',
+                          '$currency${sale.dueAmount.toStringAsFixed(2)}',
+                          isBold: sale.dueAmount > 0,
+                          color: sale.dueAmount > 0 ? PdfColors.red800 : PdfColors.grey800,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              pw.Spacer(),
+
+              // 5. SIGNATURE FOOTER
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.center,
+                    children: [
+                      pw.Container(width: 130, height: 1, color: PdfColors.grey400),
+                      pw.SizedBox(height: 4),
+                      pw.Text("Customer's Signature", style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700)),
+                    ],
+                  ),
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.center,
+                    children: [
+                      pw.Container(width: 130, height: 1, color: PdfColors.grey400),
+                      pw.SizedBox(height: 4),
+                      pw.Text('Authorized Signature', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700)),
+                    ],
+                  ),
+                ],
+              ),
+              pw.SizedBox(height: 8),
+              pw.Center(
+                child: pw.Text(
+                  'Powered by Smart Inventory POS Management System',
+                  style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey500),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    return pdf.save();
+  }
+
+  /// FORMAT 3: Compact POS Thermal 80mm Receipt Slip
+  static Future<Uint8List> _generateThermalPosInvoicePdf({
+    required SaleEntity sale,
+    required ShopProfileEntity shopProfile,
+  }) async {
+    final font = await PdfGoogleFonts.notoSansBengaliRegular();
+    final boldFont = await PdfGoogleFonts.notoSansBengaliBold();
+    final pdf = pw.Document(
+      theme: pw.ThemeData.withFont(
+        base: font,
+        bold: boldFont,
+      ),
+    );
+
+    final currency = (shopProfile.currencySymbol == '৳' || shopProfile.currencySymbol.isEmpty) ? 'Tk ' : '${shopProfile.currencySymbol} ';
+    final shopName = shopProfile.shopName.isNotEmpty ? shopProfile.shopName : 'INVENTORY POS STORE';
+    final shopPhone = shopProfile.phone.isNotEmpty ? shopProfile.phone : 'N/A';
+    final shopAddress = shopProfile.address?.isNotEmpty == true ? shopProfile.address! : '';
+
+    final dateStr = '${sale.createdAt.day.toString().padLeft(2, '0')}/'
+        '${sale.createdAt.month.toString().padLeft(2, '0')}/'
+        '${sale.createdAt.year} ${sale.createdAt.hour.toString().padLeft(2, '0')}:${sale.createdAt.minute.toString().padLeft(2, '0')}';
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: const PdfPageFormat(80 * PdfPageFormat.mm, double.infinity, marginAll: 4 * PdfPageFormat.mm),
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
+            children: [
+              // STORE HEADER
+              pw.Text(
+                shopName.toUpperCase(),
+                textAlign: pw.TextAlign.center,
+                style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold),
+              ),
+              if (sale.branchName != null && sale.branchName!.isNotEmpty) ...[
+                pw.SizedBox(height: 1),
+                pw.Text('Branch: ${sale.branchName}', style: const pw.TextStyle(fontSize: 8)),
+              ],
+              if (shopAddress.isNotEmpty) ...[
+                pw.SizedBox(height: 1),
+                pw.Text(shopAddress, textAlign: pw.TextAlign.center, style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey700)),
+              ],
+              pw.Text('Phone: $shopPhone', style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey700)),
+              pw.SizedBox(height: 4),
+
+              pw.Text('====================================', style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey600)),
+              pw.Text('*** SALES RECEIPT ***', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+              pw.Text('====================================', style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey600)),
+              pw.SizedBox(height: 2),
+
+              // INVOICE META
+              pw.Align(
+                alignment: pw.Alignment.centerLeft,
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('Invoice #: ${sale.invoiceNo}', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                    pw.Text('Date: $dateStr', style: const pw.TextStyle(fontSize: 7.5)),
+                    pw.Text('Customer: ${sale.customer?.name ?? "Walk-in"}', style: const pw.TextStyle(fontSize: 7.5)),
+                    if (sale.servedBy.isNotEmpty)
+                      pw.Text('Served By: ${sale.servedBy}', style: const pw.TextStyle(fontSize: 7.5)),
+                  ],
+                ),
+              ),
+
+              pw.SizedBox(height: 4),
+              pw.Text('----------------------------------------------------', style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey600)),
+
+              // ITEMS LIST TABLE
+              pw.Table(
+                columnWidths: const {
+                  0: pw.FlexColumnWidth(3.5), // Item Name
+                  1: pw.FlexColumnWidth(1.0), // Qty
+                  2: pw.FlexColumnWidth(1.8), // Price
+                  3: pw.FlexColumnWidth(2.0), // Total
+                },
+                children: [
+                  pw.TableRow(
+                    children: [
+                      pw.Text('ITEM', style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold)),
+                      pw.Text('QTY', textAlign: pw.TextAlign.center, style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold)),
+                      pw.Text('PRICE', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold)),
+                      pw.Text('TOTAL', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold)),
+                    ],
+                  ),
+                  ...sale.items.map((cartItem) {
+                    final total = cartItem.quantity * cartItem.item.retailSellPrice;
+                    return pw.TableRow(
+                      children: [
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.symmetric(vertical: 2),
+                          child: pw.Text(cartItem.item.name, style: const pw.TextStyle(fontSize: 7.5)),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.symmetric(vertical: 2),
+                          child: pw.Text('${cartItem.quantity}', textAlign: pw.TextAlign.center, style: const pw.TextStyle(fontSize: 7.5)),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.symmetric(vertical: 2),
+                          child: pw.Text('$currency${cartItem.item.retailSellPrice.toStringAsFixed(0)}', textAlign: pw.TextAlign.right, style: const pw.TextStyle(fontSize: 7.5)),
+                        ),
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.symmetric(vertical: 2),
+                          child: pw.Text('$currency${total.toStringAsFixed(0)}', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold)),
+                        ),
+                      ],
+                    );
+                  }),
+                ],
+              ),
+
+              pw.Text('----------------------------------------------------', style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey600)),
+              pw.SizedBox(height: 2),
+
+              // FINANCIAL SUMMARY
+              pw.Column(
+                children: [
+                  _buildThermalRow('Subtotal:', '$currency${sale.subtotal.toStringAsFixed(2)}'),
+                  if (sale.discountAmount > 0)
+                    _buildThermalRow('Discount:', '-$currency${sale.discountAmount.toStringAsFixed(2)}'),
+                  if (sale.vatAmount > 0)
+                    _buildThermalRow('VAT:', '+$currency${sale.vatAmount.toStringAsFixed(2)}'),
+                  pw.SizedBox(height: 2),
+                  pw.Text('====================================', style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey600)),
+                  _buildThermalRow('NET TOTAL:', '$currency${sale.netTotal.toStringAsFixed(2)}', isBold: true, fontSize: 9.5),
+                  pw.Text('====================================', style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey600)),
+                  _buildThermalRow('Paid Amount:', '$currency${sale.paidAmount.toStringAsFixed(2)}'),
+                  _buildThermalRow('Due Amount:', '$currency${sale.dueAmount.toStringAsFixed(2)}', isBold: sale.dueAmount > 0),
+                  _buildThermalRow('Payment Method:', sale.paymentMethod.toUpperCase()),
+                ],
+              ),
+
+              pw.SizedBox(height: 6),
+              pw.Text('====================================', style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey600)),
+              pw.Text('*** THANK YOU! VISIT AGAIN ***', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+              pw.Text('Goods once sold exchangeable within 7 days', style: const pw.TextStyle(fontSize: 6.5, color: PdfColors.grey700)),
+              pw.SizedBox(height: 6),
+            ],
+          );
+        },
+      ),
+    );
+
+    return pdf.save();
+  }
+
+  static pw.Widget _buildThermalRow(String label, String value, {bool isBold = false, double fontSize = 7.5}) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 1),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text(label, style: pw.TextStyle(fontSize: fontSize, fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal)),
+          pw.Text(value, style: pw.TextStyle(fontSize: fontSize, fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal)),
+        ],
+      ),
+    );
   }
 
   /// Generates Uint8List PDF Bytes for Customer Ledger Statement.

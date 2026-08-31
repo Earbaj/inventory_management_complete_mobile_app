@@ -44,3 +44,11 @@ class SearchReportsEvent extends ReportsEvent {
 
   const SearchReportsEvent(this.query);
 }
+
+/// Event: Deletes an invoice log record and triggers recalculation & sync.
+class DeleteInvoiceEvent extends ReportsEvent {
+  final String invoiceId;
+
+  const DeleteInvoiceEvent(this.invoiceId);
+}
+

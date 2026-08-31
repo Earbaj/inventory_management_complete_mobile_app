@@ -508,6 +508,9 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                             }).toList(),
                           );
                         }).toList(),
+                        onDeleteInvoice: (invoice) {
+                          context.read<ReportsBloc>().add(DeleteInvoiceEvent(invoice.id));
+                        },
                       ),
                       isListLoading
                           ? const ReportsShimmerView(showMetricCards: false)

@@ -55,4 +55,11 @@ class ReportsRepositoryImpl implements ReportsRepository {
       return filtered.map(PosMapper.saleModelToEntity).toList();
     }
   }
+
+  @override
+  Future<void> deleteInvoice(String invoiceId) async {
+    await remoteDataSource.deleteInvoice(invoiceId);
+    await posLocalDataSource.clearCache();
+    await localDataSource.clearCache();
+  }
 }

@@ -79,6 +79,7 @@ import '../../features/reports/data/repositories/reports_repository_impl.dart';
 import '../../features/reports/domain/repositories/reports_repository.dart';
 import '../../features/reports/domain/usecases/get_invoice_logs_usecase.dart';
 import '../../features/reports/domain/usecases/get_reports_summary_usecase.dart';
+import '../../features/reports/domain/usecases/delete_invoice_usecase.dart';
 import '../../features/reports/presentation/bloc/reports_bloc.dart';
 
 import '../../features/returnandrestoke/data/datasources/returns_local_data_source.dart';
@@ -207,6 +208,7 @@ class InjectionContainer {
 
   static late final GetReportsSummaryUseCase getReportsSummaryUseCase;
   static late final GetInvoiceLogsUseCase getInvoiceLogsUseCase;
+  static late final DeleteInvoiceUseCase deleteInvoiceUseCase;
 
   static late final ProcessReturnUseCase processReturnUseCase;
   static late final GetReturnLogsUseCase getReturnLogsUseCase;
@@ -409,6 +411,7 @@ class InjectionContainer {
 
     getReportsSummaryUseCase = GetReportsSummaryUseCase(reportsRepository);
     getInvoiceLogsUseCase = GetInvoiceLogsUseCase(reportsRepository);
+    deleteInvoiceUseCase = DeleteInvoiceUseCase(reportsRepository);
 
     processReturnUseCase = ProcessReturnUseCase(returnsRepository);
     getReturnLogsUseCase = GetReturnLogsUseCase(returnsRepository);
@@ -491,6 +494,7 @@ class InjectionContainer {
     reportsBloc = ReportsBloc(
       getReportsSummaryUseCase: getReportsSummaryUseCase,
       getInvoiceLogsUseCase: getInvoiceLogsUseCase,
+      deleteInvoiceUseCase: deleteInvoiceUseCase,
     );
 
     returnsBloc = ReturnsBloc(
