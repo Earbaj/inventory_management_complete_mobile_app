@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../posbilling/domain/entities/sale_entity.dart';
 import '../../../../core/di/injection_container.dart';
-import '../../../recyclebin/presentation/bloc/recycle_bin_event.dart';
+import '../../../recycle_bin/presentation/bloc/recycle_bin_event.dart';
 import '../../domain/entities/report_summary_entity.dart';
 import '../../domain/usecases/delete_invoice_usecase.dart';
 import '../../domain/usecases/get_invoice_logs_usecase.dart';
