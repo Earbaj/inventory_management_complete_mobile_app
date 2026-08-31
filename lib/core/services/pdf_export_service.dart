@@ -1038,7 +1038,7 @@ class PdfExportService {
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.symmetric(horizontal: 30, vertical: 26),
+        margin: const pw.EdgeInsets.symmetric(horizontal: 32, vertical: 28),
         build: (pw.Context context) {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -1079,19 +1079,19 @@ class PdfExportService {
                     // Banner
                     pw.Container(
                       width: double.infinity,
-                      padding: const pw.EdgeInsets.symmetric(vertical: 5),
+                      padding: const pw.EdgeInsets.symmetric(vertical: 6),
                       decoration: pw.BoxDecoration(
                         color: PdfColors.blueGrey800,
                         borderRadius: pw.BorderRadius.circular(4),
                       ),
                       child: pw.Center(
                         child: pw.Text(
-                          'INVOICE / বিল ও ক্যাশ মেমো',
+                          'SALES INVOICE',
                           style: pw.TextStyle(
                             color: PdfColors.white,
-                            fontSize: 11,
+                            fontSize: 12,
                             fontWeight: pw.FontWeight.bold,
-                            letterSpacing: 1.2,
+                            letterSpacing: 1.5,
                           ),
                         ),
                       ),
@@ -1119,18 +1119,18 @@ class PdfExportService {
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
                           pw.Text(
-                            'Customer / ক্রেতা: ${sale.customer?.name.isNotEmpty == true ? sale.customer!.name : "Walk-in Customer"}',
+                            'Customer: ${sale.customer?.name.isNotEmpty == true ? sale.customer!.name : "Walk-in Customer"}',
                             style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10.5),
                           ),
                           pw.SizedBox(height: 3),
                           pw.Text(
-                            'Mobile / মোবাইল: ${sale.customer?.phone.isNotEmpty == true ? sale.customer!.phone : "N/A"}',
+                            'Phone: ${sale.customer?.phone.isNotEmpty == true ? sale.customer!.phone : "N/A"}',
                             style: const pw.TextStyle(fontSize: 9.5, color: PdfColors.grey800),
                           ),
                           if (sale.servedBy.isNotEmpty) ...[
                             pw.SizedBox(height: 3),
                             pw.Text(
-                              'Served By / বিক্রয়কর্মী: ${sale.servedBy}',
+                              'Served By: ${sale.servedBy}',
                               style: const pw.TextStyle(fontSize: 9.5, color: PdfColors.grey800),
                             ),
                           ],
@@ -1158,7 +1158,7 @@ class PdfExportService {
                             children: [
                               pw.Text('Payment: ${sale.paymentMethod.toUpperCase()} | ', style: const pw.TextStyle(fontSize: 9.5, color: PdfColors.grey800)),
                               pw.Text(
-                                isPaid ? 'PAID FULL' : 'DUE / বাকি',
+                                isPaid ? 'PAID IN FULL' : 'PAYMENT DUE',
                                 style: pw.TextStyle(
                                   fontSize: 9.5,
                                   fontWeight: pw.FontWeight.bold,
@@ -1210,7 +1210,7 @@ class PdfExportService {
                   3: const pw.FixedColumnWidth(45),
                   4: const pw.FixedColumnWidth(90),
                 },
-                headers: ['SL', 'Item Description / পণ্যের বিবরণ', 'Unit Price', 'Qty', 'Total Amount'],
+                headers: ['SL', 'Item Description', 'Unit Price', 'Qty', 'Total Amount'],
                 data: sale.items.asMap().entries.map((entry) {
                   final idx = entry.key + 1;
                   final item = entry.value;
@@ -1227,127 +1227,118 @@ class PdfExportService {
 
               pw.SizedBox(height: 12),
 
-              // 4. FULL-WIDTH CALCULATION SUMMARY TABLE (Lomba Width / Across Full Width, not on one side)
-              pw.Table(
-                border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.8),
-                columnWidths: const {
-                  0: pw.FlexColumnWidth(1),
-                  1: pw.FlexColumnWidth(1),
-                  2: pw.FlexColumnWidth(1),
-                  3: pw.FlexColumnWidth(1.2),
-                },
-                children: [
-                  // Row 1: Subtotal | Discount | VAT/Tax | Grand Total
-                  pw.TableRow(
-                    decoration: const pw.BoxDecoration(color: PdfColors.grey100),
-                    children: [
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 7),
-                        child: pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.center,
-                          children: [
-                            pw.Text('SUBTOTAL / মোট মূল্য', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)),
-                            pw.SizedBox(height: 2),
-                            pw.Text('$currency${sale.subtotal.toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 10.5, fontWeight: pw.FontWeight.bold)),
-                          ],
-                        ),
+              // 4. FULL-WIDTH CALCULATION SUMMARY ROWS (Row 1 Subtotal, Row 2 Discount, Row 3 Net Total)
+              pw.Container(
+                decoration: pw.BoxDecoration(
+                  border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.8).top.style == pw.BorderStyle.solid
+                      ? pw.BoxDecoration(
+                          border: pw.Border.all(color: PdfColors.grey400, width: 0.8),
+                          borderRadius: pw.BorderRadius.circular(4),
+                        ).border
+                      : null,
+                ),
+                child: pw.Column(
+                  children: [
+                    // FIRST ROW: Subtotal
+                    pw.Container(
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                      decoration: const pw.BoxDecoration(
+                        color: PdfColors.grey100,
+                        border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.8)),
                       ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 7),
-                        child: pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.center,
-                          children: [
-                            pw.Text('DISCOUNT / বিশেষ ছাড়', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)),
-                            pw.SizedBox(height: 2),
-                            pw.Text('- $currency${sale.discountAmount.toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 10.5, fontWeight: pw.FontWeight.bold, color: PdfColors.green800)),
-                          ],
-                        ),
+                      child: pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                        children: [
+                          pw.Text('Subtotal', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10, color: PdfColors.grey800)),
+                          pw.Text('$currency${sale.subtotal.toStringAsFixed(2)}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10.5)),
+                        ],
                       ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 7),
-                        child: pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.center,
-                          children: [
-                            pw.Text('VAT/TAX / ভ্যাট', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)),
-                            pw.SizedBox(height: 2),
-                            pw.Text('+ $currency${sale.vatAmount.toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 10.5, fontWeight: pw.FontWeight.bold)),
-                          ],
-                        ),
+                    ),
+                    // SECOND ROW: Discount
+                    pw.Container(
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                      decoration: const pw.BoxDecoration(
+                        color: PdfColors.white,
+                        border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.8)),
                       ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 7),
-                        child: pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.center,
-                          children: [
-                            pw.Text('GRAND TOTAL / সর্বমোট', style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
-                            pw.SizedBox(height: 2),
-                            pw.Text('$currency${sale.netTotal.toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 12.5, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
-                          ],
-                        ),
+                      child: pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                        children: [
+                          pw.Text('Discount', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10, color: PdfColors.grey800)),
+                          pw.Text('- $currency${sale.discountAmount.toStringAsFixed(2)}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10.5, color: PdfColors.green800)),
+                        ],
                       ),
-                    ],
-                  ),
-                  // Row 2: Paid Amount | Due Balance | Payment Method | Status
-                  pw.TableRow(
-                    decoration: const pw.BoxDecoration(color: PdfColors.white),
-                    children: [
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    ),
+                    // (Optional VAT Row)
+                    if (sale.vatAmount > 0)
+                      pw.Container(
+                        padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                        decoration: const pw.BoxDecoration(
+                          color: PdfColors.grey50,
+                          border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.8)),
+                        ),
                         child: pw.Row(
-                          mainAxisAlignment: pw.MainAxisAlignment.center,
+                          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                           children: [
-                            pw.Text('Paid / নগদ জমা: ', style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey700)),
-                            pw.Text('$currency${sale.paidAmount.toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold, color: PdfColors.green800)),
+                            pw.Text('VAT / Tax', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10, color: PdfColors.grey800)),
+                            pw.Text('+ $currency${sale.vatAmount.toStringAsFixed(2)}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10.5)),
                           ],
                         ),
                       ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                        child: pw.Row(
-                          mainAxisAlignment: pw.MainAxisAlignment.center,
-                          children: [
-                            pw.Text('Due / বাকি: ', style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey700)),
-                            pw.Text(
-                              '$currency${sale.dueAmount.toStringAsFixed(2)}',
-                              style: pw.TextStyle(
-                                fontSize: 9.5,
-                                fontWeight: pw.FontWeight.bold,
-                                color: sale.dueAmount > 0 ? PdfColors.red800 : PdfColors.grey800,
+                    // THIRD ROW: Net Total (Grand Total)
+                    pw.Container(
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                      decoration: const pw.BoxDecoration(
+                        color: PdfColors.blueGrey800,
+                        border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.8)),
+                      ),
+                      child: pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                        children: [
+                          pw.Text('Net Total', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12, color: PdfColors.white)),
+                          pw.Text('$currency${sale.netTotal.toStringAsFixed(2)}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12.5, color: PdfColors.white)),
+                        ],
+                      ),
+                    ),
+                    // FOURTH ROW: Paid Amount, Due Balance & Payment Method
+                    pw.Container(
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                      decoration: const pw.BoxDecoration(
+                        color: PdfColors.white,
+                      ),
+                      child: pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                        children: [
+                          pw.Row(
+                            children: [
+                              pw.Text('Paid Amount: ', style: const pw.TextStyle(fontSize: 9.5, color: PdfColors.grey700)),
+                              pw.Text('$currency${sale.paidAmount.toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold, color: PdfColors.green800)),
+                            ],
+                          ),
+                          pw.Row(
+                            children: [
+                              pw.Text('Due Balance: ', style: const pw.TextStyle(fontSize: 9.5, color: PdfColors.grey700)),
+                              pw.Text(
+                                '$currency${sale.dueAmount.toStringAsFixed(2)}',
+                                style: pw.TextStyle(
+                                  fontSize: 9.5,
+                                  fontWeight: pw.FontWeight.bold,
+                                  color: sale.dueAmount > 0 ? PdfColors.red800 : PdfColors.grey800,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
+                          pw.Row(
+                            children: [
+                              pw.Text('Method: ', style: const pw.TextStyle(fontSize: 9.5, color: PdfColors.grey700)),
+                              pw.Text(sale.paymentMethod.toUpperCase(), style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
+                            ],
+                          ),
+                        ],
                       ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                        child: pw.Row(
-                          mainAxisAlignment: pw.MainAxisAlignment.center,
-                          children: [
-                            pw.Text('Method: ', style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey700)),
-                            pw.Text(sale.paymentMethod.toUpperCase(), style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
-                          ],
-                        ),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                        child: pw.Row(
-                          mainAxisAlignment: pw.MainAxisAlignment.center,
-                          children: [
-                            pw.Text('Status: ', style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey700)),
-                            pw.Text(
-                              isPaid ? 'PAID / পরিশোধিত' : 'DUE / বকেয়া',
-                              style: pw.TextStyle(
-                                fontSize: 8.5,
-                                fontWeight: pw.FontWeight.bold,
-                                color: isPaid ? PdfColors.green800 : PdfColors.red800,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
 
               pw.SizedBox(height: 10),
@@ -1361,14 +1352,14 @@ class PdfExportService {
                   borderRadius: pw.BorderRadius.circular(4),
                 ),
                 child: pw.Text(
-                  'নোট: ১. বিক্রিত মাল ৭ দিনের মধ্যে ইনভয়েস রিসিটসহ পরিবর্তনযোগ্য। ২. যেকোনো প্রয়োজনে শপের ফোন নম্বরে যোগাযোগ করুন।',
+                  'Terms: 1. Goods sold can be exchanged within 7 days with valid invoice. 2. For inquiries, please contact our support phone.',
                   style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
                 ),
               ),
 
               pw.Spacer(),
 
-              // 5. BOTTOM DUAL SIGNATURES (Dokan & Customer Sign)
+              // 5. BOTTOM DUAL SIGNATURES (Store & Customer Signature)
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: pw.CrossAxisAlignment.end,
@@ -1379,18 +1370,16 @@ class PdfExportService {
                     children: [
                       pw.Container(width: 170, height: 1, color: PdfColors.grey600),
                       pw.SizedBox(height: 5),
-                      pw.Text('গ্রাহকের স্বাক্ষর', style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold)),
-                      pw.Text("Customer's Signature", style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey700)),
+                      pw.Text("Customer's Signature", style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold)),
                     ],
                   ),
-                  // Dokan / Store Authorized Signature
+                  // Store Authorized Signature
                   pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.center,
                     children: [
                       pw.Container(width: 170, height: 1, color: PdfColors.grey600),
                       pw.SizedBox(height: 5),
-                      pw.Text('দোকানের সিল ও স্বাক্ষর', style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold)),
-                      pw.Text('Store Authorized Signature', style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey700)),
+                      pw.Text('Store Authorized Signature', style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold)),
                     ],
                   ),
                 ],
@@ -1398,7 +1387,7 @@ class PdfExportService {
               pw.SizedBox(height: 8),
               pw.Center(
                 child: pw.Text(
-                  'ধন্যবাদ! আবার আসবেন • Generated by Smart Inventory POS Management System',
+                  'Thank you for your business! • Generated by Smart Inventory POS Management System',
                   style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey600),
                 ),
               ),
