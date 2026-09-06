@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/utils/money_util.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inventory_management_complete/features/reports/presentation/bloc/reports_bloc.dart';
@@ -16,6 +17,7 @@ import '../../../inventory/presentation/bloc/inventory_state.dart';
 import '../../../reports/presentation/bloc/reports_event.dart';
 import '../../../reports/presentation/bloc/reports_state.dart';
 import '../widgets/dashboard_shimmer.dart';
+import '../widgets/easy_dashboard_view.dart';
 import '../widgets/profit_chart.dart';
 import '../widgets/recent_transactions.dart';
 import '../widgets/sales_chart.dart';
@@ -36,6 +38,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
   String? _selectedBranchId;
   List<BranchEntity> _branches = [];
   bool _isLoading = false;
+  bool _isEasyMode = false;
 
   @override
   bool get wantKeepAlive => true;
@@ -47,7 +50,24 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
     if (reportsState is ReportsLoadedState) {
       _selectedBranchId = reportsState.branchId;
     }
+    SharedPreferences.getInstance().then((prefs) {
+      if (mounted) {
+        setState(() {
+          _isEasyMode = prefs.getBool('dashboard_easy_mode_pref') ?? false;
+        });
+      }
+    });
     _fetchDashboardData();
+  }
+
+  Future<void> _toggleEasyMode(bool value) async {
+    setState(() {
+      _isEasyMode = value;
+    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('dashboard_easy_mode_pref', value);
+    } catch (_) {}
   }
 
   Future<void> _fetchDashboardData() async {
@@ -145,6 +165,8 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                               },
                             ),
                           ),
+                          _buildModeToggle(colorScheme),
+                          const SizedBox(width: 4),
                           IconButton(
                             onPressed: _isLoading ? null : () => _fetchDashboardData(),
                             icon:  const Icon(Icons.refresh_rounded),
@@ -217,6 +239,10 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                   if (_isLoading)
                     SliverToBoxAdapter(
                       child: DashboardShimmerView(isAdmin: isAdmin),
+                    )
+                  else if (_isEasyMode)
+                    SliverToBoxAdapter(
+                      child: EasyDashboardView(isAdmin: isAdmin),
                     )
                   else ...[
                     // QUICK NAVIGATION ACTIONS
@@ -479,6 +505,46 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
             Text(
               label,
               style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModeToggle(ColorScheme colorScheme) {
+    return InkWell(
+      onTap: () => _toggleEasyMode(!_isEasyMode),
+      borderRadius: BorderRadius.circular(20),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: _isEasyMode
+              ? Colors.green.withValues(alpha: 0.15)
+              : colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: _isEasyMode ? Colors.green : colorScheme.outlineVariant.withValues(alpha: 0.6),
+            width: 1.2,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              _isEasyMode ? Icons.lightbulb_rounded : Icons.tune_rounded,
+              size: 16,
+              color: _isEasyMode ? Colors.green : colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              _isEasyMode ? 'সহজ মোড' : 'Standard',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: _isEasyMode ? Colors.green : colorScheme.onSurface,
+              ),
             ),
           ],
         ),
