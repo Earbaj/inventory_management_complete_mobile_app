@@ -88,6 +88,10 @@ mixin Bangla {
   static const String noRecentSalesEasy = DashboardStrings.noRecentSalesEasy;
   static const String memoNo = DashboardStrings.memoNo;
   static const String sendDueReminder = DashboardStrings.sendDueReminder;
+  static const String goodMorning = DashboardStrings.goodMorning;
+  static const String goodAfternoon = DashboardStrings.goodAfternoon;
+  static const String goodEvening = DashboardStrings.goodEvening;
+  static const String goodNight = DashboardStrings.goodNight;
 
   // POS
   static const String pos = PosStrings.posTitle;

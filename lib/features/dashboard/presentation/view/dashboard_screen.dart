@@ -104,16 +104,22 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
 
   String getGreeting(BuildContext context) {
     final hour = DateTime.now().hour;
-    final isBangla = Localizations.localeOf(context).languageCode == 'bn';
 
-    if (hour < 12) {
-      return isBangla ? 'শুভ সকাল' : 'Good Morning';
-    } else if (hour < 17) {
-      return isBangla ? 'শুভ অপরাহ্ন' : 'Good Afternoon';
-    } else if (hour < 20) {
-      return isBangla ? 'শুভ সন্ধ্যা' : 'Good Evening';
-    } else {
-      return isBangla ? 'শুভ রাত্রি' : 'Good Night';
+    // ৫:০০ AM - ১১:৫৯ AM : শুভ সকাল / Good Morning
+    if (hour >= 5 && hour < 12) {
+      return Bangla.goodMorning.getString(context);
+    }
+    // ১২:০০ PM - ৪:৫৯ PM : শুভ অপরাহ্ন / Good Afternoon
+    else if (hour >= 12 && hour < 17) {
+      return Bangla.goodAfternoon.getString(context);
+    }
+    // ৫:০০ PM - ৮:৫৯ PM : শুভ সন্ধ্যা / Good Evening
+    else if (hour >= 17 && hour < 21) {
+      return Bangla.goodEvening.getString(context);
+    }
+    // ৯:০০ PM - ৪:৫৯ AM (গভীর রাত) : শুভ রাত্রি / Good Night
+    else {
+      return Bangla.goodNight.getString(context);
     }
   }
 

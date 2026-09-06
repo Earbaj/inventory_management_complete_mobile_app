@@ -43,6 +43,10 @@ class DashboardStrings {
   static const String recentSalesEasy = 'recent_sales_easy';
   static const String noRecentSalesEasy = 'no_recent_sales_easy';
   static const String memoNo = 'memo_no';
+  static const String goodMorning = 'good_morning';
+  static const String goodAfternoon = 'good_afternoon';
+  static const String goodEvening = 'good_evening';
+  static const String goodNight = 'good_night';
 
   static const Map<String, String> bn = {
     dashboard: 'ড্যাশবোর্ড',
@@ -89,6 +93,10 @@ class DashboardStrings {
     recentSalesEasy: 'শেষ কয়েকটি বিক্রি 🧾',
     noRecentSalesEasy: 'আজকের কোনো বিক্রি পাওয়া যায়নি।\nনতুন বিক্রি করতে উপরের বাটন চাপুন।',
     memoNo: 'মেমো #',
+    goodMorning: 'শুভ সকাল ☀️',
+    goodAfternoon: 'শুভ অপরাহ্ন 🌤️',
+    goodEvening: 'শুভ সন্ধ্যা 🌆',
+    goodNight: 'শুভ রাত্রি 🌙',
   };
 
   static const Map<String, String> en = {
@@ -136,5 +144,9 @@ class DashboardStrings {
     recentSalesEasy: 'Recent Sales 🧾',
     noRecentSalesEasy: 'No sales recorded today.\nTap the button above to start a sale.',
     memoNo: 'Invoice #',
+    goodMorning: 'Good Morning ☀️',
+    goodAfternoon: 'Good Afternoon 🌤️',
+    goodEvening: 'Good Evening 🌆',
+    goodNight: 'Good Night 🌙',
   };
 }
