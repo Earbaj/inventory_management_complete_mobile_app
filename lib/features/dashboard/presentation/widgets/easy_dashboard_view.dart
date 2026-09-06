@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../../core/utils/money_util.dart';
 import '../../../customers/presentation/bloc/customer_bloc.dart';
@@ -107,11 +106,7 @@ class EasyDashboardView extends StatelessWidget {
 
           // CARD 2: CUSTOMER DUE (কাস্টমারদের কাছে বাকি)
           BlocBuilder<CustomerBloc, CustomerState>(
-            builder: (context, snapshot) {
-              final custState = snapshot is CustomerLoadedState
-                  ? snapshot
-                  : InjectionContainer.customerBloc.state;
-
+            builder: (context, custState) {
               double due = 0.0;
               int dueCustomersCount = 0;
               if (custState is CustomerLoadedState && custState.customers.isNotEmpty) {
@@ -124,7 +119,7 @@ class EasyDashboardView extends StatelessWidget {
               }
 
               if (due == 0.0) {
-                final reportsState = InjectionContainer.reportsBloc.state;
+                final reportsState = context.watch<ReportsBloc>().state;
                 if (reportsState is ReportsLoadedState) {
                   due = reportsState.summary.totalDue > 0
                       ? reportsState.summary.totalDue
@@ -153,10 +148,7 @@ class EasyDashboardView extends StatelessWidget {
 
           // CARD 3: STOCK & INVENTORY (দোকানের মালামাল ও স্টক)
           BlocBuilder<InventoryBloc, InventoryState>(
-            builder: (context, snapshot) {
-              final state = snapshot is InventoryLoadedState
-                  ? snapshot
-                  : InjectionContainer.inventoryBloc.state;
+            builder: (context, state) {
               final int totalItems = state is InventoryLoadedState ? state.items.length : 0;
               final int lowStock = state is InventoryLoadedState
                   ? state.items.where((i) => i.isLowStock || i.isOutOfStock).length
@@ -292,13 +284,8 @@ class EasyDashboardView extends StatelessWidget {
           const SizedBox(height: 24),
 
           // 5. RECENT SALES IN PLAIN WORDS
-          StreamBuilder<ReportsState>(
-            stream: InjectionContainer.reportsBloc.stream,
-            initialData: InjectionContainer.reportsBloc.state,
-            builder: (context, snapshot) {
-              final state = snapshot.data is ReportsLoadedState
-                  ? snapshot.data
-                  : InjectionContainer.reportsBloc.state;
+          BlocBuilder<ReportsBloc, ReportsState>(
+            builder: (context, state) {
               final List<SaleEntity> logs = state is ReportsLoadedState ? state.invoiceLogs : [];
               final recentList = logs.take(5).toList();
 

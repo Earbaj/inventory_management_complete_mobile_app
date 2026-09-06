@@ -22,8 +22,15 @@ class PaymentSubmittedSuccessState extends SubscriptionState {
   });
 }
 
+class PaymentLogsLoadedState extends SubscriptionState {
+  final List<PaymentEntity> paymentLogs;
+
+  const PaymentLogsLoadedState(this.paymentLogs);
+}
+
 class SubscriptionErrorState extends SubscriptionState {
   final String message;
 
   const SubscriptionErrorState(this.message);
 }
+

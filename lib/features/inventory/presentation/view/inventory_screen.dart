@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inventory_management_complete/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:inventory_management_complete/features/inventory/presentation/bloc/inventory_bloc.dart';
-import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../../core/widgets/global_empty_placeholder.dart';
 import '../../../auth/domain/entities/user_entity.dart';
@@ -60,7 +59,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   void _onSearchChanged(String query) {
     _searchDebounceTimer?.cancel();
     _searchDebounceTimer = Timer(const Duration(milliseconds: 400), () {
-      InjectionContainer.inventoryBloc.add(
+      context.read<InventoryBloc>().add(
         FetchInventoryItemsEvent(
           searchQuery: query,
           category: selectedCategory,
@@ -74,7 +73,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
     setState(() {
       selectedCategory = category;
     });
-    InjectionContainer.inventoryBloc.add(
+    context.read<InventoryBloc>().add(
       FetchInventoryItemsEvent(
         searchQuery: searchController.text,
         category: category,
@@ -87,7 +86,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
     setState(() {
       selectedFilter = filter;
     });
-    InjectionContainer.inventoryBloc.add(
+    context.read<InventoryBloc>().add(
       FetchInventoryItemsEvent(
         searchQuery: searchController.text,
         category: selectedCategory,
@@ -377,60 +376,26 @@ class _InventoryScreenState extends State<InventoryScreen> {
                             const SizedBox(width: 10),
                             // Create Button with Button Loader
                             FilledButton(
-                              onPressed: isSubmitting
+                                onPressed: isSubmitting
                                   ? null
-                                  : () async {
+                                  : () {
                                       if (formKey.currentState!.validate()) {
                                         final categoryName = nameController.text.trim();
                                         final description = descController.text.trim();
 
-                                        setDialogState(() {
-                                          isSubmitting = true;
-                                          errorMessage = null;
-                                        });
-
-                                        try {
-                                          await InjectionContainer.inventoryRemoteDataSource.createCategory(
-                                            categoryName,
+                                        context.read<InventoryBloc>().add(
+                                          CreateCategoryEvent(
+                                            name: categoryName,
                                             description: description.isNotEmpty ? description : null,
-                                          );
+                                          ),
+                                        );
 
-                                          InjectionContainer.inventoryBloc.add(
-                                            AddCategoryLocalEvent(categoryName),
-                                          );
+                                        if (dialogContext.mounted) {
+                                          Navigator.pop(dialogContext, categoryName);
+                                        }
 
-                                          if (dialogContext.mounted) {
-                                            Navigator.pop(dialogContext, categoryName);
-                                          }
-
-                                          if (context.mounted) {
-                                            _onCategorySelected(categoryName);
-                                          }
-                                        } catch (e) {
-                                          final rawErr = e.toString();
-                                          if (rawErr.toLowerCase().contains('already exists') ||
-                                              rawErr.contains('409') ||
-                                              rawErr.toLowerCase().contains('conflict')) {
-                                            InjectionContainer.inventoryBloc.add(
-                                              AddCategoryLocalEvent(categoryName),
-                                            );
-                                            if (dialogContext.mounted) {
-                                              Navigator.pop(dialogContext, categoryName);
-                                            }
-                                            if (context.mounted) {
-                                              _onCategorySelected(categoryName);
-                                            }
-                                          } else {
-                                            if (dialogContext.mounted) {
-                                              setDialogState(() {
-                                                isSubmitting = false;
-                                                errorMessage = rawErr
-                                                    .replaceAll('Exception: ', '')
-                                                    .replaceAll('ServerFailure: ', '')
-                                                    .replaceAll('NetworkFailure: ', '');
-                                              });
-                                            }
-                                          }
+                                        if (context.mounted) {
+                                          _onCategorySelected(categoryName);
                                         }
                                       }
                                     },
@@ -518,7 +483,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 onPressed: isRefreshing
                     ? null
                     : () {
-                        InjectionContainer.inventoryBloc.add(
+                        context.read<InventoryBloc>().add(
                           FetchInventoryItemsEvent(
                             searchQuery: searchController.text,
                             category: selectedCategory,
@@ -628,7 +593,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     const SizedBox(height: 24),
                     ElevatedButton.icon(
                       onPressed: () {
-                        InjectionContainer.inventoryBloc.add(
+                        context.read<InventoryBloc>().add(
                           FetchInventoryItemsEvent(
                             searchQuery: searchController.text,
                             category: selectedCategory,
@@ -793,7 +758,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               label: const Text('Delete Item'),
               onPressed: () {
                 Navigator.pop(dialogContext);
-                InjectionContainer.inventoryBloc.add(DeleteInventoryItemEvent(item.id));
+                context.read<InventoryBloc>().add(DeleteInventoryItemEvent(item.id));
               },
             ),
           ],
@@ -815,21 +780,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
           existingItem: existingItem,
           onSave: (item) async {
             if (existingItem == null) {
-              final savedItem = await InjectionContainer.addInventoryItemUseCase(item);
-              InjectionContainer.inventoryBloc.add(AddInventoryItemEvent(savedItem));
+              context.read<InventoryBloc>().add(AddInventoryItemEvent(item));
             } else {
-              final updatedItem = await InjectionContainer.updateInventoryItemUseCase(item);
-              InjectionContainer.inventoryBloc.add(UpdateInventoryItemEvent(updatedItem));
+              context.read<InventoryBloc>().add(UpdateInventoryItemEvent(item));
             }
-
-            // Immediately refresh inventory categories & items so the main screen updates
-            InjectionContainer.inventoryBloc.add(
-              FetchInventoryItemsEvent(
-                category: selectedCategory,
-                searchQuery: searchController.text,
-                filter: selectedFilter,
-              ),
-            );
 
             if (sheetContext.mounted) {
               Navigator.pop(sheetContext);
@@ -916,7 +870,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               }
 
               if (items.isNotEmpty) {
-                InjectionContainer.inventoryBloc.add(ImportCsvEvent(items));
+                context.read<InventoryBloc>().add(ImportCsvEvent(items));
                 Navigator.pop(dialogCtx);
               }
             },

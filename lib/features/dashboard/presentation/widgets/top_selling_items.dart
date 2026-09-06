@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/money_util.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/di/injection_container.dart';
+import '../../../reports/presentation/bloc/reports_bloc.dart';
 import '../../../reports/presentation/bloc/reports_state.dart';
+import '../../../inventory/presentation/bloc/inventory_bloc.dart';
 import '../../../inventory/presentation/bloc/inventory_state.dart';
 import '../../../posbilling/domain/entities/sale_entity.dart';
 import '../../../posbilling/domain/entities/cart_item_entity.dart';
@@ -14,11 +16,8 @@ class TopSellingItems extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return StreamBuilder<ReportsState>(
-      stream: InjectionContainer.reportsBloc.stream,
-      initialData: InjectionContainer.reportsBloc.state,
-      builder: (context, reportsSnapshot) {
-        final reportsState = reportsSnapshot.data is ReportsLoadedState ? reportsSnapshot.data : InjectionContainer.reportsBloc.state;
+    return BlocBuilder<ReportsBloc, ReportsState>(
+      builder: (context, reportsState) {
         final List<SaleEntity> logs = reportsState is ReportsLoadedState ? reportsState.invoiceLogs : [];
 
         // Aggregate item sales count and total revenue strictly from API logs
@@ -112,11 +111,8 @@ class TopSellingItems extends StatelessWidget {
                   );
                 })
               else
-                StreamBuilder<InventoryState>(
-                  stream: InjectionContainer.inventoryBloc.stream,
-                  initialData: InjectionContainer.inventoryBloc.state,
-                  builder: (context, invSnapshot) {
-                    final invState = invSnapshot.data is InventoryLoadedState ? invSnapshot.data : InjectionContainer.inventoryBloc.state;
+                BlocBuilder<InventoryBloc, InventoryState>(
+                  builder: (context, invState) {
                     final items = invState is InventoryLoadedState ? invState.items : [];
 
                     if (items.isEmpty) {

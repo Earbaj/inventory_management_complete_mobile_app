@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/money_util.dart';
-import '../../../../core/di/injection_container.dart';
+import '../bloc/subscription_bloc.dart';
 import '../bloc/subscription_event.dart';
 import '../bloc/subscription_state.dart';
 import '../../data/models/subscription_package_model.dart';
@@ -42,7 +43,7 @@ class _PaymentCheckoutModalState extends State<PaymentCheckoutModal> {
 
   Future<void> _fetchPackages() async {
     try {
-      final packages = await InjectionContainer.subscriptionRemoteDataSource.getPackages();
+      final packages = await context.read<SubscriptionBloc>().getPackages();
       if (mounted) {
         setState(() {
           _packages = packages;
@@ -56,7 +57,7 @@ class _PaymentCheckoutModalState extends State<PaymentCheckoutModal> {
 
   Future<void> _fetchPaymentInfo() async {
     try {
-      final info = await InjectionContainer.subscriptionRemoteDataSource.getPaymentInfo();
+      final info = await context.read<SubscriptionBloc>().getPaymentInfo();
       if (mounted) {
         setState(() {
           _paymentNumbers = info.toNumbersMap();
@@ -87,7 +88,7 @@ class _PaymentCheckoutModalState extends State<PaymentCheckoutModal> {
       final trxId = _trxController.text.trim();
       final targetTier = _selectedPackage?.id ?? 'premium';
 
-      InjectionContainer.subscriptionBloc.add(SubmitSubscriptionPaymentEvent(
+      context.read<SubscriptionBloc>().add(SubmitSubscriptionPaymentEvent(
         method: _selectedMethod.toLowerCase() == "bkash" ? "manual_bkash":"",
         transactionId: trxId,
         amount: amount,
@@ -109,11 +110,8 @@ class _PaymentCheckoutModalState extends State<PaymentCheckoutModal> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SafeArea(
-        child: StreamBuilder<SubscriptionState>(
-          stream: InjectionContainer.subscriptionBloc.stream,
-          initialData: InjectionContainer.subscriptionBloc.state,
-          builder: (context, snapshot) {
-            final state = snapshot.data;
+        child: BlocBuilder<SubscriptionBloc, SubscriptionState>(
+          builder: (context, state) {
 
             if (state is PaymentSubmittedSuccessState) {
               return Padding(

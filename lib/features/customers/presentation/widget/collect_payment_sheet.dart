@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/money_util.dart';
-import '../../../../core/di/injection_container.dart';
 import '../../domain/entities/customer_entity.dart';
+import '../bloc/customer_bloc.dart';
 import '../bloc/customer_event.dart';
 import '../bloc/customer_state.dart';
-import '../../../reports/presentation/bloc/reports_event.dart';
 
 class CollectPaymentSheet extends StatefulWidget {
   final CustomerEntity? preSelectedCustomer;
@@ -50,41 +50,26 @@ class _CollectPaymentSheetState extends State<CollectPaymentSheet> {
 
     setState(() => _isSubmitting = true);
 
-    try {
-      await InjectionContainer.customerRemoteDataSource.collectCustomerPayment(
+    context.read<CustomerBloc>().add(
+      CollectCustomerPaymentEvent(
         customerId: _selectedCustomer!.id,
         amount: amount,
         paymentMethod: _paymentMethod,
         note: _noteCtrl.text.trim(),
+      ),
+    );
+
+    if (mounted) {
+      Navigator.pop(context, true);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Payment of ${MoneyUtil.currencySymbol}${amount.toStringAsFixed(0)} received for ${_selectedCustomer!.name}',
+          ),
+          backgroundColor: Colors.green[700],
+        ),
       );
-
-      InjectionContainer.customerBloc.add(const FetchCustomersEvent());
-      try {
-        InjectionContainer.reportsBloc.add(const FetchReportsEvent());
-      } catch (_) {}
-
-      if (mounted) {
-        Navigator.pop(context, true);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Payment of ${MoneyUtil.currencySymbol}${amount.toStringAsFixed(0)} received for ${_selectedCustomer!.name}',
-            ),
-            backgroundColor: Colors.green[700],
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isSubmitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to process payment: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
     }
   }
 
@@ -93,7 +78,7 @@ class _CollectPaymentSheetState extends State<CollectPaymentSheet> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final customerState = InjectionContainer.customerBloc.state;
+    final customerState = context.watch<CustomerBloc>().state;
     final List<CustomerEntity> customersList = customerState is CustomerLoadedState
         ? customerState.customers
         : (_selectedCustomer != null ? [_selectedCustomer!] : []);

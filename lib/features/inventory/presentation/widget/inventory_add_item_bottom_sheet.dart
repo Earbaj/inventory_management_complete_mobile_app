@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/money_util.dart';
-import '../../../../core/di/injection_container.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/services/barcode_scanner_service.dart';
 import '../../inventory_item.dart';
+import '../bloc/inventory_bloc.dart';
 import '../bloc/inventory_event.dart';
 import '../bloc/inventory_state.dart';
 import 'iinventory_add_item_sub_widget.dart';
@@ -23,30 +24,36 @@ class AddItemSheet extends StatefulWidget {
 }
 
 class _AddItemSheetState extends State<AddItemSheet> {
-  final formKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
+  GlobalKey<FormState> get formKey => _formKey;
 
-  late final TextEditingController nameController;
-  late final TextEditingController skuController;
-  late final TextEditingController lowStockController;
-  late final TextEditingController sellPriceController;
-  late final TextEditingController purchasePriceController;
-  late final TextEditingController stockController;
+  late TextEditingController nameController;
+  late TextEditingController skuController;
+  late TextEditingController lowStockController;
+  late TextEditingController sellPriceController;
+  late TextEditingController purchasePriceController;
+  late TextEditingController stockController;
 
   String category = 'General';
-  String unit = 'Piece';
-  List<String> categoriesList = ['General'];
-  bool isLoadingCategories = true;
+  String unit = 'pcs';
   bool isSaving = false;
+  bool isScanning = false;
+  bool isLoadingCategories = true;
 
-  final units = const [
-    'Piece',
-    'Box',
-    'Pack',
-    'Kg',
-    'Liter',
-    'Dozen',
+  List<String> categoriesList = ['General'];
+  final List<String> unitsList = const [
     'pcs',
+    'kg',
+    'ltr',
+    'box',
+    'packet',
+    'dozen',
+    'meter',
+    'gm',
+    'ml',
+    'set',
   ];
+  List<String> get units => unitsList;
 
   @override
   void initState() {
@@ -67,50 +74,27 @@ class _AddItemSheetState extends State<AddItemSheet> {
       category = item.category.trim();
       unit = item.unit;
     }
-
-    // Pre-populate with all categories from loaded Bloc state
-    final blocState = InjectionContainer.inventoryBloc.state;
-    if (blocState is InventoryLoadedState) {
-      for (final cat in blocState.categories) {
-        if (cat.toLowerCase() != 'all' && cat.trim().isNotEmpty) {
-          initialCategories.add(cat.trim());
-        }
-      }
-    }
     categoriesList = initialCategories.toList();
-    if (!categoriesList.contains(category)) {
-      category = categoriesList.first;
-    }
 
-    _fetchCategoriesFromApi();
-  }
-
-  Future<void> _fetchCategoriesFromApi() async {
-    try {
-      final apiCategories = await InjectionContainer.inventoryRemoteDataSource.getCategories(forceRefresh: true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
+        final blocState = context.read<InventoryBloc>().state;
+        if (blocState is InventoryLoadedState) {
+          for (final cat in blocState.categories) {
+            if (cat.toLowerCase() != 'all' && cat.trim().isNotEmpty) {
+              initialCategories.add(cat.trim());
+            }
+          }
+        }
         setState(() {
-          final set = <String>{
-            if (widget.existingItem != null && widget.existingItem!.category.trim().isNotEmpty)
-              widget.existingItem!.category.trim(),
-            'General',
-            ...categoriesList,
-            ...apiCategories,
-          };
-          categoriesList = set.toList();
+          categoriesList = initialCategories.toList();
           if (!categoriesList.contains(category)) {
             category = categoriesList.first;
           }
           isLoadingCategories = false;
         });
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          isLoadingCategories = false;
-        });
-      }
-    }
+    });
   }
 
   @override
@@ -615,63 +599,25 @@ class _AddItemSheetState extends State<AddItemSheet> {
                 FilledButton(
                   onPressed: isSubmitting
                       ? null
-                      : () async {
+                      : () {
                           if (formKey.currentState!.validate()) {
                             final newCategoryName = nameController.text.trim();
-                            setDialogState(() {
-                              isSubmitting = true;
-                              errorMessage = null;
-                            });
 
-                            try {
-                              await InjectionContainer.inventoryRemoteDataSource.createCategory(newCategoryName);
+                            context.read<InventoryBloc>().add(
+                              CreateCategoryEvent(name: newCategoryName),
+                            );
 
-                              // Locally add to Bloc's categories without refetching all items
-                              InjectionContainer.inventoryBloc.add(
-                                AddCategoryLocalEvent(newCategoryName),
-                              );
+                            if (dialogContext.mounted) {
+                              Navigator.pop(dialogContext);
+                            }
 
-                              if (dialogContext.mounted) {
-                                Navigator.pop(dialogContext);
-                              }
-
-                              if (mounted) {
-                                setState(() {
-                                  if (!categoriesList.contains(newCategoryName)) {
-                                    categoriesList.add(newCategoryName);
-                                  }
-                                  category = newCategoryName;
-                                });
-                              }
-                            } catch (e) {
-                              final rawErr = e.toString();
-                              if (rawErr.toLowerCase().contains('already exists') ||
-                                  rawErr.contains('409') ||
-                                  rawErr.toLowerCase().contains('conflict')) {
-                                InjectionContainer.inventoryBloc.add(
-                                  AddCategoryLocalEvent(newCategoryName),
-                                );
-                                if (dialogContext.mounted) {
-                                  Navigator.pop(dialogContext);
+                            if (mounted) {
+                              setState(() {
+                                if (!categoriesList.contains(newCategoryName)) {
+                                  categoriesList.add(newCategoryName);
                                 }
-                                if (mounted) {
-                                  setState(() {
-                                    if (!categoriesList.contains(newCategoryName)) {
-                                      categoriesList.add(newCategoryName);
-                                    }
-                                    category = newCategoryName;
-                                  });
-                                }
-                              } else {
-                                if (dialogContext.mounted) {
-                                  setDialogState(() {
-                                    isSubmitting = false;
-                                    errorMessage = rawErr
-                                        .replaceAll('Exception: ', '')
-                                        .replaceAll('ServerFailure: ', '');
-                                  });
-                                }
-                              }
+                                category = newCategoryName;
+                              });
                             }
                           }
                         },

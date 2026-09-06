@@ -1,7 +1,7 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/di/injection_container.dart';
+import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
 
@@ -19,39 +19,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   final _shopNameController = TextEditingController();
 
-  StreamSubscription<AuthState>? _authSubscription;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _acceptedTerms = false;
-  bool _isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _authSubscription = InjectionContainer.authBloc.stream.listen((state) {
-      if (!mounted) return;
-      if (state is AuthLoadingState) {
-        setState(() => _isLoading = true);
-      } else {
-        setState(() => _isLoading = false);
-        if (state is AuthenticatedState) {
-          context.go('/dashboard');
-        } else if (state is AuthFailureState) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      }
-    });
-  }
 
   @override
   void dispose() {
-    _authSubscription?.cancel();
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -97,7 +70,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    InjectionContainer.authBloc.add(RegisterRequestedEvent(
+    context.read<AuthBloc>().add(RegisterRequestedEvent(
       name: name,
       email: email,
       password: password,
@@ -112,22 +85,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 20),
-              IconButton(
-                onPressed: () => context.pop(),
-                icon: const Icon(Icons.arrow_back_ios_new),
-              ),
-              const SizedBox(height: 20),
-              Center(child: _Logo(color: colorScheme.primary)),
-              const SizedBox(height: 20),
-              Center(
-                child: Text('Create Account', style: theme.textTheme.headlineLarge),
-              ),
+        child: BlocConsumer<AuthBloc, AuthState>(
+          listener: (context, state) {
+            if (state is AuthenticatedState) {
+              context.go('/dashboard');
+            } else if (state is AuthFailureState) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.red,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+          },
+          builder: (context, state) {
+            final isLoading = state is AuthLoadingState;
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 20),
+                  IconButton(
+                    onPressed: () => context.pop(),
+                    icon: const Icon(Icons.arrow_back_ios_new),
+                  ),
+                  const SizedBox(height: 20),
+                  Center(child: _Logo(color: colorScheme.primary)),
+                  const SizedBox(height: 20),
+                  Center(
+                    child: Text('Create Account', style: theme.textTheme.headlineLarge),
+                  ),
               const SizedBox(height: 8),
               Center(
                 child: Text('Register as Shop Owner', style: theme.textTheme.bodyMedium),
@@ -235,8 +225,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _register,
-                  child: _isLoading
+                  onPressed: isLoading ? null : _register,
+                  child: isLoading
                       ? const SizedBox(
                           width: 24,
                           height: 24,
@@ -263,9 +253,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: 30),
             ],
           ),
-        ),
-      ),
-    );
+        );
+      },
+    ),
+  ),
+);
   }
 }
 

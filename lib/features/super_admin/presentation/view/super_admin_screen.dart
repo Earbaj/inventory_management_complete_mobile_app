@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/money_util.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/di/injection_container.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
+import '../bloc/super_admin_bloc.dart';
 import '../bloc/super_admin_event.dart';
 import '../bloc/super_admin_state.dart';
 import '../../data/models/shop_item_model.dart';
@@ -23,7 +25,11 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> with SingleTickerPr
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    InjectionContainer.superAdminBloc.add(const FetchSuperAdminDashboardEvent());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<SuperAdminBloc>().add(const FetchSuperAdminDashboardEvent());
+      }
+    });
   }
 
   @override
@@ -131,10 +137,11 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> with SingleTickerPr
                   Expanded(
                     child: FilledButton(
                       onPressed: () {
+                        final authBloc = context.read<AuthBloc>();
                         Navigator.pop(dialogContext);
                         // Add a small delay for smooth animation
                         Future.delayed(const Duration(milliseconds: 300), () {
-                          InjectionContainer.authBloc.add(const LogoutRequestedEvent());
+                          authBloc.add(const LogoutRequestedEvent());
                           context.go('/login');
                         });
                       },
@@ -190,7 +197,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> with SingleTickerPr
             label: const Text('Delete Shop'),
             onPressed: () {
               Navigator.pop(dialogContext);
-              InjectionContainer.superAdminBloc.add(DeleteShopEvent(shop.id));
+              context.read<SuperAdminBloc>().add(DeleteShopEvent(shop.id));
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Shop deletion requested for ${shop.name}'),
@@ -241,7 +248,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> with SingleTickerPr
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () {
               Navigator.pop(dialogCtx);
-              InjectionContainer.superAdminBloc.add(
+              context.read<SuperAdminBloc>().add(
                 RejectPaymentEvent(paymentId, reason: reasonController.text.trim()),
               );
             },
@@ -257,7 +264,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> with SingleTickerPr
     final colorScheme = theme.colorScheme;
 
     // Pre-instantiate Future once to preserve state across scroll/drag rebuilds
-    final shopDetailsFuture = InjectionContainer.superAdminRemoteDataSource.getShopDetails(shopId);
+    final shopDetailsFuture = context.read<SuperAdminBloc>().getShopDetails(shopId);
 
     showModalBottomSheet(
       context: context,
@@ -458,7 +465,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> with SingleTickerPr
           IconButton(
             tooltip: 'Refresh Overview',
             onPressed: () {
-              InjectionContainer.superAdminBloc.add(const FetchSuperAdminDashboardEvent());
+              context.read<SuperAdminBloc>().add(const FetchSuperAdminDashboardEvent());
             },
             icon: const Icon(Icons.refresh_rounded),
           ),
@@ -478,12 +485,8 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> with SingleTickerPr
           ],
         ),
       ),
-      body: StreamBuilder<SuperAdminState>(
-        stream: InjectionContainer.superAdminBloc.stream,
-        initialData: InjectionContainer.superAdminBloc.state,
-        builder: (context, snapshot) {
-          final state = snapshot.data;
-
+      body: BlocBuilder<SuperAdminBloc, SuperAdminState>(
+        builder: (context, state) {
           if (state is SuperAdminLoadingState) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -498,7 +501,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> with SingleTickerPr
                   Text('Error: ${state.message}', style: const TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => InjectionContainer.superAdminBloc.add(const FetchSuperAdminDashboardEvent()),
+                    onPressed: () => context.read<SuperAdminBloc>().add(const FetchSuperAdminDashboardEvent()),
                     child: const Text('Retry'),
                   ),
                 ],
@@ -772,7 +775,7 @@ class _SuperAdminScreenState extends State<SuperAdminScreen> with SingleTickerPr
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          InjectionContainer.superAdminBloc.add(ApprovePaymentEvent(payment.id));
+                          context.read<SuperAdminBloc>().add(ApprovePaymentEvent(payment.id));
                         },
                         icon: const Icon(Icons.check_circle_rounded),
                         label: const Text('Approve', style: TextStyle(fontWeight: FontWeight.bold)),

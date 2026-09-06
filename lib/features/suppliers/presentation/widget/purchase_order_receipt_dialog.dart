@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/money_util.dart';
-import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/pdf_export_service.dart';
 import '../../../settings/domain/entities/shop_profile_entity.dart';
+import '../../../settings/presentation/bloc/settings_bloc.dart';
 import '../../../settings/presentation/bloc/settings_state.dart';
 import '../../domain/entities/purchase_order_entity.dart';
 import '../../domain/entities/supplier_entity.dart';
@@ -58,7 +59,7 @@ class _PurchaseOrderReceiptDialogState extends State<PurchaseOrderReceiptDialog>
 
     try {
       ShopProfileEntity? profile;
-      final settingsState = InjectionContainer.settingsBloc.state;
+      final settingsState = context.read<SettingsBloc>().state;
       if (settingsState is SettingsLoadedState) {
         profile = settingsState.profile;
       }
@@ -97,7 +98,7 @@ class _PurchaseOrderReceiptDialogState extends State<PurchaseOrderReceiptDialog>
     // Get current shop profile if available
     String shopName = 'SMART INVENTORY STORE';
     String shopPhone = '';
-    final settingsState = InjectionContainer.settingsBloc.state;
+    final settingsState = context.watch<SettingsBloc>().state;
     if (settingsState is SettingsLoadedState) {
       if (settingsState.profile.shopName.isNotEmpty) {
         shopName = settingsState.profile.shopName;

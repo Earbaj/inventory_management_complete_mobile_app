@@ -1,7 +1,8 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/money_util.dart';
-import '../../../../core/di/injection_container.dart';
+import '../../../reports/presentation/bloc/reports_bloc.dart';
 import '../../../reports/presentation/bloc/reports_state.dart';
 import '../../../posbilling/domain/entities/sale_entity.dart';
 
@@ -24,11 +25,8 @@ class _SalesChartState extends State<SalesChart> {
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
 
-    return StreamBuilder<ReportsState>(
-      stream: InjectionContainer.reportsBloc.stream,
-      initialData: InjectionContainer.reportsBloc.state,
-      builder: (context, snapshot) {
-        final state = snapshot.data is ReportsLoadedState ? snapshot.data : InjectionContainer.reportsBloc.state;
+    return BlocBuilder<ReportsBloc, ReportsState>(
+      builder: (context, state) {
         final List<SaleEntity> logs = state is ReportsLoadedState ? state.invoiceLogs : [];
 
         // Compute aggregated buckets based on timeframe

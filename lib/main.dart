@@ -12,6 +12,10 @@ import 'package:inventory_management_complete/features/expenses/presentation/blo
 import 'package:inventory_management_complete/features/ai_insights/presentation/bloc/ai_insights_bloc.dart';
 import 'package:inventory_management_complete/features/ai_insights/presentation/bloc/ai_insights_event.dart';
 import 'package:inventory_management_complete/features/export/presentation/bloc/export_bloc.dart';
+import 'package:inventory_management_complete/features/returnandrestoke/presentation/bloc/returns_bloc.dart';
+import 'package:inventory_management_complete/features/returnandrestoke/presentation/bloc/returns_event.dart';
+import 'package:inventory_management_complete/features/subscription/presentation/bloc/subscription_bloc.dart';
+import 'package:inventory_management_complete/features/super_admin/presentation/bloc/super_admin_bloc.dart';
 
 import 'core/di/injection_container.dart';
 import 'core/route/app_route.dart';
@@ -85,6 +89,15 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider<SupplierBloc>(
           create: (context) => InjectionContainer.supplierBloc,
+        ),
+        BlocProvider<ReturnsBloc>(
+          create: (context) => InjectionContainer.returnsBloc..add(const FetchReturnLogsEvent()),
+        ),
+        BlocProvider<SubscriptionBloc>(
+          create: (context) => InjectionContainer.subscriptionBloc,
+        ),
+        BlocProvider<SuperAdminBloc>(
+          create: (context) => InjectionContainer.superAdminBloc,
         ),
       ],
       child: MaterialApp.router(

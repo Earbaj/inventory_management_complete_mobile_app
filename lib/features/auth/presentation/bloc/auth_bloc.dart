@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/network/api_client.dart';
+import '../../domain/usecases/delete_account_usecase.dart';
 import '../../domain/usecases/forgot_password_usecase.dart';
 import '../../domain/usecases/get_me_usecase.dart';
 import '../../domain/usecases/login_usecase.dart';
@@ -18,6 +19,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final ResetPasswordUseCase resetPasswordUseCase;
   final GetMeUseCase getMeUseCase;
   final LogoutUseCase logoutUseCase;
+  final DeleteAccountUseCase deleteAccountUseCase;
   final ApiClient apiClient;
 
   AuthBloc({
@@ -27,6 +29,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required this.resetPasswordUseCase,
     required this.getMeUseCase,
     required this.logoutUseCase,
+    required this.deleteAccountUseCase,
     required this.apiClient,
   }) : super(const AuthInitialState()) {
     // Event Handler Registration (Bloc v8.0+)
@@ -38,6 +41,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<GetMeRequestedEvent>(_onGetMeRequested);
     on<LogoutRequestedEvent>(_onLogoutRequested);
     on<SessionExpiredEvent>(_onSessionExpired);
+    on<DeleteAccountRequestedEvent>(_onDeleteAccountRequested);
 
     // Setup Global 401 Unauthorized Interceptor Callback
     apiClient.onUnauthorized = () {
@@ -164,5 +168,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       ) async {
     await logoutUseCase();
     emit(const UnauthenticatedState('Session expired. Please log in again.'));
+  }
+
+  /// Handles permanent account deletion.
+  Future<void> _onDeleteAccountRequested(
+      DeleteAccountRequestedEvent event,
+      Emitter<AuthState> emit,
+      ) async {
+    emit(const AuthLoadingState());
+    try {
+      await deleteAccountUseCase();
+      emit(const UnauthenticatedState('Account deleted successfully'));
+    } catch (e) {
+      emit(AuthFailureState(e.toString()));
+    }
   }
 }

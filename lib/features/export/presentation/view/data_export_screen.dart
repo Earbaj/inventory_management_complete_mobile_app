@@ -6,7 +6,6 @@ import 'package:printing/printing.dart';
 
 import '../../../../core/route/app_route.dart';
 import '../../../../core/services/pdf_export_service.dart';
-import '../../../../core/di/injection_container.dart';
 import '../../../customers/customer_transaction.dart';
 import '../../../customers/domain/entities/customer_entity.dart';
 import '../../../customers/presentation/bloc/customer_bloc.dart';
@@ -166,7 +165,7 @@ class _DataExportScreenState extends State<DataExportScreen> {
     setState(() => _isLoadingLedgerPdf = true);
 
     try {
-      final data = await InjectionContainer.customerRemoteDataSource.getCustomerLedger(
+      final data = await context.read<CustomerBloc>().getCustomerLedgerUseCase(
         customerId: _selectedCustomerForLedger!.id,
       );
 

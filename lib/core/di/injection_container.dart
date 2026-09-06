@@ -2,6 +2,7 @@ import '../../features/auth/data/datasources/auth_local_data_source.dart';
 import '../../features/auth/data/datasources/auth_remote_data_source.dart';
 import '../../features/auth/data/repositories/auth_repository_impl.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
+import '../../features/auth/domain/usecases/delete_account_usecase.dart';
 import '../../features/auth/domain/usecases/forgot_password_usecase.dart';
 import '../../features/auth/domain/usecases/get_me_usecase.dart';
 import '../../features/auth/domain/usecases/login_usecase.dart';
@@ -25,6 +26,7 @@ import '../../features/customers/domain/usecases/add_customer_usecase.dart';
 import '../../features/customers/domain/usecases/collect_customer_payment_usecase.dart';
 import '../../features/customers/domain/usecases/delete_customer_usecase.dart';
 import '../../features/customers/domain/usecases/get_customer_details_usecase.dart';
+import '../../features/customers/domain/usecases/get_customer_ledger_usecase.dart';
 import '../../features/customers/domain/usecases/get_customers_usecase.dart';
 import '../../features/customers/domain/usecases/get_due_reminder_link_usecase.dart';
 import '../../features/customers/domain/usecases/update_customer_usecase.dart';
@@ -112,6 +114,7 @@ import '../../features/staff_managers/presentation/bloc/staff_bloc.dart';
 import '../../features/subscription/data/datasources/subscription_remote_data_source.dart';
 import '../../features/subscription/data/repositories/subscription_repository_impl.dart';
 import '../../features/subscription/domain/repositories/subscription_repository.dart';
+import '../../features/subscription/domain/usecases/get_payment_logs_usecase.dart';
 import '../../features/subscription/domain/usecases/submit_payment_usecase.dart';
 import '../../features/subscription/presentation/bloc/subscription_bloc.dart';
 
@@ -189,6 +192,7 @@ class InjectionContainer {
   static late final ResetPasswordUseCase resetPasswordUseCase;
   static late final GetMeUseCase getMeUseCase;
   static late final LogoutUseCase logoutUseCase;
+  static late final DeleteAccountUseCase deleteAccountUseCase;
 
   static late final GetInventoryItemsUseCase getInventoryItemsUseCase;
   static late final AddInventoryItemUseCase addInventoryItemUseCase;
@@ -202,6 +206,7 @@ class InjectionContainer {
   static late final DeleteCustomerUseCase deleteCustomerUseCase;
   static late final CollectCustomerPaymentUseCase collectCustomerPaymentUseCase;
   static late final GetDueReminderLinkUseCase getDueReminderLinkUseCase;
+  static late final GetCustomerLedgerUseCase getCustomerLedgerUseCase;
 
   static late final CreateSaleUseCase createSaleUseCase;
   static late final GetSalesLogsUseCase getSalesLogsUseCase;
@@ -224,6 +229,7 @@ class InjectionContainer {
   static late final DeleteStaffMemberUseCase deleteStaffMemberUseCase;
 
   static late final SubmitPaymentUseCase submitPaymentUseCase;
+  static late final GetPaymentLogsUseCase getPaymentLogsUseCase;
 
   static late final GetTrashItemsUseCase getTrashItemsUseCase;
   static late final RestoreTrashItemUseCase restoreTrashItemUseCase;
@@ -392,6 +398,7 @@ class InjectionContainer {
     resetPasswordUseCase = ResetPasswordUseCase(authRepository);
     getMeUseCase = GetMeUseCase(authRepository);
     logoutUseCase = LogoutUseCase(authRepository);
+    deleteAccountUseCase = DeleteAccountUseCase(authRepository);
 
     getInventoryItemsUseCase = GetInventoryItemsUseCase(inventoryRepository);
     addInventoryItemUseCase = AddInventoryItemUseCase(inventoryRepository);
@@ -405,6 +412,7 @@ class InjectionContainer {
     deleteCustomerUseCase = DeleteCustomerUseCase(customerRepository);
     collectCustomerPaymentUseCase = CollectCustomerPaymentUseCase(customerRepository);
     getDueReminderLinkUseCase = GetDueReminderLinkUseCase(customerRepository);
+    getCustomerLedgerUseCase = GetCustomerLedgerUseCase(customerRepository);
 
     createSaleUseCase = CreateSaleUseCase(posRepository);
     getSalesLogsUseCase = GetSalesLogsUseCase(posRepository);
@@ -427,6 +435,7 @@ class InjectionContainer {
     deleteStaffMemberUseCase = DeleteStaffMemberUseCase(staffRepository);
 
     submitPaymentUseCase = SubmitPaymentUseCase(subscriptionRepository);
+    getPaymentLogsUseCase = GetPaymentLogsUseCase(subscriptionRepository);
 
     getTrashItemsUseCase = GetTrashItemsUseCase(recycleBinRepository);
     restoreTrashItemUseCase = RestoreTrashItemUseCase(recycleBinRepository);
@@ -465,6 +474,7 @@ class InjectionContainer {
       resetPasswordUseCase: resetPasswordUseCase,
       getMeUseCase: getMeUseCase,
       logoutUseCase: logoutUseCase,
+      deleteAccountUseCase: deleteAccountUseCase,
       apiClient: apiClient,
     );
 
@@ -484,6 +494,7 @@ class InjectionContainer {
       deleteCustomerUseCase: deleteCustomerUseCase,
       collectCustomerPaymentUseCase: collectCustomerPaymentUseCase,
       getDueReminderLinkUseCase: getDueReminderLinkUseCase,
+      getCustomerLedgerUseCase: getCustomerLedgerUseCase,
     );
 
     posBloc = PosBloc(
@@ -518,6 +529,8 @@ class InjectionContainer {
 
     subscriptionBloc = SubscriptionBloc(
       submitPaymentUseCase: submitPaymentUseCase,
+      getPaymentLogsUseCase: getPaymentLogsUseCase,
+      remoteDataSource: subscriptionRemoteDataSource,
     );
 
     superAdminBloc = SuperAdminBloc(
@@ -533,6 +546,7 @@ class InjectionContainer {
 
     supplierBloc = SupplierBloc(
       getSuppliersUseCase: getSuppliersUseCase,
+      getSupplierByIdUseCase: getSupplierByIdUseCase,
       createSupplierUseCase: createSupplierUseCase,
       updateSupplierUseCase: updateSupplierUseCase,
       deleteSupplierUseCase: deleteSupplierUseCase,

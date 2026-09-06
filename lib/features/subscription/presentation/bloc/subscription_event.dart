@@ -2,6 +2,10 @@ abstract class SubscriptionEvent {
   const SubscriptionEvent();
 }
 
+class FetchPaymentLogsEvent extends SubscriptionEvent {
+  const FetchPaymentLogsEvent();
+}
+
 class SubmitSubscriptionPaymentEvent extends SubscriptionEvent {
   final String method;
   final String transactionId;
@@ -17,3 +21,4 @@ class SubmitSubscriptionPaymentEvent extends SubscriptionEvent {
     required this.accountNumber,
   });
 }
+

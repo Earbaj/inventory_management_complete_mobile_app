@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/money_util.dart';
-import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../../core/widgets/global_empty_placeholder.dart';
 import '../../../customers/domain/entities/customer_entity.dart';
+import '../../../customers/presentation/bloc/customer_bloc.dart';
 import '../../../customers/presentation/bloc/customer_event.dart';
 import '../../../customers/presentation/bloc/customer_state.dart';
 import '../../../posbilling/domain/entities/cart_item_entity.dart';
 import '../../../posbilling/domain/entities/sale_entity.dart';
+import '../../../reports/presentation/bloc/reports_bloc.dart';
 import '../../../reports/presentation/bloc/reports_event.dart';
 import '../../../reports/presentation/bloc/reports_state.dart';
 import '../../domain/entities/return_item_entity.dart';
 import '../../../customers/presentation/widget/transaction_details_sheet.dart';
+import '../bloc/returns_bloc.dart';
 import '../bloc/returns_event.dart';
 import '../bloc/returns_state.dart';
 
@@ -41,9 +44,13 @@ class _ReturnsScreenState extends State<ReturnsScreen>
     _tabController = TabController(length: 2, vsync: this);
 
     // Dispatch initial fetch events
-    InjectionContainer.returnsBloc.add(const FetchReturnLogsEvent());
-    InjectionContainer.customerBloc.add(const FetchCustomersEvent());
-    InjectionContainer.reportsBloc.add(const FetchReportsEvent());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<ReturnsBloc>().add(const FetchReturnLogsEvent());
+        context.read<CustomerBloc>().add(const FetchCustomersEvent());
+        context.read<ReportsBloc>().add(const FetchReportsEvent());
+      }
+    });
   }
 
   @override
@@ -55,7 +62,7 @@ class _ReturnsScreenState extends State<ReturnsScreen>
   }
 
   void _onSearchChanged(String query) {
-    InjectionContainer.returnsBloc.add(FetchReturnLogsEvent(query));
+    context.read<ReturnsBloc>().add(FetchReturnLogsEvent(query));
   }
 
   void _onCustomerSelected(CustomerEntity? customer) {
@@ -137,7 +144,7 @@ class _ReturnsScreenState extends State<ReturnsScreen>
             createdAt: DateTime.now(),
           );
 
-          InjectionContainer.returnsBloc.add(
+          context.read<ReturnsBloc>().add(
             ProcessReturnItemEvent(returnItem),
           );
           processedCount++;
@@ -189,9 +196,9 @@ class _ReturnsScreenState extends State<ReturnsScreen>
         actions: [
           IconButton(
             onPressed: () {
-              InjectionContainer.returnsBloc.add(const FetchReturnLogsEvent());
-              InjectionContainer.customerBloc.add(const FetchCustomersEvent());
-              InjectionContainer.reportsBloc.add(const FetchReportsEvent());
+              context.read<ReturnsBloc>().add(const FetchReturnLogsEvent());
+              context.read<CustomerBloc>().add(const FetchCustomersEvent());
+              context.read<ReportsBloc>().add(const FetchReportsEvent());
             },
             icon: const Icon(Icons.refresh_rounded),
           ),
@@ -223,12 +230,12 @@ class _ReturnsScreenState extends State<ReturnsScreen>
     ColorScheme colorScheme,
   ) {
     // 1. Fetch Customers List
-    final custSnapshot = InjectionContainer.customerBloc.state;
+    final custSnapshot = context.watch<CustomerBloc>().state;
     final List<CustomerEntity> customerList =
         custSnapshot is CustomerLoadedState ? custSnapshot.customers : [];
 
     // 2. Fetch Sales Invoices List
-    final reportsSnapshot = InjectionContainer.reportsBloc.state;
+    final reportsSnapshot = context.watch<ReportsBloc>().state;
     final List<SaleEntity> allInvoices = reportsSnapshot is ReportsLoadedState
         ? reportsSnapshot.invoiceLogs
         : [];
@@ -973,12 +980,8 @@ class _ReturnsScreenState extends State<ReturnsScreen>
     ThemeData theme,
     ColorScheme colorScheme,
   ) {
-    return StreamBuilder<ReturnsState>(
-      stream: InjectionContainer.returnsBloc.stream,
-      initialData: InjectionContainer.returnsBloc.state,
-      builder: (context, snapshot) {
-        final state = snapshot.data;
-
+    return BlocBuilder<ReturnsBloc, ReturnsState>(
+      builder: (context, state) {
         if (state is ReturnsLoadingState) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -986,11 +989,11 @@ class _ReturnsScreenState extends State<ReturnsScreen>
         final loadedState = state is ReturnsLoadedState ? state : null;
         final returnLogs = loadedState?.filteredLogs ?? [];
 
-        final custSnapshot = InjectionContainer.customerBloc.state;
+        final custSnapshot = context.watch<CustomerBloc>().state;
         final List<CustomerEntity> customerList =
             custSnapshot is CustomerLoadedState ? custSnapshot.customers : [];
 
-        final reportsSnapshot = InjectionContainer.reportsBloc.state;
+        final reportsSnapshot = context.watch<ReportsBloc>().state;
         final List<SaleEntity> allInvoices =
             reportsSnapshot is ReportsLoadedState
             ? reportsSnapshot.invoiceLogs

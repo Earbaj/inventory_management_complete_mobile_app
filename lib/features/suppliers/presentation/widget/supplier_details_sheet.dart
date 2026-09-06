@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/money_util.dart';
-import '../../../../core/di/injection_container.dart';
 import '../../domain/entities/purchase_order_entity.dart';
 import '../../domain/entities/supplier_entity.dart';
-import '../../data/mappers/supplier_mapper.dart';
+import '../bloc/supplier_bloc.dart';
 import 'purchase_order_receipt_dialog.dart';
 
 class SupplierDetailsSheet extends StatefulWidget {
@@ -41,11 +41,9 @@ class _SupplierDetailsSheetState extends State<SupplierDetailsSheet> {
 
   Future<void> _loadSupplierDetails() async {
     try {
-      final model = await InjectionContainer.supplierRemoteDataSource.getSupplierById(_supplier.id);
-      final entity = SupplierMapper.supplierToEntity(model);
-      final orders = model.purchaseOrders.isNotEmpty
-          ? model.purchaseOrders.map(SupplierMapper.orderToEntity).toList()
-          : await InjectionContainer.supplierRepository.getPurchaseOrders(supplierId: _supplier.id);
+      final bloc = context.read<SupplierBloc>();
+      final entity = await bloc.getSupplierByIdUseCase(_supplier.id);
+      final orders = await bloc.getPurchaseOrdersUseCase(supplierId: _supplier.id);
       if (mounted) {
         setState(() {
           _supplier = entity;

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/money_util.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../../core/di/injection_container.dart';
+import '../bloc/customer_bloc.dart';
 import '../../customer.dart';
 import 'customer_info.dart';
 
@@ -23,7 +24,7 @@ class CustomerCard extends StatelessWidget {
 
   Future<void> _launchWhatsAppReminder(BuildContext context) async {
     try {
-      final res = await InjectionContainer.customerRepository.getDueReminderLink(customer.id);
+      final res = await context.read<CustomerBloc>().getDueReminderLinkUseCase(customer.id);
       final rawUrl = res['whatsappUrl']?.toString() ?? res['url']?.toString() ?? '';
 
       String targetUrl = rawUrl;

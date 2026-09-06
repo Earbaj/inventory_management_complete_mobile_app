@@ -8,6 +8,7 @@ import '../../domain/usecases/add_customer_usecase.dart';
 import '../../domain/usecases/collect_customer_payment_usecase.dart';
 import '../../domain/usecases/delete_customer_usecase.dart';
 import '../../domain/usecases/get_customer_details_usecase.dart';
+import '../../domain/usecases/get_customer_ledger_usecase.dart';
 import '../../domain/usecases/get_customers_usecase.dart';
 import '../../domain/usecases/get_due_reminder_link_usecase.dart';
 import '../../domain/usecases/update_customer_usecase.dart';
@@ -22,6 +23,7 @@ class CustomerBloc extends Bloc<CustomerEvent, CustomerState> {
   final DeleteCustomerUseCase deleteCustomerUseCase;
   final CollectCustomerPaymentUseCase collectCustomerPaymentUseCase;
   final GetDueReminderLinkUseCase getDueReminderLinkUseCase;
+  final GetCustomerLedgerUseCase getCustomerLedgerUseCase;
 
   List<CustomerEntity> _allCustomers = [];
   String _currentSearchQuery = '';
@@ -34,6 +36,7 @@ class CustomerBloc extends Bloc<CustomerEvent, CustomerState> {
     required this.deleteCustomerUseCase,
     required this.collectCustomerPaymentUseCase,
     required this.getDueReminderLinkUseCase,
+    required this.getCustomerLedgerUseCase,
   }) : super(const CustomerInitialState()) {
     // Event Handlers
     on<FetchCustomersEvent>(_onFetchCustomers);

@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/money_util.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/excel_export_service.dart';
 import '../../../../core/services/pdf_export_service.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../../posbilling/domain/entities/sale_entity.dart';
 import '../../../settings/domain/entities/shop_profile_entity.dart';
+import '../../../settings/presentation/bloc/settings_bloc.dart';
 import '../../../settings/presentation/bloc/settings_event.dart';
 import '../../../settings/presentation/bloc/settings_state.dart';
 import '../../domain/entities/customer_entity.dart';
+import '../bloc/customer_bloc.dart';
 import '../../customer.dart';
 import '../../customer_transaction.dart';
 import '../widget/collect_payment_sheet.dart';
@@ -36,7 +39,9 @@ class CustomerStatementScreen extends StatefulWidget {
 }
 
 class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
-  bool _isLoading = true;
+  DateTime? _startDate;
+  DateTime? _endDate;
+  bool _isLoading = false;
   double _openingBalance = 0.0;
   double _totalSales = 0.0;
   double _totalPaid = 0.0;
@@ -49,9 +54,11 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
     super.initState();
     _fetchLedgerFromApi();
     // Pre-fetch settings to ensure shop details are available for PDF/Excel exports
-    if (InjectionContainer.settingsBloc.state is! SettingsLoadedState) {
-      InjectionContainer.settingsBloc.add(const FetchSettingsEvent());
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && context.read<SettingsBloc>().state is! SettingsLoadedState) {
+        context.read<SettingsBloc>().add(const FetchSettingsEvent());
+      }
+    });
   }
 
   static double _parseDouble(dynamic val) {
@@ -107,7 +114,7 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
   Future<void> _fetchLedgerFromApi() async {
     setState(() => _isLoading = true);
     try {
-      final data = await InjectionContainer.customerRemoteDataSource.getCustomerLedger(
+      final data = await context.read<CustomerBloc>().getCustomerLedgerUseCase(
         customerId: widget.customer.id,
       );
 
@@ -209,10 +216,10 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
       rawBalance: _rawBalance,
     );
 
-    final authState = InjectionContainer.authBloc.state;
+    final authState = context.read<AuthBloc>().state;
     final user = authState is AuthenticatedState ? authState.user : null;
 
-    final settingsState = InjectionContainer.settingsBloc.state;
+    final settingsState = context.read<SettingsBloc>().state;
     final profile = settingsState is SettingsLoadedState ? settingsState.profile : null;
 
     final shopName = (profile?.shopName.isNotEmpty == true ? profile!.shopName : null) ??
@@ -304,7 +311,7 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
 
   Future<void> _launchWhatsAppReminder(BuildContext context) async {
     try {
-      final res = await InjectionContainer.customerRepository.getDueReminderLink(widget.customer.id);
+      final res = await context.read<CustomerBloc>().getDueReminderLinkUseCase(widget.customer.id);
       final rawUrl = res['whatsappUrl']?.toString() ?? res['url']?.toString() ?? '';
 
       String targetUrl = rawUrl;

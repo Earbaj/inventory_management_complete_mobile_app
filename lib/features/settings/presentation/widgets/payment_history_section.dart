@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../../core/utils/money_util.dart';
-import '../../../subscription/data/models/payment_model.dart';
+import '../../../subscription/domain/entities/payment_entity.dart';
 
 class PaymentHistorySection extends StatelessWidget {
-  final List<PaymentModel> payments;
+  final List<PaymentEntity> payments;
   final bool isLoading;
   final VoidCallback onRefresh;
 

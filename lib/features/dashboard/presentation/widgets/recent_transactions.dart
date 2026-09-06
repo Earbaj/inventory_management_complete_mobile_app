@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/money_util.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/di/injection_container.dart';
+import '../../../reports/presentation/bloc/reports_bloc.dart';
 import '../../../reports/presentation/bloc/reports_state.dart';
 
 class RecentTransactions extends StatelessWidget {
@@ -11,11 +12,8 @@ class RecentTransactions extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return StreamBuilder<ReportsState>(
-      stream: InjectionContainer.reportsBloc.stream,
-      initialData: InjectionContainer.reportsBloc.state,
-      builder: (context, snapshot) {
-        final state = snapshot.data is ReportsLoadedState ? snapshot.data : InjectionContainer.reportsBloc.state;
+    return BlocBuilder<ReportsBloc, ReportsState>(
+      builder: (context, state) {
         final logs = state is ReportsLoadedState ? state.invoiceLogs : [];
 
         return Container(

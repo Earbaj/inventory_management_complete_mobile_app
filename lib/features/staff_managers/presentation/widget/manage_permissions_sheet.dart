@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../../core/di/injection_container.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/models/staff_model.dart';
 import '../../domain/entities/staff_entity.dart';
+import '../bloc/staff_bloc.dart';
 import '../bloc/staff_event.dart';
 
 class ManagePermissionsSheet extends StatefulWidget {
@@ -48,36 +49,17 @@ class _ManagePermissionsSheetState extends State<ManagePermissionsSheet> {
       permissions: updatedPermissions,
     );
 
-    try {
-      await InjectionContainer.staffRemoteDataSource.updateStaffPermissions(
-        widget.staff.id,
-        updatedPermissions,
-      );
-      InjectionContainer.staffBloc.add(UpdateStaffEvent(updatedStaff));
+    context.read<StaffBloc>().add(UpdateStaffEvent(updatedStaff));
 
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Permissions updated for ${widget.staff.name}'),
-            backgroundColor: Colors.green.shade700,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          isSaving = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update permissions: $e'),
-            backgroundColor: Colors.red.shade700,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+    if (mounted) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Permissions updated for ${widget.staff.name}'),
+          backgroundColor: Colors.green.shade700,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 

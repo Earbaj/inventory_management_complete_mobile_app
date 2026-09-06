@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/money_util.dart';
-import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/pdf_export_service.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../../customers/domain/entities/customer_entity.dart';
 import '../../../inventory/domain/entities/inventory_item_entity.dart';
 import '../../../posbilling/domain/entities/cart_item_entity.dart';
 import '../../../posbilling/domain/entities/sale_entity.dart';
 import '../../../settings/domain/entities/shop_profile_entity.dart';
+import '../../../settings/presentation/bloc/settings_bloc.dart';
 import '../../../settings/presentation/bloc/settings_state.dart';
 import '../../reports_models.dart';
 
@@ -75,10 +77,10 @@ class ReceiptDialog extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     // Dynamically resolve Shop Profile from AuthBloc (Admin registration profile) & SettingsBloc
-    final authState = InjectionContainer.authBloc.state;
+    final authState = context.watch<AuthBloc>().state;
     final user = authState is AuthenticatedState ? authState.user : null;
 
-    final settingsState = InjectionContainer.settingsBloc.state;
+    final settingsState = context.watch<SettingsBloc>().state;
     final profile = settingsState is SettingsLoadedState ? settingsState.profile : null;
 
     final shopName = (user?.shopName?.isNotEmpty == true ? user!.shopName : null) ??

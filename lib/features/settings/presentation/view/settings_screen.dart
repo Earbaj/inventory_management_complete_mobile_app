@@ -2,7 +2,6 @@ import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/di/injection_container.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../../core/services/pdf_export_service.dart';
 import '../../../customers/domain/entities/customer_entity.dart';
@@ -13,7 +12,10 @@ import '../bloc/settings_bloc.dart';
 import '../bloc/settings_event.dart';
 import '../bloc/settings_state.dart';
 import '../../domain/entities/shop_profile_entity.dart';
-import '../../../subscription/data/models/payment_model.dart';
+import '../../../subscription/presentation/bloc/subscription_bloc.dart';
+import '../../../subscription/presentation/bloc/subscription_event.dart';
+import '../../../subscription/presentation/bloc/subscription_state.dart';
+import '../../../subscription/domain/entities/payment_entity.dart';
 import '../widgets/subscription_card.dart';
 import '../widgets/payment_history_section.dart';
 
@@ -34,8 +36,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late TextEditingController _vatRateController;
   late TextEditingController _logoUrlController;
 
-  List<PaymentModel> _myPayments = [];
-  bool _isLoadingPayments = false;
   bool _isSaving = false;
   InvoicePdfFormat _selectedPdfFormat = InvoicePdfFormat.classic;
 
@@ -66,11 +66,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _vatRateController = TextEditingController(text: '0.0');
     _logoUrlController = TextEditingController();
 
-    // Fetch Initial Settings, Saved PDF Format, and Payment History
+    // Fetch Initial Settings, Saved PDF Format, and Payment History via BLoC
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<SettingsBloc>().add(const FetchSettingsEvent());
+      context.read<SubscriptionBloc>().add(const FetchPaymentLogsEvent());
       _loadSavedPdfFormat();
-      _fetchPaymentHistory();
     });
   }
 
@@ -80,21 +80,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         _selectedPdfFormat = format;
       });
-    }
-  }
-
-  Future<void> _fetchPaymentHistory() async {
-    setState(() => _isLoadingPayments = true);
-    try {
-      final payments = await InjectionContainer.subscriptionRemoteDataSource.getPaymentLogs();
-      if (mounted) {
-        setState(() {
-          _myPayments = payments;
-          _isLoadingPayments = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) setState(() => _isLoadingPayments = false);
     }
   }
 
@@ -377,7 +362,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           IconButton(
             onPressed: () {
               context.read<SettingsBloc>().add(const FetchSettingsEvent());
-              _fetchPaymentHistory();
+              context.read<SubscriptionBloc>().add(const FetchPaymentLogsEvent());
             },
             icon: const Icon(Icons.refresh_rounded),
           ),
@@ -437,7 +422,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       subscription: subscription,
                       onCheckoutSuccess: () {
                         context.read<SettingsBloc>().add(const FetchSettingsEvent());
-                        _fetchPaymentHistory();
+                        context.read<SubscriptionBloc>().add(const FetchPaymentLogsEvent());
                       },
                     ),
                     const SizedBox(height: 24),
@@ -448,10 +433,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: 24),
 
                   // PAYMENT REQUEST HISTORY SECTION
-                  PaymentHistorySection(
-                    payments: _myPayments,
-                    isLoading: _isLoadingPayments,
-                    onRefresh: _fetchPaymentHistory,
+                  BlocBuilder<SubscriptionBloc, SubscriptionState>(
+                    builder: (context, subState) {
+                      final bool isLoading = subState is SubscriptionLoadingState;
+                      final List<PaymentEntity> payments =
+                          subState is PaymentLogsLoadedState ? subState.paymentLogs : const [];
+                      return PaymentHistorySection(
+                        payments: payments,
+                        isLoading: isLoading,
+                        onRefresh: () => context.read<SubscriptionBloc>().add(const FetchPaymentLogsEvent()),
+                      );
+                    },
                   ),
                   const SizedBox(height: 24),
 

@@ -111,7 +111,7 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
       Emitter<InventoryState> emit,
       ) async {
     try {
-      final updatedItem = event.item;
+      final updatedItem = await updateItemUseCase(event.item);
       final index = _allItems.indexWhere((item) => item.id == updatedItem.id);
       if (index != -1) {
         _allItems[index] = updatedItem;

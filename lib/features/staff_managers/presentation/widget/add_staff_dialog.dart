@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../../../core/di/injection_container.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/error/failures.dart';
 import '../../../branches/domain/entities/branch_entity.dart';
+import '../../../branches/presentation/bloc/branch_bloc.dart';
+import '../../../branches/presentation/bloc/branch_event.dart';
 import '../../domain/entities/staff_entity.dart';
 import '../../staff_manager_model.dart';
+import '../bloc/staff_bloc.dart';
 import '../bloc/staff_event.dart';
 
 class AddStaffDialog extends StatefulWidget {
@@ -28,10 +31,11 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
   StaffRole _selectedRole = StaffRole.manager;
   bool _obscurePassword = true;
   bool isSaving = false;
-  bool _isLoadingBranches = false;
+
   List<BranchEntity> _branches = [];
   String? _selectedBranchId;
   String? _selectedBranchName;
+  bool _isLoadingBranches = false;
 
   @override
   void initState() {
@@ -39,29 +43,23 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
     _loadBranches();
   }
 
-  Future<void> _loadBranches() async {
-    setState(() {
-      _isLoadingBranches = true;
-    });
-    try {
-      final list = await InjectionContainer.getBranchesUseCase();
+  void _loadBranches() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        setState(() {
-          _branches = list;
-          if (list.isNotEmpty) {
+        final branchBloc = context.read<BranchBloc>();
+        final list = branchBloc.branches;
+        if (list.isNotEmpty) {
+          setState(() {
+            _branches = list;
             _selectedBranchId = list.first.id;
             _selectedBranchName = list.first.name;
-          }
-          _isLoadingBranches = false;
-        });
+            _isLoadingBranches = false;
+          });
+        } else {
+          branchBloc.add(const FetchBranchesEvent());
+        }
       }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _isLoadingBranches = false;
-        });
-      }
-    }
+    });
   }
 
   @override
@@ -101,64 +99,10 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
       createdAt: DateTime.now(),
     );
 
-    try {
-      final savedStaff = await InjectionContainer.addStaffMemberUseCase(newStaffEntity);
-      InjectionContainer.staffBloc.add(AddStaffEvent(savedStaff));
+    context.read<StaffBloc>().add(AddStaffEvent(newStaffEntity));
 
-      if (widget.onAdd != null) {
-        widget.onAdd!(
-          StaffMember(
-            id: savedStaff.id,
-            name: savedStaff.name,
-            email: savedStaff.email,
-            phone: savedStaff.phone,
-            role: _selectedRole,
-            status: StaffStatus.active,
-            joinedDate: savedStaff.createdAt,
-            assignedBranch: _selectedBranchName ?? 'Main Branch',
-            salesServedCount: 0,
-          ),
-        );
-      }
-
-      if (mounted) {
-        Navigator.pop(context, true);
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          isSaving = false;
-        });
-
-        final rawMsg = e is Failure ? e.message : e.toString();
-        final cleanMsg = rawMsg
-            .replaceAll('Exception: ', '')
-            .replaceAll('ServerFailure: ', '')
-            .replaceAll('NetworkFailure: ', '');
-
-        final isFreeTierLimit = cleanMsg.toLowerCase().contains('free tier') ||
-            cleanMsg.toLowerCase().contains('limited to 1') ||
-            cleanMsg.toLowerCase().contains('upgrade');
-
-        if (isFreeTierLimit) {
-          _showFreeTierLimitDialog(context, cleanMsg);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(Icons.error_outline_rounded, color: Colors.white),
-                  const SizedBox(width: 10),
-                  Expanded(child: Text(cleanMsg)),
-                ],
-              ),
-              backgroundColor: Colors.red.shade700,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-          );
-        }
-      }
+    if (mounted) {
+      Navigator.pop(context, true);
     }
   }
 

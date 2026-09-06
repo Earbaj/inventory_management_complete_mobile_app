@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inventory_management_complete/features/staff_managers/presentation/bloc/staff_bloc.dart';
 
-import '../../../../core/di/injection_container.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../../core/widgets/global_empty_placeholder.dart';
 import '../../../../core/widgets/global_warning_dialog.dart';
@@ -82,29 +82,8 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
       cancelText: 'Cancel',
       icon: Icons.delete_forever_rounded,
       confirmColor: Colors.red,
-      onConfirm: () async {
-        try {
-          await InjectionContainer.deleteStaffMemberUseCase(staffId);
-          if (mounted) {
-            context.read<StaffBloc>().add(FetchStaffEvent(_searchController.text));
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Staff member deleted successfully'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          }
-        } catch (e) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(e.toString().replaceAll('Exception: ', '')),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-          rethrow;
-        }
+      onConfirm: () {
+        context.read<StaffBloc>().add(DeleteStaffEvent(staffId));
       },
     );
   }
@@ -236,7 +215,7 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
             );
           }
 
-          final authState = InjectionContainer.authBloc.state;
+          final authState = context.watch<AuthBloc>().state;
           final String? currentUserId = authState is AuthenticatedState ? authState.user?.id : null;
 
           final List<StaffEntity> staffEntitiesSource = (state is StaffLoadedState)

@@ -1,7 +1,7 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/di/injection_container.dart';
+import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
 
@@ -15,42 +15,11 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  StreamSubscription<AuthState>? _authSubscription;
 
   bool _obscurePassword = true;
-  bool _isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _authSubscription = InjectionContainer.authBloc.stream.listen((state) {
-      if (!mounted) return;
-      if (state is AuthLoadingState) {
-        setState(() => _isLoading = true);
-      } else {
-        setState(() => _isLoading = false);
-        if (state is AuthenticatedState) {
-          if (state.user?.role.toLowerCase() == 'superadmin') {
-            context.go('/super-admin');
-          } else {
-            context.go('/dashboard');
-          }
-        } else if (state is AuthFailureState) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      }
-    });
-  }
 
   @override
   void dispose() {
-    _authSubscription?.cancel();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -70,7 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    InjectionContainer.authBloc.add(
+    context.read<AuthBloc>().add(
       LoginRequestedEvent(email: email, password: password),
     );
   }
@@ -82,11 +51,32 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        child: BlocConsumer<AuthBloc, AuthState>(
+          listener: (context, state) {
+            if (state is AuthenticatedState) {
+              if (state.user?.role.toLowerCase() == 'superadmin') {
+                context.go('/super-admin');
+              } else {
+                context.go('/dashboard');
+              }
+            } else if (state is AuthFailureState) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.red,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+          },
+          builder: (context, state) {
+            final isLoading = state is AuthLoadingState;
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
               const SizedBox(height: 55),
               Center(child: _Logo(color: colorScheme.primary)),
               const SizedBox(height: 24),
@@ -136,8 +126,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _login,
-                  child: _isLoading
+                  onPressed: isLoading ? null : _login,
+                  child: isLoading
                       ? const SizedBox(
                           width: 24,
                           height: 24,
@@ -197,9 +187,11 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 30),
             ],
           ),
-        ),
-      ),
-    );
+        );
+      },
+    ),
+  ),
+);
   }
 }
 

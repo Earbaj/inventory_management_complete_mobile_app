@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/utils/money_util.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/di/injection_container.dart';
+import '../../../branches/presentation/bloc/branch_bloc.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
@@ -54,7 +54,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
 
   Future<void> _loadBranches() async {
     try {
-      final list = await InjectionContainer.getBranchesUseCase();
+      final list = context.read<BranchBloc>().branches;
       if (mounted) {
         setState(() {
           _branches = list;

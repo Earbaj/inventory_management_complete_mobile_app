@@ -8,11 +8,13 @@ import '../../domain/usecases/update_supplier_usecase.dart';
 import '../../domain/usecases/delete_supplier_usecase.dart';
 import '../../domain/usecases/create_purchase_order_usecase.dart';
 import '../../domain/usecases/get_purchase_orders_usecase.dart';
+import '../../domain/usecases/get_supplier_by_id_usecase.dart';
 import 'supplier_event.dart';
 import 'supplier_state.dart';
 
 class SupplierBloc extends Bloc<SupplierEvent, SupplierState> {
   final GetSuppliersUseCase getSuppliersUseCase;
+  final GetSupplierByIdUseCase getSupplierByIdUseCase;
   final CreateSupplierUseCase createSupplierUseCase;
   final UpdateSupplierUseCase updateSupplierUseCase;
   final DeleteSupplierUseCase deleteSupplierUseCase;
@@ -21,6 +23,7 @@ class SupplierBloc extends Bloc<SupplierEvent, SupplierState> {
 
   SupplierBloc({
     required this.getSuppliersUseCase,
+    required this.getSupplierByIdUseCase,
     required this.createSupplierUseCase,
     required this.updateSupplierUseCase,
     required this.deleteSupplierUseCase,

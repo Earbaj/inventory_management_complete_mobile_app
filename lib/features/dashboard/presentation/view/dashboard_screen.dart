@@ -4,7 +4,7 @@ import '../../../../core/utils/money_util.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inventory_management_complete/features/reports/presentation/bloc/reports_bloc.dart';
 
-import '../../../../core/di/injection_container.dart';
+import '../../../branches/presentation/bloc/branch_bloc.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
@@ -88,7 +88,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
 
   Future<void> _loadBranches() async {
     try {
-      final list = await InjectionContainer.getBranchesUseCase();
+      final list = context.read<BranchBloc>().branches;
       if (mounted) {
         setState(() {
           _branches = list;
@@ -326,7 +326,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                       // 2. Total Invoices Count (ReportsBloc)
                       BlocBuilder<ReportsBloc,ReportsState>(
                         builder: (context, snapshot) {
-                          final state = snapshot is ReportsLoadedState ? snapshot : InjectionContainer.reportsBloc.state;
+                          final state = snapshot is ReportsLoadedState ? snapshot : context.read<ReportsBloc>().state;
                           final summary = state is ReportsLoadedState ? state.summary : null;
                           final salesCount = summary != null ? summary.totalSalesCount : 0;
 
@@ -347,7 +347,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                         builder: (context, snapshot) {
                           final custState = snapshot is CustomerLoadedState
                               ? snapshot
-                              : InjectionContainer.customerBloc.state;
+                              : context.read<CustomerBloc>().state;
 
                           double due = 0.0;
                           if (custState is CustomerLoadedState && custState.customers.isNotEmpty) {
@@ -355,7 +355,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                           }
 
                           if (due == 0.0) {
-                            final reportsState = InjectionContainer.reportsBloc.state;
+                            final reportsState = context.read<ReportsBloc>().state;
                             if (reportsState is ReportsLoadedState) {
                               due = reportsState.summary.totalDue > 0
                                   ? reportsState.summary.totalDue
@@ -378,7 +378,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                       // 4. Low Stock Alert Count (InventoryBloc)
                       BlocBuilder<InventoryBloc,InventoryState>(
                         builder: (context, snapshot) {
-                          final state = snapshot is InventoryLoadedState ? snapshot : InjectionContainer.inventoryBloc.state;
+                          final state = snapshot is InventoryLoadedState ? snapshot : context.read<InventoryBloc>().state;
                           final lowStockCount = state is InventoryLoadedState
                               ? state.items.where((i) => i.isLowStock || i.isOutOfStock).length
                               : 0;
@@ -397,7 +397,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                       // 5. Total Active Customers (CustomerBloc)
                       BlocBuilder<CustomerBloc,CustomerState>(
                         builder: (context, snapshot) {
-                          final state = snapshot is CustomerLoadedState ? snapshot : InjectionContainer.customerBloc.state;
+                          final state = snapshot is CustomerLoadedState ? snapshot : context.read<CustomerBloc>().state;
                           final customerCount = state is CustomerLoadedState ? state.customers.length : 0;
 
                           return StatCard(
@@ -415,7 +415,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                       // 6. Total Items Count (InventoryBloc)
                       BlocBuilder<InventoryBloc,InventoryState>(
                         builder: (context, snapshot) {
-                          final state = snapshot is InventoryLoadedState ? snapshot : InjectionContainer.inventoryBloc.state;
+                          final state = snapshot is InventoryLoadedState ? snapshot : context.read<InventoryBloc>().state;
                           final totalItems = state is InventoryLoadedState ? state.items.length : 0;
 
                           return StatCard(

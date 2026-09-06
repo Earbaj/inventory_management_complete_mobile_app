@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/money_util.dart';
-import '../../../../core/di/injection_container.dart';
-import '../../../inventory/data/models/inventory_item_model.dart';
+import '../../../inventory/domain/entities/inventory_item_entity.dart';
+import '../../../inventory/presentation/bloc/inventory_bloc.dart';
+import '../../../inventory/presentation/bloc/inventory_event.dart';
+import '../../../inventory/presentation/bloc/inventory_state.dart';
 import '../../../inventory/presentation/widget/inventory_add_item_bottom_sheet.dart';
 import '../../domain/entities/purchase_order_entity.dart';
 import '../../domain/entities/supplier_entity.dart';
@@ -44,7 +47,7 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
   final _paidCtrl = TextEditingController(text: '0');
   final _noteCtrl = TextEditingController();
 
-  List<InventoryItemModel> _inventoryItems = [];
+  List<InventoryItemEntity> _inventoryItems = [];
   String? _selectedItemId;
   String _selectedItemName = '';
   bool _isLoadingItems = true;
@@ -60,7 +63,13 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
 
   Future<void> _loadInventoryItems() async {
     try {
-      final items = await InjectionContainer.inventoryLocalDataSource.getItems();
+      final invState = context.read<InventoryBloc>().state;
+      List<InventoryItemEntity> items = [];
+      if (invState is InventoryLoadedState && invState.items.isNotEmpty) {
+        items = invState.items;
+      } else {
+        items = await context.read<InventoryBloc>().getItemsUseCase();
+      }
       if (mounted) {
         setState(() {
           _inventoryItems = items;
@@ -89,27 +98,27 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => AddItemSheet(
         onSave: (newItem) async {
-          final model = InventoryItemModel(
-            id: newItem.id.isNotEmpty ? newItem.id : 'item_${DateTime.now().millisecondsSinceEpoch}',
-            name: newItem.name,
-            sku: newItem.sku,
-            category: newItem.category,
-            unit: newItem.unit,
-            stockQuantity: newItem.stockQuantity,
-            lowStockQuantity: newItem.lowStockQuantity,
-            purchasePrice: newItem.purchasePrice,
-            retailSellPrice: newItem.retailSellPrice,
-            createdAt: DateTime.now().toIso8601String(),
-            updatedAt: DateTime.now().toIso8601String(),
-          );
-          try {
-            await InjectionContainer.inventoryRemoteDataSource.addItem(model);
-          } catch (_) {}
+          final entity = newItem.id.isNotEmpty
+              ? newItem
+              : InventoryItemEntity(
+                  id: 'item_${DateTime.now().millisecondsSinceEpoch}',
+                  name: newItem.name,
+                  sku: newItem.sku,
+                  category: newItem.category,
+                  unit: newItem.unit,
+                  stockQuantity: newItem.stockQuantity,
+                  lowStockQuantity: newItem.lowStockQuantity,
+                  purchasePrice: newItem.purchasePrice,
+                  retailSellPrice: newItem.retailSellPrice,
+                  createdAt: DateTime.now(),
+                  updatedAt: DateTime.now(),
+                );
+          context.read<InventoryBloc>().add(AddInventoryItemEvent(entity));
           setState(() {
-            _inventoryItems.insert(0, model);
-            _selectedItemId = model.id;
-            _selectedItemName = model.name;
-            _costCtrl.text = model.purchasePrice.toStringAsFixed(0);
+            _inventoryItems.insert(0, entity);
+            _selectedItemId = entity.id;
+            _selectedItemName = entity.name;
+            _costCtrl.text = entity.purchasePrice.toStringAsFixed(0);
             _updateCalculations();
           });
         },

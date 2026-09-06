@@ -1,8 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/di/injection_container.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_event.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -49,25 +52,34 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     _controller.forward();
+    context.read<AuthBloc>().add(const CheckAuthStatusEvent());
     _initializeApp();
   }
 
   Future<void> _initializeApp() async {
-    // Minimum animation display delay (1.5s)
-    final minDelayFuture = Future.delayed(const Duration(milliseconds: 1500));
+    // Minimum animation display delay (1500ms)
+    await Future.delayed(const Duration(milliseconds: 1500));
+    if (!mounted) return;
 
-    // Auth status check Future
-    final authCheckFuture = _checkAuthStatus();
+    final authBloc = context.read<AuthBloc>();
+    final currentState = authBloc.state;
+    final AuthState finalState;
 
-    // Wait for BOTH minimum splash delay AND API auth check to finish concurrently
-    final results = await Future.wait([minDelayFuture, authCheckFuture]);
-    final isAuthenticated = results[1] as bool;
+    if (currentState is AuthLoadingState || currentState is AuthInitialState) {
+      finalState = await authBloc.stream.firstWhere(
+        (s) => s is! AuthLoadingState && s is! AuthInitialState,
+      ).timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => const UnauthenticatedState(),
+      );
+    } else {
+      finalState = currentState;
+    }
 
     if (!mounted) return;
 
-    if (isAuthenticated) {
-      final user = await InjectionContainer.authRepository.getSavedUser();
-      if (user?.role.toLowerCase() == 'superadmin') {
+    if (finalState is AuthenticatedState) {
+      if (finalState.user?.role.toLowerCase() == 'superadmin') {
         context.go('/super-admin');
       } else {
         context.go('/dashboard');
@@ -75,17 +87,6 @@ class _SplashScreenState extends State<SplashScreen>
     } else {
       context.go('/login');
     }
-  }
-
-  Future<bool> _checkAuthStatus() async {
-    try {
-      final savedToken = await InjectionContainer.authRepository.getSavedToken();
-      if (savedToken != null && savedToken.isNotEmpty) {
-        await InjectionContainer.getMeUseCase();
-        return true;
-      }
-    } catch (_) {}
-    return false;
   }
 
   @override

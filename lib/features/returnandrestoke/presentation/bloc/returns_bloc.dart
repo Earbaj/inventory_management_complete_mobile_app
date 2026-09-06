@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../customers/presentation/bloc/customer_event.dart';
 import '../../../inventory/presentation/bloc/inventory_event.dart';
@@ -9,75 +10,58 @@ import '../../domain/usecases/process_return_usecase.dart';
 import 'returns_event.dart';
 import 'returns_state.dart';
 
-class ReturnsBloc {
+class ReturnsBloc extends Bloc<ReturnsEvent, ReturnsState> {
   final ProcessReturnUseCase processReturnUseCase;
   final GetReturnLogsUseCase getReturnLogsUseCase;
-
-  ReturnsState _state = const ReturnsInitialState();
-  final _stateController = StreamController<ReturnsState>.broadcast();
 
   List<ReturnItemEntity> _allReturnLogs = [];
   String _currentSearchQuery = '';
 
-  ReturnsState get state => _state;
-  Stream<ReturnsState> get stream => _stateController.stream;
-
   ReturnsBloc({
     required this.processReturnUseCase,
     required this.getReturnLogsUseCase,
-  });
-
-  void add(ReturnsEvent event) {
-    _handleEvent(event);
+  }) : super(const ReturnsInitialState()) {
+    on<FetchReturnLogsEvent>(_onFetchReturnLogs);
+    on<ProcessReturnItemEvent>(_onProcessReturn);
   }
 
-  void _emit(ReturnsState newState) {
-    _state = newState;
-    if (!_stateController.isClosed) {
-      _stateController.add(_state);
-    }
-  }
-
-  Future<void> _handleEvent(ReturnsEvent event) async {
-    if (event is FetchReturnLogsEvent) {
-      await _onFetchReturnLogs(event);
-    } else if (event is ProcessReturnItemEvent) {
-      await _onProcessReturn(event);
-    }
-  }
-
-  Future<void> _onFetchReturnLogs(FetchReturnLogsEvent event) async {
+  Future<void> _onFetchReturnLogs(
+    FetchReturnLogsEvent event,
+    Emitter<ReturnsState> emit,
+  ) async {
     _currentSearchQuery = event.searchQuery ?? _currentSearchQuery;
-
-    _emit(const ReturnsLoadingState());
+    emit(const ReturnsLoadingState());
 
     try {
       _allReturnLogs = await getReturnLogsUseCase();
     } catch (e) {
       _allReturnLogs = [];
     }
-    _emitLoadedState();
+    _emitLoadedState(emit);
   }
 
-  Future<void> _onProcessReturn(ProcessReturnItemEvent event) async {
+  Future<void> _onProcessReturn(
+    ProcessReturnItemEvent event,
+    Emitter<ReturnsState> emit,
+  ) async {
     try {
       final processedItem = await processReturnUseCase(event.returnItem);
       _allReturnLogs.insert(0, processedItem);
-      _emit(const ReturnsOperationSuccessState('Item return processed & inventory restocked successfully!'));
+      emit(const ReturnsOperationSuccessState('Item return processed & inventory restocked successfully!'));
 
       try {
-        InjectionContainer.inventoryBloc.add(FetchInventoryItemsEvent());
-        InjectionContainer.reportsBloc.add(FetchReportsEvent());
-        InjectionContainer.customerBloc.add(FetchCustomersEvent());
+        InjectionContainer.inventoryBloc.add(const FetchInventoryItemsEvent());
+        InjectionContainer.reportsBloc.add(const FetchReportsEvent());
+        InjectionContainer.customerBloc.add(const FetchCustomersEvent());
       } catch (_) {}
 
-      _emitLoadedState();
+      _emitLoadedState(emit);
     } catch (e) {
-      _emit(ReturnsErrorState(e.toString()));
+      emit(ReturnsErrorState(e.toString()));
     }
   }
 
-  void _emitLoadedState() {
+  void _emitLoadedState(Emitter<ReturnsState> emit) {
     final query = _currentSearchQuery.trim().toLowerCase();
     final filtered = _allReturnLogs.where((item) {
       final matchesSearch = query.isEmpty ||
@@ -88,14 +72,10 @@ class ReturnsBloc {
       return matchesSearch;
     }).toList();
 
-    _emit(ReturnsLoadedState(
+    emit(ReturnsLoadedState(
       returnLogs: _allReturnLogs,
       filteredLogs: filtered,
       searchQuery: _currentSearchQuery,
     ));
-  }
-
-  void dispose() {
-    _stateController.close();
   }
 }

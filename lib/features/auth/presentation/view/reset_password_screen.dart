@@ -1,7 +1,7 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/di/injection_container.dart';
+import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
 
@@ -23,46 +23,16 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
-  StreamSubscription<AuthState>? _authSubscription;
-  bool _isLoading = false;
   bool _obscurePassword = true;
 
   @override
   void initState() {
     super.initState();
     _emailController = TextEditingController(text: widget.email ?? '');
-
-    _authSubscription = InjectionContainer.authBloc.stream.listen((state) {
-      if (!mounted) return;
-      if (state is AuthLoadingState) {
-        setState(() => _isLoading = true);
-      } else {
-        setState(() => _isLoading = false);
-        if (state is PasswordResetSuccessState) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-          context.go('/login');
-        } else if (state is AuthFailureState) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      }
-    });
   }
 
   @override
   void dispose() {
-    _authSubscription?.cancel();
     _emailController.dispose();
     _otpController.dispose();
     _newPasswordController.dispose();
@@ -96,7 +66,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       return;
     }
 
-    InjectionContainer.authBloc.add(ResetPasswordRequestedEvent(
+    context.read<AuthBloc>().add(ResetPasswordRequestedEvent(
       email: email,
       otpCode: otpCode,
       newPassword: newPassword,
@@ -106,7 +76,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -117,76 +86,101 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         title: const Text('Enter OTP & Reset Password'),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Email Address', style: theme.textTheme.labelLarge),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  hintText: 'Your email',
-                  prefixIcon: Icon(Icons.email_outlined),
+        child: BlocConsumer<AuthBloc, AuthState>(
+          listener: (context, state) {
+            if (state is PasswordResetSuccessState) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.green,
+                  behavior: SnackBarBehavior.floating,
                 ),
-              ),
-              const SizedBox(height: 18),
-              Text('6-Digit OTP Code', style: theme.textTheme.labelLarge),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _otpController,
-                keyboardType: TextInputType.number,
-                maxLength: 6,
-                decoration: const InputDecoration(
-                  hintText: 'Enter 6-digit code',
-                  prefixIcon: Icon(Icons.pin_outlined),
+              );
+              context.go('/login');
+            } else if (state is AuthFailureState) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.red,
+                  behavior: SnackBarBehavior.floating,
                 ),
-              ),
-              const SizedBox(height: 10),
-              Text('New Password', style: theme.textTheme.labelLarge),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _newPasswordController,
-                obscureText: _obscurePassword,
-                decoration: InputDecoration(
-                  hintText: 'Create a new password',
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  suffixIcon: IconButton(
-                    icon: Icon(_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined),
-                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+              );
+            }
+          },
+          builder: (context, state) {
+            final isLoading = state is AuthLoadingState;
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Email Address', style: theme.textTheme.labelLarge),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      hintText: 'Your email',
+                      prefixIcon: Icon(Icons.email_outlined),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 18),
+                  Text('6-Digit OTP Code', style: theme.textTheme.labelLarge),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _otpController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      hintText: 'Enter 6-digit code',
+                      prefixIcon: Icon(Icons.pin_outlined),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Text('New Password', style: theme.textTheme.labelLarge),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _newPasswordController,
+                    obscureText: _obscurePassword,
+                    decoration: InputDecoration(
+                      hintText: 'Enter new password',
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      suffixIcon: IconButton(
+                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                        icon: Icon(_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Text('Confirm New Password', style: theme.textTheme.labelLarge),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _confirmPasswordController,
+                    obscureText: _obscurePassword,
+                    decoration: const InputDecoration(
+                      hintText: 'Re-enter new password',
+                      prefixIcon: Icon(Icons.lock_outline),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: isLoading ? null : _resetPassword,
+                      child: isLoading
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                            )
+                          : const Text('Reset Password'),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 18),
-              Text('Confirm New Password', style: theme.textTheme.labelLarge),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _confirmPasswordController,
-                obscureText: _obscurePassword,
-                decoration: const InputDecoration(
-                  hintText: 'Confirm new password',
-                  prefixIcon: Icon(Icons.lock_outline),
-                ),
-              ),
-              const SizedBox(height: 28),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _resetPassword,
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
-                        )
-                      : const Text('Reset Password'),
-                ),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

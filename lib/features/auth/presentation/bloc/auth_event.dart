@@ -72,3 +72,8 @@ class LogoutRequestedEvent extends AuthEvent {
 class SessionExpiredEvent extends AuthEvent {
   const SessionExpiredEvent();
 }
+
+/// Event triggered when user permanently deletes their account.
+class DeleteAccountRequestedEvent extends AuthEvent {
+  const DeleteAccountRequestedEvent();
+}

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/di/injection_container.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
@@ -440,10 +439,11 @@ class AppDrawer extends StatelessWidget {
                     child: FilledButton(
                       onPressed: () {
                         Navigator.pop(dialogContext);
-                        // Add a small delay for smooth animation
                         Future.delayed(const Duration(milliseconds: 300), () {
-                          InjectionContainer.authBloc.add(const LogoutRequestedEvent());
-                          context.go('/login');
+                          if (context.mounted) {
+                            context.read<AuthBloc>().add(const LogoutRequestedEvent());
+                            context.go('/login');
+                          }
                         });
                       },
                       style: FilledButton.styleFrom(
