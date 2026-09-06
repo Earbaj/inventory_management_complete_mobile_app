@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../../core/localization/localization_local.dart';
 import '../../../../core/utils/money_util.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -118,14 +119,14 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
             },
             icon: const Icon(Icons.menu_rounded),
           ),
-          title: const Text('POS Billing'),
+          title: Text(Bangla.posTitle.getString(context)),
           actions: [
             IconButton(
               onPressed: () {
                 context.read<PosBloc>().add(const ClearCartEvent());
                 discountController.clear();
               },
-              tooltip: 'Clear Cart',
+              tooltip: Bangla.clearCart.getString(context),
               icon: const Icon(Icons.delete_sweep_outlined),
             ),
           ],
@@ -140,7 +141,7 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
               controller: searchController,
               onChanged: _onSearchChanged,
               decoration: InputDecoration(
-                hintText: 'Search product name or SKU',
+                hintText: Bangla.searchProductOrSku.getString(context),
                 prefixIcon: const Icon(Icons.search_rounded),
                 suffixIcon: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -154,7 +155,7 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
                         icon: const Icon(Icons.close_rounded),
                       ),
                     IconButton(
-                      tooltip: 'Scan Barcode with Camera',
+                      tooltip: Bangla.scanBarcode.getString(context),
                       onPressed: () async {
                         final scannedCode = await BarcodeScannerService.scanBarcode(context);
                         if (!context.mounted) return;
@@ -243,7 +244,7 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
                           final selected = selectedCategory == category;
 
                           return ChoiceChip(
-                            label: Text(category),
+                            label: Text(category == 'All' ? Bangla.all.getString(context) : category),
                             selected: selected,
                             onSelected: (_) {
                               setState(() {
@@ -260,24 +261,24 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
                     // PRODUCT LIST
                     Expanded(
                       child: (_isSearching && filteredProducts.isEmpty)
-                          ? const Center(
+                          ? Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  CircularProgressIndicator(),
-                                  SizedBox(height: 12),
+                                  const CircularProgressIndicator(),
+                                  const SizedBox(height: 12),
                                   Text(
-                                    'Searching database...',
-                                    style: TextStyle(color: Colors.grey, fontSize: 13),
+                                    Bangla.searchingDatabase.getString(context),
+                                    style: const TextStyle(color: Colors.grey, fontSize: 13),
                                   ),
                                 ],
                               ),
                             )
                           : filteredProducts.isEmpty
-                              ? const Center(
+                              ? Center(
                                   child: Text(
-                                    'No products available',
-                                    style: TextStyle(color: Colors.grey),
+                                    Bangla.noProductsFound.getString(context),
+                                    style: const TextStyle(color: Colors.grey),
                                   ),
                                 )
                               : BlocBuilder<PosBloc, PosState>(
@@ -370,11 +371,11 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
                           child: DropdownButton<CustomerEntity?>(
                             isExpanded: true,
                             value: selectedVal,
-                            hint: const Text('Select Customer (Optional)'),
+                            hint: Text(Bangla.selectCustomer.getString(context)),
                             items: [
-                              const DropdownMenuItem<CustomerEntity?>(
+                              DropdownMenuItem<CustomerEntity?>(
                                 value: null,
-                                child: Text('Walk-in Customer (Guest)'),
+                                child: Text(Bangla.walkInCustomer.getString(context)),
                               ),
                               ...customerList.map((cust) {
                                 return DropdownMenuItem<CustomerEntity?>(
@@ -404,7 +405,7 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '${cartState.totalItemCount} Items',
+                              '${cartState.totalItemCount} ${Bangla.items.getString(context)}',
                               style: TextStyle(
                                 color: colorScheme.onSurfaceVariant,
                                 fontSize: 12,
@@ -438,9 +439,9 @@ class _PosBillingScreenState extends State<PosBillingScreen> {
                               borderRadius: BorderRadius.circular(14),
                             ),
                           ),
-                          child: const Text(
-                            'Checkout',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          child: Text(
+                            Bangla.checkout.getString(context),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ),

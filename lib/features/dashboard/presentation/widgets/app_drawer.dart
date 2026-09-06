@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/localization/localization_local.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
@@ -173,21 +174,21 @@ class AppDrawer extends StatelessWidget {
 
                       // ২. সাধারণ সব ইউজারের জন্য মেনু
                       _DrawerItem(
-                        title: 'Dashboard',
+                        title: Bangla.dashboard.getString(context),
                         icon: Icons.dashboard_outlined,
                         activeIcon: Icons.dashboard_rounded,
                         route: '/dashboard',
                         currentRoute: currentRoute,
                       ),
                       _DrawerItem(
-                        title: 'POS Billing',
+                        title: Bangla.posTitle.getString(context),
                         icon: Icons.point_of_sale_outlined,
                         activeIcon: Icons.point_of_sale_rounded,
                         route: '/pos-billing',
                         currentRoute: currentRoute,
                       ),
                       _DrawerItem(
-                        title: 'Inventory',
+                        title: Bangla.inventoryTitle.getString(context),
                         icon: Icons.inventory_2_outlined,
                         activeIcon: Icons.inventory_2_rounded,
                         route: '/inventory',
@@ -204,7 +205,7 @@ class AppDrawer extends StatelessWidget {
                       // Customers (Visible to Owner, Admin & Manager)
                       if (isOwnerOrAdmin || isManager) ...[
                         _DrawerItem(
-                          title: 'Customers',
+                          title: Bangla.customersTitle.getString(context),
                           icon: Icons.people_outline,
                           activeIcon: Icons.people_rounded,
                           route: '/customers',
@@ -215,7 +216,7 @@ class AppDrawer extends StatelessWidget {
                       // 🔒 ৩. শুধুমাত্র Owner ও Admin-দের পেজ
                       if (isOwnerOrAdmin) ...[
                         _DrawerItem(
-                          title: 'Reports',
+                          title: Bangla.reportsTitle.getString(context),
                           icon: Icons.bar_chart_outlined,
                           activeIcon: Icons.bar_chart_rounded,
                           route: '/reports',
@@ -291,7 +292,7 @@ class AppDrawer extends StatelessWidget {
                         ),
                         // ৪. Settings
                         _DrawerItem(
-                          title: 'Settings',
+                          title: Bangla.settingsTitle.getString(context),
                           icon: Icons.settings_outlined,
                           activeIcon: Icons.settings_rounded,
                           route: '/settings',
@@ -320,9 +321,9 @@ class AppDrawer extends StatelessWidget {
                           Icons.logout_rounded,
                           color: Colors.red,
                         ),
-                        title: const Text(
-                          'Sign Out',
-                          style: TextStyle(
+                        title: Text(
+                          Bangla.logout.getString(context),
+                          style: const TextStyle(
                             color: Colors.red,
                             fontWeight: FontWeight.w600,
                           ),

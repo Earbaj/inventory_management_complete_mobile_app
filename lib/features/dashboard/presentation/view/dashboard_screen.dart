@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/localization/localization_local.dart';
 import '../../../../core/utils/money_util.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inventory_management_complete/features/reports/presentation/bloc/reports_bloc.dart';
@@ -97,15 +98,18 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
     } catch (_) {}
   }
 
-  String getGreeting() {
+  String getGreeting(BuildContext context) {
     final hour = DateTime.now().hour;
+    final isBangla = Localizations.localeOf(context).languageCode == 'bn';
 
     if (hour < 12) {
-      return 'Good Morning';
+      return isBangla ? 'শুভ সকাল' : 'Good Morning';
     } else if (hour < 17) {
-      return 'Good Afternoon';
+      return isBangla ? 'শুভ অপরাহ্ন' : 'Good Afternoon';
+    } else if (hour < 20) {
+      return isBangla ? 'শুভ সন্ধ্যা' : 'Good Evening';
     } else {
-      return 'Good Night';
+      return isBangla ? 'শুভ রাত্রি' : 'Good Night';
     }
   }
 
@@ -152,7 +156,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      getGreeting(),
+                                      getGreeting(context),
                                       style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                                     ),
                                     const SizedBox(height: 3),
@@ -165,7 +169,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                               },
                             ),
                           ),
-                          _buildModeToggle(colorScheme),
+                          _buildModeToggle(context, colorScheme),
                           const SizedBox(width: 4),
                           IconButton(
                             onPressed: _isLoading ? null : () => _fetchDashboardData(),
@@ -257,7 +261,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                             _buildQuickActionButton(
                               context,
                               icon: Icons.point_of_sale_rounded,
-                              label: 'POS Billing',
+                              label: Bangla.posTitle.getString(context),
                               color: colorScheme.primary,
                               onTap: () {
                                 AppRoute.shellScaffoldKey.currentState?.openDrawer();
@@ -267,7 +271,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                             _buildQuickActionButton(
                               context,
                               icon: Icons.add_shopping_cart_rounded,
-                              label: 'Add Item',
+                              label: Bangla.addNewItem.getString(context),
                               color: Colors.teal,
                               onTap: () {
                                 AppRoute.shellScaffoldKey.currentState?.openDrawer();
@@ -277,7 +281,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                             _buildQuickActionButton(
                               context,
                               icon: Icons.person_add_alt_1_rounded,
-                              label: 'Customers',
+                              label: Bangla.customersTitle.getString(context),
                               color: Colors.orange,
                               onTap: () {
                                 AppRoute.shellScaffoldKey.currentState?.openDrawer();
@@ -287,7 +291,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                             _buildQuickActionButton(
                               context,
                               icon: Icons.bar_chart_rounded,
-                              label: 'Reports',
+                              label: Bangla.reportsTitle.getString(context),
                               color: Colors.purple,
                               onTap: () {
                                 AppRoute.shellScaffoldKey.currentState?.openDrawer();
@@ -312,7 +316,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                           final revenue = summary != null ? summary.totalRevenue : 0.0;
 
                           return StatCard(
-                            title: 'Total Sell',
+                            title: Bangla.todaySales.getString(context),
                             value: '${MoneyUtil.currencySymbol} ${revenue.toStringAsFixed(0)}',
                             icon: Icons.shopping_bag_outlined,
                             iconBackground: const Color(0xFFE8F0FF),
@@ -364,7 +368,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                           }
 
                           return StatCard(
-                            title: 'Outstanding Due',
+                            title: Bangla.totalDues.getString(context),
                             value: '${MoneyUtil.currencySymbol} ${due.toStringAsFixed(0)}',
                             icon: Icons.account_balance_wallet_outlined,
                             iconBackground: const Color(0xFFFFF2E5),
@@ -384,7 +388,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                               : 0;
 
                           return StatCard(
-                            title: 'Low Stock Alert',
+                            title: Bangla.lowStockAlert.getString(context),
                             value: '$lowStockCount',
                             icon: Icons.warning_amber_rounded,
                             iconBackground: const Color(0xFFFFE9EC),
@@ -512,7 +516,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
     );
   }
 
-  Widget _buildModeToggle(ColorScheme colorScheme) {
+  Widget _buildModeToggle(BuildContext context, ColorScheme colorScheme) {
     return InkWell(
       onTap: () => _toggleEasyMode(!_isEasyMode),
       borderRadius: BorderRadius.circular(20),
@@ -539,7 +543,9 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
             ),
             const SizedBox(width: 5),
             Text(
-              _isEasyMode ? 'সহজ মোড' : 'Standard',
+              _isEasyMode
+                  ? Bangla.easyMode.getString(context)
+                  : Bangla.standardMode.getString(context),
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,

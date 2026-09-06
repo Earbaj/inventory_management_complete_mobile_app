@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/localization/localization_local.dart';
 import 'package:inventory_management_complete/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:inventory_management_complete/features/inventory/presentation/bloc/inventory_bloc.dart';
 import '../../../../core/route/app_route.dart';
@@ -468,7 +469,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
           },
           icon: const Icon(Icons.menu_rounded),
         ),
-        title: const Text('Inventory'),
+        title: Text(Bangla.inventoryTitle.getString(context)),
         actions: [
           IconButton(
             tooltip: 'Import CSV / এক্সেল ফাইল আপলোড',

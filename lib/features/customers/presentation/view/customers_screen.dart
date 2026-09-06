@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/localization/localization_local.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../../core/widgets/global_empty_placeholder.dart';
 import '../../../../core/widgets/global_warning_dialog.dart';
@@ -60,12 +61,12 @@ class _CustomersScreenState extends State<CustomersScreen> {
           },
           icon: const Icon(Icons.menu_rounded),
         ),
-        title: const Text('Customers'),
+        title: Text(Bangla.customersTitle.getString(context)),
         actions: [
           IconButton(
             onPressed: () => _openCollectPaymentSheet(),
             icon: const Icon(Icons.payments_rounded, color: Colors.green),
-            tooltip: 'Receive Payment',
+            tooltip: Bangla.collectPayment.getString(context),
           ),
           IconButton(
             onPressed: () {

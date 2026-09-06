@@ -2,6 +2,10 @@ import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/localization/localization_local.dart';
+import '../../../../core/localization/bloc/language_bloc.dart';
+import '../../../../core/localization/bloc/language_state.dart';
+import '../../../../core/localization/widgets/language_selector_dialog.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../../core/services/pdf_export_service.dart';
 import '../../../customers/domain/entities/customer_entity.dart';
@@ -344,6 +348,97 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildLanguageSection(ThemeData theme, ColorScheme colorScheme) {
+    return BlocBuilder<LanguageBloc, LanguageState>(
+      builder: (context, langState) {
+        final isBangla = langState.locale.languageCode == 'bn';
+        return Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.translate_rounded, color: colorScheme.primary),
+                        const SizedBox(width: 8),
+                        Text(
+                          Bangla.language.getString(context),
+                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    TextButton.icon(
+                      onPressed: () => LanguageSelectorDialog.show(context),
+                      icon: const Icon(Icons.edit_rounded, size: 16),
+                      label: Text(Bangla.edit.getString(context)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                InkWell(
+                  onTap: () => LanguageSelectorDialog.show(context),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: colorScheme.primary.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: colorScheme.primary.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Text(
+                              isBangla ? '🇧🇩' : '🇬🇧',
+                              style: const TextStyle(fontSize: 18),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isBangla ? 'বাংলা (Bangla)' : 'English',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                              Text(
+                                isBangla ? 'অ্যাপের ভাষা বাংলা নির্বাচন করা আছে' : 'App language is set to English',
+                                style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.arrow_forward_ios_rounded, size: 14, color: colorScheme.onSurfaceVariant),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -357,7 +452,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           },
           icon: const Icon(Icons.menu_rounded),
         ),
-        title: const Text('Shop Settings & Subscription'),
+        title: Text(Bangla.settingsTitle.getString(context)),
         actions: [
           IconButton(
             onPressed: () {
@@ -427,6 +522,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 24),
                   ],
+
+                  // LANGUAGE PREFERENCE SECTION
+                  _buildLanguageSection(theme, colorScheme),
+                  const SizedBox(height: 24),
 
                   // INVOICE PDF PRINT TEMPLATES SECTION
                   _buildPdfFormatSection(theme, colorScheme, profile),

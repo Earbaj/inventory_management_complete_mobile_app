@@ -10,6 +10,7 @@ import '../../features/auth/domain/usecases/logout_usecase.dart';
 import '../../features/auth/domain/usecases/register_usecase.dart';
 import '../../features/auth/domain/usecases/reset_password_usecase.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
+import '../localization/bloc/language_bloc.dart';
 import '../../features/inventory/data/datasources/inventory_local_data_source.dart';
 import '../../features/inventory/data/datasources/inventory_remote_data_source.dart';
 import '../../features/inventory/data/repositories/inventory_repository_impl.dart';
@@ -277,6 +278,7 @@ class InjectionContainer {
   static late final AiInsightsBloc aiInsightsBloc;
   static late final ExportBloc exportBloc;
   static late final SupplierBloc supplierBloc;
+  static late final LanguageBloc languageBloc;
 
   /// Initializes all singletons and dependencies.
   static Future<void> init() async {
@@ -578,5 +580,7 @@ class InjectionContainer {
       exportSalesUseCase: exportSalesUseCase,
       exportCustomerLedgerUseCase: exportCustomerLedgerUseCase,
     );
+
+    languageBloc = LanguageBloc();
   }
 }

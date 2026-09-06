@@ -17,10 +17,15 @@ import 'package:inventory_management_complete/features/returnandrestoke/presenta
 import 'package:inventory_management_complete/features/subscription/presentation/bloc/subscription_bloc.dart';
 import 'package:inventory_management_complete/features/super_admin/presentation/bloc/super_admin_bloc.dart';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+
 import 'core/di/injection_container.dart';
+import 'core/localization/bloc/language_bloc.dart';
+import 'core/localization/bloc/language_event.dart';
+import 'core/localization/bloc/language_state.dart';
 import 'core/route/app_route.dart';
 import 'core/theme/app_theme.dart';
-import 'package:flutter/material.dart';
 
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/bloc/auth_event.dart';
@@ -99,14 +104,31 @@ class MyApp extends StatelessWidget {
         BlocProvider<SuperAdminBloc>(
           create: (context) => InjectionContainer.superAdminBloc,
         ),
+        BlocProvider<LanguageBloc>(
+          create: (context) => InjectionContainer.languageBloc..add(const LoadSavedLanguageEvent()),
+        ),
       ],
-      child: MaterialApp.router(
-        debugShowCheckedModeBanner: false,
-        title: 'Flutter Demo',
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system,
-        routerConfig: AppRoute.router,
+      child: BlocBuilder<LanguageBloc, LanguageState>(
+        builder: (context, langState) {
+          return MaterialApp.router(
+            debugShowCheckedModeBanner: false,
+            title: 'Inventory POS',
+            locale: langState.locale,
+            supportedLocales: const [
+              Locale('bn'),
+              Locale('en'),
+            ],
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: ThemeMode.system,
+            routerConfig: AppRoute.router,
+          );
+        },
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../../core/localization/localization_local.dart';
 import '../../../../core/utils/money_util.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -207,7 +208,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
           },
           icon: const Icon(Icons.menu_rounded),
         ),
-        title: const Text('Sales Reports & Analytics'),
+        title: Text(Bangla.reportsTitle.getString(context)),
         actions: [
           IconButton(
             onPressed: () {

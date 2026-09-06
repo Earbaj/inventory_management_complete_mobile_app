@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/localization/localization_local.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../../core/utils/money_util.dart';
 import '../../../customers/presentation/bloc/customer_bloc.dart';
@@ -59,14 +60,14 @@ class EasyDashboardView extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'দোকানের সহজ হিসাব 📋',
+                        Bangla.easyShopTitle.getString(context),
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'সব তথ্য সহজে এক নজরে দেখুন',
+                        Bangla.easyShopSubtitle.getString(context),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.75),
                         ),
@@ -89,10 +90,10 @@ class EasyDashboardView extends StatelessWidget {
 
               return _buildHeroCard(
                 context,
-                title: 'আজকের মোট বিক্রি',
-                subtitle: '$count টি মেমো তৈরি হয়েছে',
+                title: Bangla.todaySales.getString(context),
+                subtitle: '$count ${Bangla.memoCreated.getString(context)}',
                 value: '${MoneyUtil.currencySymbol} ${revenue.toStringAsFixed(0)}',
-                badgeText: 'সফল বিক্রি',
+                badgeText: Bangla.successfulSales.getString(context),
                 icon: Icons.point_of_sale_rounded,
                 bgColor: isDark ? const Color(0xFF064E3B) : const Color(0xFFE8F9F0),
                 accentColor: const Color(0xFF059669),
@@ -129,12 +130,12 @@ class EasyDashboardView extends StatelessWidget {
 
               return _buildHeroCard(
                 context,
-                title: 'কাস্টমারদের কাছে বাকি আছে',
+                title: Bangla.totalDues.getString(context),
                 subtitle: dueCustomersCount > 0
-                    ? '$dueCustomersCount জন কাস্টমারের বকেয়া'
-                    : 'বাকি আদায়ের তালিকা দেখুন',
+                    ? '$dueCustomersCount ${Bangla.customersDueCount.getString(context)}'
+                    : Bangla.viewDueList.getString(context),
                 value: '${MoneyUtil.currencySymbol} ${due.toStringAsFixed(0)}',
-                badgeText: 'তাগাদা দিন',
+                badgeText: Bangla.sendDueReminder.getString(context),
                 icon: Icons.account_balance_wallet_rounded,
                 bgColor: isDark ? const Color(0xFF431407) : const Color(0xFFFFF4EC),
                 accentColor: const Color(0xFFEA580C),
@@ -156,12 +157,12 @@ class EasyDashboardView extends StatelessWidget {
 
               return _buildHeroCard(
                 context,
-                title: 'দোকানের মোট মালামাল',
+                title: Bangla.totalStock.getString(context),
                 subtitle: lowStock > 0
-                    ? '⚠️ $lowStock টি পণ্য শেষ হওয়ার পথে!'
-                    : 'সব পণ্য স্টকে পর্যাপ্ত আছে',
-                value: '$totalItems টি আইটেম',
-                badgeText: lowStock > 0 ? 'স্টক সতর্কবার্তা' : 'স্টক ওকে',
+                    ? '⚠️ $lowStock ${Bangla.stockLowWarning.getString(context)}'
+                    : Bangla.stockAllAdequate.getString(context),
+                value: '$totalItems ${Bangla.stockItemsCount.getString(context)}',
+                badgeText: lowStock > 0 ? Bangla.stockWarning.getString(context) : Bangla.stockOk.getString(context),
                 icon: Icons.inventory_2_rounded,
                 bgColor: isDark ? const Color(0xFF172554) : const Color(0xFFEFF6FF),
                 accentColor: const Color(0xFF2563EB),
@@ -196,7 +197,7 @@ class EasyDashboardView extends StatelessWidget {
                         const Icon(Icons.pie_chart_outline_rounded, color: Colors.indigo, size: 22),
                         const SizedBox(width: 8),
                         Text(
-                          'টাকা কীভাবে এসেছে (সহজ হিসাব)',
+                          Bangla.paymentBreakdownEasy.getString(context),
                           style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -206,7 +207,7 @@ class EasyDashboardView extends StatelessWidget {
                       children: [
                         Expanded(
                           child: _buildMiniBreakdownTile(
-                            label: 'নগদ ক্যাশ 💵',
+                            label: Bangla.cashPayment.getString(context),
                             amount: '${MoneyUtil.currencySymbol} ${cash.toStringAsFixed(0)}',
                             color: Colors.green,
                           ),
@@ -214,7 +215,7 @@ class EasyDashboardView extends StatelessWidget {
                         const SizedBox(width: 10),
                         Expanded(
                           child: _buildMiniBreakdownTile(
-                            label: 'বিকাশ/কার্ড 📱',
+                            label: Bangla.digitalPayment.getString(context),
                             amount: '${MoneyUtil.currencySymbol} ${digital.toStringAsFixed(0)}',
                             color: Colors.blue,
                           ),
@@ -222,7 +223,7 @@ class EasyDashboardView extends StatelessWidget {
                         const SizedBox(width: 10),
                         Expanded(
                           child: _buildMiniBreakdownTile(
-                            label: 'বাকি বিক্রি ⏳',
+                            label: Bangla.dueSalesBadge.getString(context),
                             amount: '${MoneyUtil.currencySymbol} ${due.toStringAsFixed(0)}',
                             color: Colors.deepOrange,
                           ),
@@ -238,7 +239,7 @@ class EasyDashboardView extends StatelessWidget {
 
           // 4. BIG ONE-TOUCH ACTION BUTTONS
           Text(
-            'সরাসরি কাজ করুন 🚀',
+            Bangla.quickActionsEasy.getString(context),
             style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
@@ -248,7 +249,7 @@ class EasyDashboardView extends StatelessWidget {
                 child: _buildBigActionButton(
                   context,
                   icon: Icons.add_shopping_cart_rounded,
-                  label: 'নতুন বিক্রি\n(POS)',
+                  label: Bangla.newSalePos.getString(context),
                   color: const Color(0xFF059669),
                   onTap: () {
                     AppRoute.shellScaffoldKey.currentState?.openDrawer();
@@ -260,7 +261,7 @@ class EasyDashboardView extends StatelessWidget {
                 child: _buildBigActionButton(
                   context,
                   icon: Icons.add_box_rounded,
-                  label: 'নতুন পণ্য\nযোগ করুন',
+                  label: Bangla.addNewProductAction.getString(context),
                   color: const Color(0xFF2563EB),
                   onTap: () {
                     AppRoute.shellScaffoldKey.currentState?.openDrawer();
@@ -272,7 +273,7 @@ class EasyDashboardView extends StatelessWidget {
                 child: _buildBigActionButton(
                   context,
                   icon: Icons.people_alt_rounded,
-                  label: 'কাস্টমারদের\nবাকি তুলুন',
+                  label: Bangla.collectDueAction.getString(context),
                   color: const Color(0xFFEA580C),
                   onTap: () {
                     AppRoute.shellScaffoldKey.currentState?.openDrawer();
@@ -305,25 +306,25 @@ class EasyDashboardView extends StatelessWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'শেষ কয়েকটি বিক্রি 🧾',
+                            Bangla.recentSalesEasy.getString(context),
                             style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                           ),
                         ),
                         TextButton(
                           onPressed: () => context.go('/reports'),
-                          child: const Text('সব দেখুন'),
+                          child: Text(Bangla.viewAll.getString(context)),
                         ),
                       ],
                     ),
                     const Divider(height: 16),
                     if (recentList.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 24.0),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 24.0),
                         child: Center(
                           child: Text(
-                            'আজকের কোনো বিক্রি পাওয়া যায়নি।\nনতুন বিক্রি করতে উপরের বাটন চাপুন।',
+                            Bangla.noRecentSalesEasy.getString(context),
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.grey, fontSize: 13),
+                            style: const TextStyle(color: Colors.grey, fontSize: 13),
                           ),
                         ),
                       )
@@ -336,7 +337,7 @@ class EasyDashboardView extends StatelessWidget {
                         itemBuilder: (context, index) {
                           final sale = recentList[index];
                           final isPaid = sale.dueAmount <= 0;
-                          final customerName = sale.customer?.name ?? 'সাধারণ খরিদ্দার';
+                          final customerName = sale.customer?.name ?? Bangla.walkInCustomer.getString(context);
 
                           return Row(
                             children: [
@@ -365,7 +366,7 @@ class EasyDashboardView extends StatelessWidget {
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                     Text(
-                                      'মেমো #${sale.invoiceNo} • ${sale.paymentMethod.toUpperCase()}',
+                                      '${Bangla.memoNo.getString(context)}${sale.invoiceNo} • ${sale.paymentMethod.toUpperCase()}',
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.65),
@@ -377,18 +378,18 @@ class EasyDashboardView extends StatelessWidget {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Text(
-                                    '${MoneyUtil.currencySymbol} ${sale.netTotal.toStringAsFixed(0)}',
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                                  ),
-                                  Text(
-                                    isPaid ? 'পরিশোধিত' : 'বাকি আছে',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: isPaid ? Colors.green : Colors.deepOrange,
+                                    Text(
+                                      '${MoneyUtil.currencySymbol} ${sale.netTotal.toStringAsFixed(0)}',
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                                     ),
-                                  ),
+                                    Text(
+                                      isPaid ? Bangla.paid.getString(context) : Bangla.due.getString(context),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: isPaid ? Colors.green : Colors.deepOrange,
+                                      ),
+                                    ),
                                 ],
                               ),
                             ],
