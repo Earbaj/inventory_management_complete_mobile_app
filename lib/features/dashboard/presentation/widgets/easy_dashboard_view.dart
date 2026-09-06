@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/localization/localization_local.dart';
-import '../../../../core/route/app_route.dart';
 import '../../../../core/utils/money_util.dart';
 import '../../../customers/presentation/bloc/customer_bloc.dart';
 import '../../../customers/presentation/bloc/customer_state.dart';
@@ -98,7 +97,7 @@ class EasyDashboardView extends StatelessWidget {
                 bgColor: isDark ? const Color(0xFF064E3B) : const Color(0xFFE8F9F0),
                 accentColor: const Color(0xFF059669),
                 onTap: () {
-                  AppRoute.shellScaffoldKey.currentState?.openDrawer();
+                  context.go('/reports');
                 },
               );
             },
@@ -140,7 +139,7 @@ class EasyDashboardView extends StatelessWidget {
                 bgColor: isDark ? const Color(0xFF431407) : const Color(0xFFFFF4EC),
                 accentColor: const Color(0xFFEA580C),
                 onTap: () {
-                  AppRoute.shellScaffoldKey.currentState?.openDrawer();
+                  context.go('/customers');
                 },
               );
             },
@@ -167,7 +166,7 @@ class EasyDashboardView extends StatelessWidget {
                 bgColor: isDark ? const Color(0xFF172554) : const Color(0xFFEFF6FF),
                 accentColor: const Color(0xFF2563EB),
                 onTap: () {
-                  AppRoute.shellScaffoldKey.currentState?.openDrawer();
+                  context.go('/inventory');
                 },
               );
             },
@@ -252,7 +251,7 @@ class EasyDashboardView extends StatelessWidget {
                   label: Bangla.newSalePos.getString(context),
                   color: const Color(0xFF059669),
                   onTap: () {
-                    AppRoute.shellScaffoldKey.currentState?.openDrawer();
+                    context.go('/pos-billing');
                   },
                 ),
               ),
@@ -264,7 +263,7 @@ class EasyDashboardView extends StatelessWidget {
                   label: Bangla.addNewProductAction.getString(context),
                   color: const Color(0xFF2563EB),
                   onTap: () {
-                    AppRoute.shellScaffoldKey.currentState?.openDrawer();
+                    context.go('/inventory');
                   },
                 ),
               ),
@@ -276,7 +275,7 @@ class EasyDashboardView extends StatelessWidget {
                   label: Bangla.collectDueAction.getString(context),
                   color: const Color(0xFFEA580C),
                   onTap: () {
-                    AppRoute.shellScaffoldKey.currentState?.openDrawer();
+                    context.go('/customers');
                   },
                 ),
               ),

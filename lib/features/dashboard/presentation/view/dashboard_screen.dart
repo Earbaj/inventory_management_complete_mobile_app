@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/localization/localization_local.dart';
 import '../../../../core/utils/money_util.dart';
@@ -264,7 +265,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                               label: Bangla.posTitle.getString(context),
                               color: colorScheme.primary,
                               onTap: () {
-                                AppRoute.shellScaffoldKey.currentState?.openDrawer();
+                                context.go('/pos-billing');
                               },
                             ),
                             const SizedBox(width: 10),
@@ -274,7 +275,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                               label: Bangla.addNewItem.getString(context),
                               color: Colors.teal,
                               onTap: () {
-                                AppRoute.shellScaffoldKey.currentState?.openDrawer();
+                                context.go('/inventory');
                               },
                             ),
                             const SizedBox(width: 10),
@@ -284,7 +285,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                               label: Bangla.customersTitle.getString(context),
                               color: Colors.orange,
                               onTap: () {
-                                AppRoute.shellScaffoldKey.currentState?.openDrawer();
+                                context.go('/customers');
                               },
                             ),
                             const SizedBox(width: 10),
@@ -294,7 +295,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                               label: Bangla.reportsTitle.getString(context),
                               color: Colors.purple,
                               onTap: () {
-                                AppRoute.shellScaffoldKey.currentState?.openDrawer();
+                                context.go('/reports');
                               },
                             ),
                           ],
