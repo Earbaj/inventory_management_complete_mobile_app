@@ -7,6 +7,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inventory_management_complete/features/reports/presentation/bloc/reports_bloc.dart';
 
 import '../../../branches/presentation/bloc/branch_bloc.dart';
+import '../../../branches/presentation/bloc/branch_event.dart';
+import '../../../branches/presentation/bloc/branch_state.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
@@ -79,6 +81,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
     context.read<ReportsBloc>().add(FetchReportsEvent(branchId: _selectedBranchId,forceRefresh: true));
     context.read<InventoryBloc>().add(const FetchInventoryItemsEvent());
     context.read<CustomerBloc>().add(const FetchCustomersEvent());
+    context.read<BranchBloc>().add(const FetchBranchesEvent());
     await _loadBranches();
     await Future.delayed(const Duration(milliseconds: 600));
     if (mounted) {
@@ -202,61 +205,75 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                   ),
 
                   // ADMIN BRANCH FILTER DROPDOWN
-                  if (isAdmin && _branches.isNotEmpty)
+                  if (isAdmin)
                     SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String?>(
-                              value: _branches.any((b) => b.id == _selectedBranchId) ? _selectedBranchId : null,
-                              isExpanded: true,
-                              hint: const Row(
-                                children: [
-                                  Icon(Icons.store_rounded, size: 20, color: Colors.blue),
-                                  SizedBox(width: 8),
-                                  Text('All Branches (Shop Aggregate)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                                ],
+                      child: BlocBuilder<BranchBloc, BranchState>(
+                        builder: (context, branchState) {
+                          final branches = branchState is BranchLoadedState
+                              ? branchState.branches
+                              : (branchState is BranchErrorState
+                                  ? branchState.previousBranches
+                                  : (_branches.isNotEmpty ? _branches : context.read<BranchBloc>().branches));
+
+                          if (branches.isEmpty) {
+                            return const SizedBox.shrink();
+                          }
+
+                          return Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
                               ),
-                              items: [
-                                const DropdownMenuItem<String?>(
-                                  value: null,
-                                  child: Row(
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String?>(
+                                  value: branches.any((b) => b.id == _selectedBranchId) ? _selectedBranchId : null,
+                                  isExpanded: true,
+                                  hint: const Row(
                                     children: [
                                       Icon(Icons.store_rounded, size: 20, color: Colors.blue),
                                       SizedBox(width: 8),
                                       Text('All Branches (Shop Aggregate)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                                     ],
                                   ),
-                                ),
-                                ..._branches.map((b) {
-                                  return DropdownMenuItem<String?>(
-                                    value: b.id,
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.location_on_outlined, size: 18, color: Colors.indigo),
-                                        const SizedBox(width: 8),
-                                        Text(b.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                                      ],
+                                  items: [
+                                    const DropdownMenuItem<String?>(
+                                      value: null,
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.store_rounded, size: 20, color: Colors.blue),
+                                          SizedBox(width: 8),
+                                          Text('All Branches (Shop Aggregate)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                        ],
+                                      ),
                                     ),
-                                  );
-                                }),
-                              ],
-                              onChanged: (branchId) {
-                                setState(() {
-                                  _selectedBranchId = branchId;
-                                });
-                                _fetchDashboardData();
-                              },
+                                    ...branches.map((b) {
+                                      return DropdownMenuItem<String?>(
+                                        value: b.id,
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.location_on_outlined, size: 18, color: Colors.indigo),
+                                            const SizedBox(width: 8),
+                                            Text(b.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                          ],
+                                        ),
+                                      );
+                                    }),
+                                  ],
+                                  onChanged: (branchId) {
+                                    setState(() {
+                                      _selectedBranchId = branchId;
+                                    });
+                                    _fetchDashboardData();
+                                  },
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
+                          );
+                        },
                       ),
                     ),
 
