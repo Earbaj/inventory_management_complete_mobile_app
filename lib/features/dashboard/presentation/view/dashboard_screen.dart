@@ -136,45 +136,65 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                   // HEADER WITH SHOP & USER PROFILE
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
-                      child: Row(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          IconButton(
-                            onPressed: () {
-                              AppRoute.shellScaffoldKey.currentState?.openDrawer();
+                          // 1. TOP BAR: MENU (LEFT) | MODE TOGGLE & REFRESH (RIGHT)
+                          Row(
+                            children: [
+                              IconButton(
+                                onPressed: () {
+                                  AppRoute.shellScaffoldKey.currentState?.openDrawer();
+                                },
+                                style: IconButton.styleFrom(
+                                  backgroundColor: colorScheme.surface,
+                                ),
+                                icon: const Icon(Icons.menu_rounded),
+                              ),
+                              const Spacer(),
+                              _buildModeToggle(context, colorScheme),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                onPressed: _isLoading ? null : () => _fetchDashboardData(),
+                                style: IconButton.styleFrom(
+                                  backgroundColor: colorScheme.surface,
+                                ),
+                                icon: const Icon(Icons.refresh_rounded),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+
+                          // 2. GREETINGS & USER PROFILE (FULL WIDTH)
+                          BlocBuilder<AuthBloc, AuthState>(
+                            builder: (context, authState) {
+                              final userName = authState is AuthenticatedState ? (authState.user?.name ?? 'Owner') : 'Owner';
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    getGreeting(context),
+                                    style: theme.textTheme.headlineSmall?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: -0.5,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    userName,
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: colorScheme.primary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              );
                             },
-                            style: IconButton.styleFrom(
-                              backgroundColor: colorScheme.surface,
-                            ),
-                            icon: const Icon(Icons.menu_rounded),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: BlocBuilder<AuthBloc, AuthState>(
-                              builder: (context, authState) {
-                                final userName = authState is AuthenticatedState ? (authState.user?.name ?? 'Owner') : 'Owner';
-                                return Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      getGreeting(context),
-                                      style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                                    ),
-                                    const SizedBox(height: 3),
-                                    Text(
-                                      userName,
-                                      style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.w600),
-                                    ),
-                                  ],
-                                );
-                              },
-                            ),
-                          ),
-                          _buildModeToggle(context, colorScheme),
-                          const SizedBox(width: 4),
-                          IconButton(
-                            onPressed: _isLoading ? null : () => _fetchDashboardData(),
-                            icon:  const Icon(Icons.refresh_rounded),
                           ),
                         ],
                       ),
