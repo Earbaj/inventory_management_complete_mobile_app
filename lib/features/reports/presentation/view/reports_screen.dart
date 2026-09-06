@@ -41,6 +41,12 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
     _loadBranches();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
+        final reportsState = context.read<ReportsBloc>().state;
+        if (reportsState is ReportsLoadedState) {
+          setState(() {
+            _selectedBranchId = reportsState.branchId;
+          });
+        }
         context.read<ReportsBloc>().add(FetchReportsEvent(branchId: _selectedBranchId));
       }
     });
@@ -299,7 +305,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                           ),
                           child: DropdownButtonHideUnderline(
                             child: DropdownButton<String?>(
-                              value: _selectedBranchId,
+                              value: _branches.any((b) => b.id == _selectedBranchId) ? _selectedBranchId : null,
                               isExpanded: true,
                               hint: const Row(
                                 children: [

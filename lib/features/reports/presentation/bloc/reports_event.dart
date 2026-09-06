@@ -12,15 +12,19 @@ class FetchReportsEvent extends ReportsEvent {
   final String? branchId;
   final DateFilterType? dateFilterType;
   final bool forceRefresh;
+  final bool hasBranchFilter;
+
+  static const String _sentinelBranch = '__OMITTED_BRANCH__';
 
   const FetchReportsEvent({
     this.searchQuery,
     this.startDate,
     this.endDate,
-    this.branchId,
+    String? branchId = _sentinelBranch,
     this.dateFilterType,
     this.forceRefresh = false,
-  });
+  })  : branchId = identical(branchId, _sentinelBranch) ? null : branchId,
+        hasBranchFilter = !identical(branchId, _sentinelBranch);
 }
 
 /// Event: Filters invoice logs by date range (Today, Yesterday, Last 7 Days, Last 30 Days, Custom Range).
@@ -29,13 +33,17 @@ class FilterReportsByDateRangeEvent extends ReportsEvent {
   final DateTime? endDate;
   final String? branchId;
   final DateFilterType dateFilterType;
+  final bool hasBranchFilter;
+
+  static const String _sentinelBranch = '__OMITTED_BRANCH__';
 
   const FilterReportsByDateRangeEvent({
     this.startDate,
     this.endDate,
-    this.branchId,
+    String? branchId = _sentinelBranch,
     this.dateFilterType = DateFilterType.allTime,
-  });
+  })  : branchId = identical(branchId, _sentinelBranch) ? null : branchId,
+        hasBranchFilter = !identical(branchId, _sentinelBranch);
 }
 
 /// Event: Dispatches instant in-memory search or server-side search.

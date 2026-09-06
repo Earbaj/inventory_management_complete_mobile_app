@@ -43,6 +43,10 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
   @override
   void initState() {
     super.initState();
+    final reportsState = context.read<ReportsBloc>().state;
+    if (reportsState is ReportsLoadedState) {
+      _selectedBranchId = reportsState.branchId;
+    }
     _fetchDashboardData();
   }
 
@@ -50,7 +54,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
     setState(() {
       _isLoading = true;
     });
-    context.read<ReportsBloc>().add(FetchReportsEvent(branchId: _selectedBranchId));
+    context.read<ReportsBloc>().add(FetchReportsEvent(branchId: _selectedBranchId,forceRefresh: true));
     context.read<InventoryBloc>().add(const FetchInventoryItemsEvent());
     context.read<CustomerBloc>().add(const FetchCustomersEvent());
     await _loadBranches();
@@ -164,7 +168,7 @@ class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAli
                           ),
                           child: DropdownButtonHideUnderline(
                             child: DropdownButton<String?>(
-                              value: _selectedBranchId,
+                              value: _branches.any((b) => b.id == _selectedBranchId) ? _selectedBranchId : null,
                               isExpanded: true,
                               hint: const Row(
                                 children: [

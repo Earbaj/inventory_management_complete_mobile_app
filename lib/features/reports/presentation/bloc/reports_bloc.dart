@@ -45,7 +45,10 @@ class ReportsBloc extends Bloc<ReportsEvent, ReportsState> {
       _currentStartDate = event.startDate;
       _currentEndDate = event.endDate;
     }
-    if (event.branchId != null) {
+    if (event.hasBranchFilter) {
+      if (_currentBranchId != event.branchId) {
+        _cachedSummary = null;
+      }
       _currentBranchId = event.branchId;
     }
     if (event.dateFilterType != null) {
@@ -89,7 +92,10 @@ class ReportsBloc extends Bloc<ReportsEvent, ReportsState> {
     _currentStartDate = event.startDate;
     _currentEndDate = event.endDate;
     _currentDateFilter = event.dateFilterType;
-    if (event.branchId != null) {
+    if (event.hasBranchFilter) {
+      if (_currentBranchId != event.branchId) {
+        _cachedSummary = null;
+      }
       _currentBranchId = event.branchId;
     }
 
