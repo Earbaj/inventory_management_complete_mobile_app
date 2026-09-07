@@ -61,7 +61,7 @@ class StatementSummaryCard
           ),
 
           Text(
-            '${MoneyUtil.currencySymbol} ${value.toStringAsFixed(0)}',
+            '${MoneyUtil.currencySymbol} ${value.toStringAsFixed(2)}',
 
             maxLines: 1,
 

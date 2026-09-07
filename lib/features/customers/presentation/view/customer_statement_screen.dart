@@ -318,7 +318,7 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
       if (targetUrl.isEmpty) {
         final cleanPhone = widget.customer.phone.replaceAll(RegExp(r'[^0-9]'), '');
         final formattedPhone = cleanPhone.startsWith('88') ? cleanPhone : '88$cleanPhone';
-        final text = Uri.encodeComponent('Dear ${widget.customer.name}, your due payment of Tk ${_currentDue.toStringAsFixed(0)} is pending. Please clear your due payment.');
+        final text = Uri.encodeComponent('Dear ${widget.customer.name}, your due payment of Tk ${_currentDue.toStringAsFixed(2)} is pending. Please clear your due payment.');
         targetUrl = 'https://api.whatsapp.com/send?phone=$formattedPhone&text=$text';
       }
 
@@ -332,7 +332,7 @@ class _CustomerStatementScreenState extends State<CustomerStatementScreen> {
 
       if (!launched) {
         final cleanPhone = widget.customer.phone.replaceAll(RegExp(r'[^0-9]'), '');
-        final smsUri = Uri.parse('sms:$cleanPhone?body=${Uri.encodeComponent("Dear ${widget.customer.name}, your due payment of Tk ${_currentDue.toStringAsFixed(0)} is pending.")}');
+        final smsUri = Uri.parse('sms:$cleanPhone?body=${Uri.encodeComponent("Dear ${widget.customer.name}, your due payment of Tk ${_currentDue.toStringAsFixed(2)} is pending.")}');
         await launchUrl(smsUri);
       }
     } catch (e) {

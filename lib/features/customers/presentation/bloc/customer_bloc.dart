@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/utils/money_util.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../reports/presentation/bloc/reports_event.dart';
 import '../../domain/entities/customer_entity.dart';
@@ -141,9 +142,10 @@ class CustomerBloc extends Bloc<CustomerEvent, CustomerState> {
       Emitter<CustomerState> emit,
       ) async {
     try {
+      final roundedAmount = MoneyUtil.roundMoney(event.amount);
       await collectCustomerPaymentUseCase(
         customerId: event.customerId,
-        amount: event.amount,
+        amount: roundedAmount,
         paymentMethod: event.paymentMethod,
         note: event.note,
       );

@@ -1,3 +1,5 @@
+import '../../../../core/utils/money_util.dart';
+
 /// Domain Entity representing a Customer in the Business Logic Layer.
 class CustomerEntity {
   final String id;
@@ -17,17 +19,17 @@ class CustomerEntity {
     required this.openingBalance,
   });
 
-  /// Computed property: true if customer has an outstanding due balance (rawBalance < 0).
-  bool get hasDue => rawBalance < 0;
+  /// Computed property: true if customer has an outstanding due balance (rawBalance < -0.009).
+  bool get hasDue => rawBalance < -0.009;
 
-  /// Computed property: true if customer has an advance store credit (rawBalance > 0).
-  bool get isAdvanceCredit => rawBalance > 0;
+  /// Computed property: true if customer has an advance store credit (rawBalance > 0.009).
+  bool get isAdvanceCredit => rawBalance > 0.009;
 
   /// Active due amount (always positive, 0 if no due).
-  double get totalDue => rawBalance < 0 ? rawBalance.abs() : 0.0;
+  double get totalDue => hasDue ? MoneyUtil.roundMoney(rawBalance.abs()) : 0.0;
 
   /// Active advance store credit amount (always positive, 0 if no credit).
-  double get advanceCredit => rawBalance > 0 ? rawBalance : 0.0;
+  double get advanceCredit => isAdvanceCredit ? MoneyUtil.roundMoney(rawBalance) : 0.0;
 
   @override
   bool operator ==(Object other) =>

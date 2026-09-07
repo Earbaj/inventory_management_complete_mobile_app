@@ -31,7 +31,7 @@ class CustomerCard extends StatelessWidget {
       if (targetUrl.isEmpty) {
         final cleanPhone = customer.phone.replaceAll(RegExp(r'[^0-9]'), '');
         final formattedPhone = cleanPhone.startsWith('88') ? cleanPhone : '88$cleanPhone';
-        final text = Uri.encodeComponent('Dear ${customer.name}, your due payment of Tk ${customer.totalDue.toStringAsFixed(0)} is pending. Please clear your due payment.');
+        final text = Uri.encodeComponent('Dear ${customer.name}, your due payment of Tk ${customer.totalDue.toStringAsFixed(2)} is pending. Please clear your due payment.');
         targetUrl = 'https://api.whatsapp.com/send?phone=$formattedPhone&text=$text';
       }
 
@@ -46,7 +46,7 @@ class CustomerCard extends StatelessWidget {
       if (!launched) {
         // Fallback: SMS
         final cleanPhone = customer.phone.replaceAll(RegExp(r'[^0-9]'), '');
-        final smsUri = Uri.parse('sms:$cleanPhone?body=${Uri.encodeComponent("Dear ${customer.name}, your due payment of Tk ${customer.totalDue.toStringAsFixed(0)} is pending.")}');
+        final smsUri = Uri.parse('sms:$cleanPhone?body=${Uri.encodeComponent("Dear ${customer.name}, your due payment of Tk ${customer.totalDue.toStringAsFixed(2)} is pending.")}');
         await launchUrl(smsUri);
       }
     } catch (e) {
@@ -248,7 +248,7 @@ class CustomerCard extends StatelessWidget {
               Expanded(
                 child: CustomerInfo(
                   title: 'Opening Balance',
-                  value: '${MoneyUtil.currencySymbol} ${customer.openingBalance.toStringAsFixed(0)}',
+                  value: '${MoneyUtil.currencySymbol} ${customer.openingBalance.toStringAsFixed(2)}',
                 ),
               ),
               Expanded(
@@ -256,7 +256,7 @@ class CustomerCard extends StatelessWidget {
                   title: customer.isAdvanceCredit
                       ? 'Advance Credit'
                       : (customer.hasDue ? 'Current Due' : 'Balance'),
-                  value: '${MoneyUtil.currencySymbol} ${(customer.isAdvanceCredit ? customer.advanceCredit : customer.totalDue).toStringAsFixed(0)}',
+                  value: '${MoneyUtil.currencySymbol} ${(customer.isAdvanceCredit ? customer.advanceCredit : customer.totalDue).toStringAsFixed(2)}',
                   valueColor: customer.isAdvanceCredit
                       ? Colors.green[700]
                       : (customer.hasDue ? Colors.orange[900] : Colors.grey),

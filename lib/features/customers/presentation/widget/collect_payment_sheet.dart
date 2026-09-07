@@ -32,7 +32,8 @@ class _CollectPaymentSheetState extends State<CollectPaymentSheet> {
     _noteCtrl = TextEditingController();
 
     if (_selectedCustomer != null && _selectedCustomer!.totalDue > 0) {
-      _amountCtrl.text = _selectedCustomer!.totalDue.toStringAsFixed(0);
+      final isInt = (_selectedCustomer!.totalDue - _selectedCustomer!.totalDue.roundToDouble()).abs() < 0.001;
+      _amountCtrl.text = _selectedCustomer!.totalDue.toStringAsFixed(isInt ? 0 : 2);
     }
   }
 
@@ -46,14 +47,15 @@ class _CollectPaymentSheetState extends State<CollectPaymentSheet> {
   bool _isSubmitting = false;
 
   Future<void> _submitPayment(double amount) async {
-    if (_selectedCustomer == null || amount <= 0 || _isSubmitting) return;
+    final roundedAmount = MoneyUtil.roundMoney(amount);
+    if (_selectedCustomer == null || roundedAmount <= 0 || _isSubmitting) return;
 
     setState(() => _isSubmitting = true);
 
     context.read<CustomerBloc>().add(
       CollectCustomerPaymentEvent(
         customerId: _selectedCustomer!.id,
-        amount: amount,
+        amount: roundedAmount,
         paymentMethod: _paymentMethod,
         note: _noteCtrl.text.trim(),
       ),
@@ -65,7 +67,7 @@ class _CollectPaymentSheetState extends State<CollectPaymentSheet> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Payment of ${MoneyUtil.currencySymbol}${amount.toStringAsFixed(0)} received for ${_selectedCustomer!.name}',
+            'Payment of ${MoneyUtil.currencySymbol}${roundedAmount.toStringAsFixed(2)} received for ${_selectedCustomer!.name}',
           ),
           backgroundColor: Colors.green[700],
         ),
@@ -174,9 +176,9 @@ class _CollectPaymentSheetState extends State<CollectPaymentSheet> {
                             ),
                             Text(
                               customer.isAdvanceCredit
-                                  ? 'Credit: ${MoneyUtil.currencySymbol}${customer.advanceCredit.toStringAsFixed(0)}'
+                                  ? 'Credit: ${MoneyUtil.currencySymbol}${customer.advanceCredit.toStringAsFixed(2)}'
                                   : (customer.hasDue
-                                      ? 'Due: ${MoneyUtil.currencySymbol}${customer.totalDue.toStringAsFixed(0)}'
+                                      ? 'Due: ${MoneyUtil.currencySymbol}${customer.totalDue.toStringAsFixed(2)}'
                                       : 'Clear'),
                               style: TextStyle(
                                 fontSize: 12,
@@ -194,7 +196,8 @@ class _CollectPaymentSheetState extends State<CollectPaymentSheet> {
                       setState(() {
                         _selectedCustomer = val;
                         if (val != null && val.totalDue > 0) {
-                          _amountCtrl.text = val.totalDue.toStringAsFixed(0);
+                          final isInt = (val.totalDue - val.totalDue.roundToDouble()).abs() < 0.001;
+                          _amountCtrl.text = val.totalDue.toStringAsFixed(isInt ? 0 : 2);
                         }
                       });
                     },
@@ -330,7 +333,8 @@ class _CollectPaymentSheetState extends State<CollectPaymentSheet> {
                           ? TextButton(
                               onPressed: () {
                                 setState(() {
-                                  _amountCtrl.text = _selectedCustomer!.totalDue.toStringAsFixed(0);
+                                  final isInt = (_selectedCustomer!.totalDue - _selectedCustomer!.totalDue.roundToDouble()).abs() < 0.001;
+                                  _amountCtrl.text = _selectedCustomer!.totalDue.toStringAsFixed(isInt ? 0 : 2);
                                 });
                               },
                               child: const Text('Pay Full'),
@@ -429,7 +433,7 @@ class _CollectPaymentSheetState extends State<CollectPaymentSheet> {
                           const SizedBox(width: 8),
                           Text(
                             _selectedCustomer != null
-                                ? 'Collect ${MoneyUtil.currencySymbol}${enteredAmount.toStringAsFixed(0)} from ${_selectedCustomer!.name}'
+                                ? 'Collect ${MoneyUtil.currencySymbol}${enteredAmount.toStringAsFixed(2)} from ${_selectedCustomer!.name}'
                                 : 'Process Payment',
                             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                           ),
