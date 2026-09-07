@@ -1,3 +1,4 @@
+import '../../../../core/utils/money_util.dart';
 import '../../../inventory/domain/entities/inventory_item_entity.dart';
 
 /// Domain Entity representing an item in the POS Shopping Cart.
@@ -15,18 +16,18 @@ class CartItemEntity {
   });
 
   /// Raw subtotal before discount (quantity * retailSellPrice)
-  double get rawSubtotal => quantity * item.retailSellPrice;
+  double get rawSubtotal => MoneyUtil.roundMoney(quantity * item.retailSellPrice);
 
   /// Computed flat discount amount in Tk
   double get discountAmount {
     if (discountType == 'percent') {
-      return (rawSubtotal * (discount / 100.0)).clamp(0.0, rawSubtotal);
+      return MoneyUtil.roundMoney((rawSubtotal * (discount / 100.0)).clamp(0.0, rawSubtotal));
     }
-    return discount.clamp(0.0, rawSubtotal);
+    return MoneyUtil.roundMoney(discount.clamp(0.0, rawSubtotal));
   }
 
   /// Total price for this cart line item after product discount.
-  double get totalPrice => (rawSubtotal - discountAmount).clamp(0.0, double.infinity);
+  double get totalPrice => MoneyUtil.roundMoney((rawSubtotal - discountAmount).clamp(0.0, double.infinity));
 
   CartItemEntity copyWith({
     InventoryItemEntity? item,

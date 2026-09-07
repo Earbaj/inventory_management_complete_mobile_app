@@ -140,8 +140,8 @@ class MoneyUtil {
   /// Formats monetary value into an integer or 2-decimal string if has cents (e.g. 790 -> "790", 790.5 -> "790.50").
   static String formatSmartMoney(dynamic value) {
     final double amount = parseMoney(value);
-    if (amount % 1 == 0) {
-      return amount.toInt().toString();
+    if ((amount - amount.roundToDouble()).abs() < 0.001) {
+      return amount.round().toString();
     }
     return amount.toStringAsFixed(2);
   }

@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/utils/money_util.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../customers/presentation/bloc/customer_event.dart';
 import '../../../inventory/presentation/bloc/inventory_event.dart';
@@ -112,11 +113,13 @@ class PosBloc extends Bloc<PosEvent, PosState> {
 
     try {
       final generatedInvoiceNo = 'INV-${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}';
-      final netTotal = currentState.netTotal;
+      final netTotal = MoneyUtil.roundMoney(currentState.netTotal);
+      final rawPaid = MoneyUtil.roundMoney(event.paidAmount);
       final paidAmount = event.paymentMethod.toLowerCase() == 'due'
           ? 0.0
-          : event.paidAmount.clamp(0.0, netTotal);
-      final dueAmount = (netTotal - paidAmount).clamp(0.0, double.infinity);
+          : rawPaid.clamp(0.0, netTotal);
+      final rawDue = netTotal - paidAmount;
+      final dueAmount = rawDue > 0.009 ? MoneyUtil.roundMoney(rawDue) : 0.0;
 
       final saleToSubmit = SaleEntity(
         id: '',

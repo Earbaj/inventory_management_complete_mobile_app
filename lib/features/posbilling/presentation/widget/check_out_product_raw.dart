@@ -63,7 +63,7 @@ class CheckoutProductRow
                 ),
 
                 Text(
-                  '${MoneyUtil.currencySymbol} ${product.price.toStringAsFixed(0)}',
+                  '${MoneyUtil.currencySymbol} ${product.price.toStringAsFixed(2)}',
                   style: theme
                       .textTheme
                       .bodySmall,

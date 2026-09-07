@@ -82,18 +82,21 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
 
   void _updateDefaultPaidAmount([List<CartItemEntity>? currentItems]) {
     final cartList = currentItems ?? widget.cartItems ?? [];
-    final double rawSub = cartList.fold<double>(0.0, (sum, i) => sum + i.rawSubtotal);
-    final double itemDisc = cartList.fold<double>(0.0, (sum, i) => sum + i.discountAmount);
-    final double subAfterItemDisc = (rawSub - itemDisc).clamp(0.0, double.infinity);
+    final double rawSub = MoneyUtil.roundMoney(cartList.isNotEmpty
+        ? cartList.fold<double>(0.0, (sum, i) => sum + i.rawSubtotal)
+        : (widget.subtotal ?? 0.0));
+    final double itemDisc = MoneyUtil.roundMoney(cartList.fold<double>(0.0, (sum, i) => sum + i.discountAmount));
+    final double subAfterItemDisc = MoneyUtil.roundMoney((rawSub - itemDisc).clamp(0.0, double.infinity));
 
     final double overallDiscInTk = _calculateOverallDiscountTk(subAfterItemDisc);
-    final double calcNetTotal = (subAfterItemDisc - overallDiscInTk).clamp(0.0, double.infinity);
+    final double calcNetTotal = MoneyUtil.roundMoney((subAfterItemDisc - overallDiscInTk).clamp(0.0, double.infinity));
 
     if (!_isPaidEdited) {
       if (_paymentMethod.toLowerCase() == 'due') {
         _paidCtrl.text = '0';
       } else {
-        _paidCtrl.text = calcNetTotal.toStringAsFixed(0);
+        final isInt = (calcNetTotal - calcNetTotal.roundToDouble()).abs() < 0.001;
+        _paidCtrl.text = calcNetTotal.toStringAsFixed(isInt ? 0 : 2);
       }
     }
   }
@@ -124,9 +127,9 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
     final parsed = _parseDiscount(_overallDiscountCtrl.text, _overallDiscountType);
     if (parsed.value <= 0) return 0.0;
     if (parsed.type == 'percent') {
-      return (baseSubtotal * (parsed.value / 100.0)).clamp(0.0, baseSubtotal);
+      return MoneyUtil.roundMoney((baseSubtotal * (parsed.value / 100.0)).clamp(0.0, baseSubtotal));
     }
-    return parsed.value.clamp(0.0, baseSubtotal);
+    return MoneyUtil.roundMoney(parsed.value.clamp(0.0, baseSubtotal));
   }
 
   String _getOverallDiscountHelperText(double baseSubtotal) {
@@ -296,13 +299,15 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
               );
 
         final cartItemsList = posState.cartItems.isNotEmpty ? posState.cartItems : (widget.cartItems ?? []);
-        final double rawSubtotal = cartItemsList.fold<double>(0.0, (sum, i) => sum + i.rawSubtotal);
-        final double productDiscounts = cartItemsList.fold<double>(0.0, (sum, i) => sum + i.discountAmount);
-        final double subtotalAfterItemDiscounts = (rawSubtotal - productDiscounts).clamp(0.0, double.infinity);
+        final double rawSubtotal = MoneyUtil.roundMoney(cartItemsList.isNotEmpty
+            ? cartItemsList.fold<double>(0.0, (sum, i) => sum + i.rawSubtotal)
+            : (widget.subtotal ?? 0.0));
+        final double productDiscounts = MoneyUtil.roundMoney(cartItemsList.fold<double>(0.0, (sum, i) => sum + i.discountAmount));
+        final double subtotalAfterItemDiscounts = MoneyUtil.roundMoney((rawSubtotal - productDiscounts).clamp(0.0, double.infinity));
 
         final double overallDiscInTk = _calculateOverallDiscountTk(subtotalAfterItemDiscounts);
-        final double calcNetTotal = (subtotalAfterItemDiscounts - overallDiscInTk).clamp(0.0, double.infinity);
-        final double totalDiscounts = productDiscounts + overallDiscInTk;
+        final double calcNetTotal = MoneyUtil.roundMoney((subtotalAfterItemDiscounts - overallDiscInTk).clamp(0.0, double.infinity));
+        final double totalDiscounts = MoneyUtil.roundMoney(productDiscounts + overallDiscInTk);
 
         final itemCount = posState.totalItemCount > 0
             ? posState.totalItemCount
@@ -312,12 +317,14 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
           if (_paymentMethod.toLowerCase() == 'due') {
             _paidCtrl.text = '0';
           } else {
-            _paidCtrl.text = calcNetTotal.toStringAsFixed(0);
+            final isInt = (calcNetTotal - calcNetTotal.roundToDouble()).abs() < 0.001;
+            _paidCtrl.text = calcNetTotal.toStringAsFixed(isInt ? 0 : 2);
           }
         }
 
-        final paidAmountInput = double.tryParse(_paidCtrl.text) ?? 0.0;
-        final dueAmount = (calcNetTotal - paidAmountInput).clamp(0.0, double.infinity);
+        final paidAmountInput = MoneyUtil.roundMoney(double.tryParse(_paidCtrl.text) ?? 0.0);
+        final double rawDue = calcNetTotal - paidAmountInput;
+        final double dueAmount = rawDue > 0.009 ? MoneyUtil.roundMoney(rawDue) : 0.0;
 
         return PopScope(
           canPop: !isLoading,
@@ -385,15 +392,15 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                                   style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                                 ),
                                 subtitle: Text(
-                                  'Qty: ${cItem.quantity} x ${MoneyUtil.currencySymbol}${cItem.item.retailSellPrice.toStringAsFixed(0)}'
-                                  '${cItem.discount > 0 ? " | Item Disc: ${cItem.discountType == 'percent' ? '${cItem.discount.toStringAsFixed(0)}%' : '${MoneyUtil.currencySymbol}${cItem.discount.toStringAsFixed(0)}'}" : ""}',
+                                  'Qty: ${cItem.quantity} x ${MoneyUtil.currencySymbol}${cItem.item.retailSellPrice.toStringAsFixed(2)}'
+                                  '${cItem.discount > 0 ? " | Item Disc: ${cItem.discountType == 'percent' ? '${cItem.discount.toStringAsFixed(cItem.discount % 1 == 0 ? 0 : 2)}%' : '${MoneyUtil.currencySymbol}${cItem.discount.toStringAsFixed(2)}'}" : ""}',
                                   style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
                                 ),
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      '${MoneyUtil.currencySymbol}${cItem.totalPrice.toStringAsFixed(0)}',
+                                      '${MoneyUtil.currencySymbol}${cItem.totalPrice.toStringAsFixed(2)}',
                                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                                     ),
                                     IconButton(
@@ -584,13 +591,13 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                           children: [
                             SummaryRow(
                               title: 'Subtotal',
-                              value: '${MoneyUtil.currencySymbol} ${rawSubtotal.toStringAsFixed(0)}',
+                              value: '${MoneyUtil.currencySymbol} ${rawSubtotal.toStringAsFixed(2)}',
                             ),
                             if (totalDiscounts > 0) ...[
                               const SizedBox(height: 8),
                               SummaryRow(
                                 title: 'Total Discount',
-                                value: '- ${MoneyUtil.currencySymbol} ${totalDiscounts.toStringAsFixed(0)}',
+                                value: '- ${MoneyUtil.currencySymbol} ${totalDiscounts.toStringAsFixed(2)}',
                                 valueColor: Colors.red,
                               ),
                             ],
@@ -600,19 +607,19 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                             ),
                             SummaryRow(
                               title: 'Net Total',
-                              value: '${MoneyUtil.currencySymbol} ${calcNetTotal.toStringAsFixed(0)}',
+                              value: '${MoneyUtil.currencySymbol} ${calcNetTotal.toStringAsFixed(2)}',
                               large: true,
                             ),
                             const SizedBox(height: 8),
                             SummaryRow(
                               title: 'Paid Amount',
-                              value: '${MoneyUtil.currencySymbol} ${paidAmountInput.toStringAsFixed(0)}',
+                              value: '${MoneyUtil.currencySymbol} ${paidAmountInput.toStringAsFixed(2)}',
                               valueColor: Colors.green[700],
                             ),
                             const SizedBox(height: 8),
                             SummaryRow(
                               title: 'Due Amount',
-                              value: '${MoneyUtil.currencySymbol} ${dueAmount.toStringAsFixed(0)}',
+                              value: '${MoneyUtil.currencySymbol} ${dueAmount.toStringAsFixed(2)}',
                               valueColor: dueAmount > 0 ? Colors.orange[800] : Colors.grey,
                               large: dueAmount > 0,
                             ),
@@ -633,12 +640,10 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                             // Sync overall calculated discount (in Tk) with PosBloc state
                             context.read<PosBloc>().add(ApplyDiscountEvent(overallDiscInTk));
 
-                            final double finalPaid;
-                            if (_paymentMethod.toLowerCase() == 'due') {
-                              finalPaid = 0.0;
-                            } else {
-                              finalPaid = double.tryParse(_paidCtrl.text) ?? calcNetTotal;
-                            }
+                            final double parsedPaid = double.tryParse(_paidCtrl.text) ?? calcNetTotal;
+                            final double finalPaid = _paymentMethod.toLowerCase() == 'due'
+                                ? 0.0
+                                : MoneyUtil.roundMoney(parsedPaid);
 
                             if (widget.onComplete != null) {
                               widget.onComplete!(_paymentMethod, finalPaid);
@@ -684,12 +689,12 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                             children: [
                               Expanded(
                                 child: Text(
-                                  dueAmount > 0 ? 'Checkout with ${MoneyUtil.currencySymbol}${dueAmount.toStringAsFixed(0)} Due' : 'Complete Checkout',
+                                  dueAmount > 0 ? 'Checkout with ${MoneyUtil.currencySymbol}${dueAmount.toStringAsFixed(2)} Due' : 'Complete Checkout',
                                   style: const TextStyle(fontWeight: FontWeight.w700),
                                 ),
                               ),
                               Text(
-                                '${MoneyUtil.currencySymbol} ${calcNetTotal.toStringAsFixed(0)}',
+                                '${MoneyUtil.currencySymbol} ${calcNetTotal.toStringAsFixed(2)}',
                                 style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
                               ),
                             ],

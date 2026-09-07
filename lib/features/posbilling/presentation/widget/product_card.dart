@@ -81,7 +81,7 @@ class ProductCard extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      '${MoneyUtil.currencySymbol} ${product.price.toStringAsFixed(0)}',
+                      '${MoneyUtil.currencySymbol} ${MoneyUtil.formatSmartMoney(product.price)}',
                       style: TextStyle(
                         color: colorScheme.primary,
                         fontWeight: FontWeight.w700,
