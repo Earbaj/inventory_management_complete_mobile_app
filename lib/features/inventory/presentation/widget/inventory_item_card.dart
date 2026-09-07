@@ -169,7 +169,7 @@ class InventoryItemCard extends StatelessWidget {
                   Expanded(
                     child: ItemDetail(
                       title: 'Stock',
-                      value: '${item.stockQuantity} ${item.unit}',
+                      value: '${item.stockQuantity}',
                       valueColor: outOfStock
                           ? Colors.red
                           : lowStock
