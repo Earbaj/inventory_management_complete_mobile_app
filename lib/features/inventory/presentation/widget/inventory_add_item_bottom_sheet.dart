@@ -114,12 +114,14 @@ class _AddItemSheetState extends State<AddItemSheet> {
     final colorScheme = theme.colorScheme;
     final editing = widget.existingItem != null;
 
-    return Container(
-      height: MediaQuery.sizeOf(context).height * 0.92,
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
-      ),
+    return PopScope(
+      canPop: !isSaving,
+      child: Container(
+        height: MediaQuery.sizeOf(context).height * 0.92,
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+        ),
       child: SafeArea(
         child: Column(
           children: [
@@ -400,7 +402,8 @@ class _AddItemSheetState extends State<AddItemSheet> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 
   String? _validatePrice(String? value) {
@@ -441,6 +444,9 @@ class _AddItemSheetState extends State<AddItemSheet> {
 
     try {
       await widget.onSave(item);
+      if (mounted) {
+        Navigator.pop(context);
+      }
     } catch (e) {
       if (mounted) {
         setState(() {

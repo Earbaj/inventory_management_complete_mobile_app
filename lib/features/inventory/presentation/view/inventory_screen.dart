@@ -780,14 +780,19 @@ class _InventoryScreenState extends State<InventoryScreen> {
         return AddItemSheet(
           existingItem: existingItem,
           onSave: (item) async {
+            final bloc = context.read<InventoryBloc>();
             if (existingItem == null) {
-              context.read<InventoryBloc>().add(AddInventoryItemEvent(item));
+              bloc.add(AddInventoryItemEvent(item));
             } else {
-              context.read<InventoryBloc>().add(UpdateInventoryItemEvent(item));
+              bloc.add(UpdateInventoryItemEvent(item));
             }
 
-            if (sheetContext.mounted) {
-              Navigator.pop(sheetContext);
+            final nextState = await bloc.stream.firstWhere(
+              (s) => s is InventoryOperationSuccessState || s is InventoryErrorState,
+            );
+
+            if (nextState is InventoryErrorState) {
+              throw Exception(nextState.message);
             }
           },
         );

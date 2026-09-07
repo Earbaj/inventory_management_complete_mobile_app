@@ -113,7 +113,14 @@ class _NewPurchaseOrderSheetState extends State<NewPurchaseOrderSheet> {
                   createdAt: DateTime.now(),
                   updatedAt: DateTime.now(),
                 );
-          context.read<InventoryBloc>().add(AddInventoryItemEvent(entity));
+          final bloc = context.read<InventoryBloc>();
+          bloc.add(AddInventoryItemEvent(entity));
+          final nextState = await bloc.stream.firstWhere(
+            (s) => s is InventoryOperationSuccessState || s is InventoryErrorState,
+          );
+          if (nextState is InventoryErrorState) {
+            throw Exception(nextState.message);
+          }
           setState(() {
             _inventoryItems.insert(0, entity);
             _selectedItemId = entity.id;
