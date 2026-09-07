@@ -235,9 +235,29 @@ class _DataExportScreenState extends State<DataExportScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    // Fetch customer list for ledger dropdown
+    // Fetch customer list for ledger dropdown & Deduplicate
     final custSnapshot = context.watch<CustomerBloc>().state;
-    final List<CustomerEntity> customerList = custSnapshot is CustomerLoadedState ? custSnapshot.customers : [];
+    final List<CustomerEntity> rawCustomers = custSnapshot is CustomerLoadedState ? custSnapshot.customers : [];
+
+    final Map<String, CustomerEntity> uniqueCustomerMap = {};
+    for (final customer in rawCustomers) {
+      final key = customer.id.isNotEmpty ? customer.id : customer.phone;
+      if (key.isNotEmpty && !uniqueCustomerMap.containsKey(key)) {
+        uniqueCustomerMap[key] = customer;
+      }
+    }
+    final List<CustomerEntity> customerList = uniqueCustomerMap.values.toList();
+
+    CustomerEntity? safeSelectedCustomerForLedger;
+    if (_selectedCustomerForLedger != null) {
+      for (final c in customerList) {
+        if ((c.id.isNotEmpty && c.id == _selectedCustomerForLedger!.id) ||
+            (c.phone.isNotEmpty && c.phone == _selectedCustomerForLedger!.phone)) {
+          safeSelectedCustomerForLedger = c;
+          break;
+        }
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -410,7 +430,7 @@ class _DataExportScreenState extends State<DataExportScreen> {
                       ),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<CustomerEntity?>(
-                        value: _selectedCustomerForLedger,
+                        value: safeSelectedCustomerForLedger,
                         isExpanded: true,
                         decoration: InputDecoration(
                           hintText: 'Select Customer to Export Ledger',

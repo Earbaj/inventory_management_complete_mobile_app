@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/money_util.dart';
 import '../../../posbilling/domain/entities/sale_entity.dart';
 import '../../customer_transaction.dart';
+import '../bloc/customer_bloc.dart';
+import '../bloc/customer_state.dart';
 import '../../../returnandrestoke/domain/entities/return_item_entity.dart';
 
 class TransactionDetailsSheet extends StatelessWidget {
@@ -94,6 +97,27 @@ class TransactionDetailsSheet extends StatelessWidget {
         '${item.createdAt.month.toString().padLeft(2, '0')}/'
         '${item.createdAt.year} ${item.createdAt.hour.toString().padLeft(2, '0')}:${item.createdAt.minute.toString().padLeft(2, '0')}';
 
+    // Safely resolve customer name
+    String customerDisplayName = item.customerName?.trim() ?? '';
+    if (customerDisplayName.isEmpty || customerDisplayName == 'Walk-in Customer') {
+      if (item.customerId != null && item.customerId!.isNotEmpty) {
+        try {
+          final custState = context.read<CustomerBloc>().state;
+          if (custState is CustomerLoadedState) {
+            for (final c in custState.customers) {
+              if (c.id == item.customerId) {
+                customerDisplayName = c.name;
+                break;
+              }
+            }
+          }
+        } catch (_) {}
+      }
+    }
+    if (customerDisplayName.isEmpty) {
+      customerDisplayName = 'Walk-in Customer';
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surface,
@@ -160,7 +184,7 @@ class TransactionDetailsSheet extends StatelessWidget {
               children: [
                 _buildDetailRow('Returned Item', item.itemName, isBold: true),
                 const SizedBox(height: 8),
-                _buildDetailRow('Customer Name', item.customerName ?? 'Walk-in Customer'),
+                _buildDetailRow('Customer Name', customerDisplayName),
                 const SizedBox(height: 8),
                 _buildDetailRow('Return Quantity', '${item.returnQuantity} units'),
                 const SizedBox(height: 8),

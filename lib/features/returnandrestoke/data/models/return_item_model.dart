@@ -45,24 +45,62 @@ class ReturnItemModel {
 
   factory ReturnItemModel.fromJson(Map<String, dynamic> json) {
     Map<String, dynamic> itemMap = json;
-    if (json['returnedItems'] is List && (json['returnedItems'] as List).isNotEmpty) {
-      final firstItem = (json['returnedItems'] as List).first;
+    if (json['data'] is Map<String, dynamic>) {
+      itemMap = json['data'] as Map<String, dynamic>;
+    } else if (json['return'] is Map<String, dynamic>) {
+      itemMap = json['return'] as Map<String, dynamic>;
+    }
+
+    if (itemMap['returnedItems'] is List && (itemMap['returnedItems'] as List).isNotEmpty) {
+      final firstItem = (itemMap['returnedItems'] as List).first;
       if (firstItem is Map<String, dynamic>) {
-        itemMap = Map<String, dynamic>.from(json)..addAll(firstItem);
+        itemMap = Map<String, dynamic>.from(itemMap)..addAll(firstItem);
       }
     }
 
     final dynamic restockedVal = itemMap['isRestocked'] ?? itemMap['is_restocked'] ?? itemMap['restocked'];
     final bool restocked = restockedVal == null ? true : (restockedVal == true || restockedVal.toString() == 'true');
 
+    String? parsedCustomerId;
+    String? parsedCustomerName;
+
+    if (itemMap['customer'] is Map<String, dynamic>) {
+      final custMap = itemMap['customer'] as Map<String, dynamic>;
+      parsedCustomerId = custMap['_id']?.toString() ?? custMap['id']?.toString();
+      parsedCustomerName = custMap['name']?.toString();
+    } else if (itemMap['customerId'] is Map<String, dynamic>) {
+      final custMap = itemMap['customerId'] as Map<String, dynamic>;
+      parsedCustomerId = custMap['_id']?.toString() ?? custMap['id']?.toString();
+      parsedCustomerName = custMap['name']?.toString();
+    } else if (itemMap['sale'] is Map<String, dynamic> && (itemMap['sale'] as Map<String, dynamic>)['customer'] is Map) {
+      final custMap = (itemMap['sale'] as Map<String, dynamic>)['customer'] as Map<String, dynamic>;
+      parsedCustomerId = custMap['_id']?.toString() ?? custMap['id']?.toString();
+      parsedCustomerName = custMap['name']?.toString();
+    } else if (itemMap['saleId'] is Map<String, dynamic> && (itemMap['saleId'] as Map<String, dynamic>)['customer'] is Map) {
+      final custMap = (itemMap['saleId'] as Map<String, dynamic>)['customer'] as Map<String, dynamic>;
+      parsedCustomerId = custMap['_id']?.toString() ?? custMap['id']?.toString();
+      parsedCustomerName = custMap['name']?.toString();
+    } else {
+      parsedCustomerId = (itemMap['customerId'] ?? itemMap['customer_id'] ?? (itemMap['customer'] is String ? itemMap['customer'] : null))?.toString();
+      parsedCustomerName = (itemMap['customerName'] ?? itemMap['customer_name'])?.toString();
+    }
+
     return ReturnItemModel(
       id: itemMap['id']?.toString() ?? itemMap['_id']?.toString() ?? '',
-      saleId: itemMap['saleId']?.toString() ?? itemMap['sale_id']?.toString() ?? '',
-      invoiceNo: itemMap['invoiceNo']?.toString() ?? itemMap['invoice_no']?.toString() ?? itemMap['invoiceNumber']?.toString() ?? '',
+      saleId: (itemMap['saleId'] is Map ? itemMap['saleId']['_id'] : itemMap['saleId'])?.toString() ??
+          (itemMap['sale_id'] is Map ? itemMap['sale_id']['_id'] : itemMap['sale_id'])?.toString() ??
+          (itemMap['sale'] is Map ? itemMap['sale']['_id'] : itemMap['sale'])?.toString() ??
+          '',
+      invoiceNo: itemMap['invoiceNo']?.toString() ??
+          itemMap['invoice_no']?.toString() ??
+          itemMap['invoiceNumber']?.toString() ??
+          (itemMap['sale'] is Map ? itemMap['sale']['invoiceNo'] : null)?.toString() ??
+          (itemMap['saleId'] is Map ? itemMap['saleId']['invoiceNo'] : null)?.toString() ??
+          '',
       itemId: itemMap['itemId']?.toString() ?? itemMap['item_id']?.toString() ?? '',
       itemName: itemMap['itemName']?.toString() ?? itemMap['item_name']?.toString() ?? itemMap['name']?.toString() ?? '',
-      customerId: itemMap['customerId']?.toString() ?? itemMap['customer_id']?.toString() ?? itemMap['customer']?.toString(),
-      customerName: itemMap['customerName']?.toString() ?? itemMap['customer_name']?.toString(),
+      customerId: parsedCustomerId,
+      customerName: parsedCustomerName,
       returnQuantity: _parseInt(itemMap['returnQuantity'] ?? itemMap['quantity'] ?? itemMap['qty'] ?? 1),
       unitPrice: _parseDouble(itemMap['unitPrice'] ?? itemMap['unit_price'] ?? itemMap['price']),
       totalRefundAmount: _parseDouble(itemMap['totalRefundAmount'] ?? itemMap['refundAmount'] ?? itemMap['refund_amount'] ?? itemMap['totalPrice'] ?? itemMap['totalRefund']),

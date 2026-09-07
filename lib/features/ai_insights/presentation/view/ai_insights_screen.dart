@@ -65,9 +65,29 @@ class _AiInsightsScreenState extends State<AiInsightsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // Fetch customer list for AI credit score lookup
+    // Fetch customer list for AI credit score lookup & Deduplicate
     final custSnapshot = context.watch<CustomerBloc>().state;
-    final List<CustomerEntity> customerList = custSnapshot is CustomerLoadedState ? custSnapshot.customers : [];
+    final List<CustomerEntity> rawCustomers = custSnapshot is CustomerLoadedState ? custSnapshot.customers : [];
+
+    final Map<String, CustomerEntity> uniqueCustomerMap = {};
+    for (final customer in rawCustomers) {
+      final key = customer.id.isNotEmpty ? customer.id : customer.phone;
+      if (key.isNotEmpty && !uniqueCustomerMap.containsKey(key)) {
+        uniqueCustomerMap[key] = customer;
+      }
+    }
+    final List<CustomerEntity> customerList = uniqueCustomerMap.values.toList();
+
+    CustomerEntity? safeSelectedCustomerForScore;
+    if (_selectedCustomerForScore != null) {
+      for (final c in customerList) {
+        if ((c.id.isNotEmpty && c.id == _selectedCustomerForScore!.id) ||
+            (c.phone.isNotEmpty && c.phone == _selectedCustomerForScore!.phone)) {
+          safeSelectedCustomerForScore = c;
+          break;
+        }
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -311,7 +331,7 @@ class _AiInsightsScreenState extends State<AiInsightsScreen> {
                           children: [
                             Expanded(
                               child: DropdownButtonFormField<CustomerEntity?>(
-                                value: _selectedCustomerForScore,
+                                value: safeSelectedCustomerForScore,
                                 isExpanded: true,
                                 decoration: InputDecoration(
                                   hintText: 'Select Customer',

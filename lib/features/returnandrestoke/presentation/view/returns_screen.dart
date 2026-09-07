@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/di/injection_container.dart';
 import '../../../../core/utils/money_util.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../../core/widgets/global_empty_placeholder.dart';
@@ -7,7 +8,7 @@ import '../../../customers/domain/entities/customer_entity.dart';
 import '../../../customers/presentation/bloc/customer_bloc.dart';
 import '../../../customers/presentation/bloc/customer_event.dart';
 import '../../../customers/presentation/bloc/customer_state.dart';
-import '../../../posbilling/domain/entities/cart_item_entity.dart';
+import '../../../inventory/presentation/bloc/inventory_event.dart';
 import '../../../posbilling/domain/entities/sale_entity.dart';
 import '../../../reports/presentation/bloc/reports_bloc.dart';
 import '../../../reports/presentation/bloc/reports_event.dart';
@@ -111,71 +112,116 @@ class _ReturnsScreenState extends State<ReturnsScreen>
   }
 
   Future<void> _submitProductReturn() async {
-    if (_selectedInvoice == null || _totalReturnItemsCount == 0) return;
+    if (_selectedInvoice == null || _totalReturnItemsCount == 0 || _isSubmitting) return;
 
     setState(() => _isSubmitting = true);
 
     try {
-      int processedCount = 0;
-      for (final item in _selectedInvoice!.items) {
-        final qty = _returnQuantities[item.item.id] ?? 0;
-        if (qty > 0) {
-          final returnItem = ReturnItemEntity(
-            id: '',
-            saleId: _selectedInvoice!.id.isNotEmpty
-                ? _selectedInvoice!.id
-                : _selectedInvoice!.invoiceNo,
-            invoiceNo: _selectedInvoice!.invoiceNo,
-            itemId: item.item.id,
-            itemName: item.item.name,
-            customerId: _selectedCustomer?.id ?? _selectedInvoice!.customer?.id,
-            customerName:
-                _selectedCustomer?.name ??
-                _selectedInvoice!.customer?.name ??
-                'Walk-in Customer',
-            returnQuantity: qty,
-            unitPrice: item.item.retailSellPrice,
-            totalRefundAmount: qty * item.item.retailSellPrice,
-            refundMethod: _refundMethod,
-            isRestocked: _isRestocked,
-            reason: reasonController.text.trim().isNotEmpty
-                ? reasonController.text.trim()
-                : 'Customer Return',
-            createdAt: DateTime.now(),
-          );
+      // 1. Strictly lock customer context to prevent misattribution across returned items
+      final selectedCust = _selectedCustomer;
+      final invoiceCust = _selectedInvoice?.customer;
 
-          context.read<ReturnsBloc>().add(
-            ProcessReturnItemEvent(returnItem),
-          );
-          processedCount++;
+      String targetCustomerId = (selectedCust?.id.isNotEmpty == true)
+          ? selectedCust!.id
+          : (invoiceCust?.id ?? '');
+      String targetCustomerName = (selectedCust?.name.isNotEmpty == true)
+          ? selectedCust!.name
+          : (invoiceCust?.name.isNotEmpty == true
+              ? invoiceCust!.name
+              : 'Walk-in Customer');
+
+      // If ID is missing but name matches an existing customer, resolve from CustomerBloc
+      if (targetCustomerId.isEmpty &&
+          targetCustomerName.isNotEmpty &&
+          targetCustomerName != 'Walk-in Customer') {
+        final custState = context.read<CustomerBloc>().state;
+        if (custState is CustomerLoadedState) {
+          for (final c in custState.customers) {
+            if (c.name.trim().toLowerCase() == targetCustomerName.trim().toLowerCase()) {
+              targetCustomerId = c.id;
+              break;
+            }
+          }
         }
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Successfully processed return for $processedCount item(s) & restocked inventory!',
+      final targetSaleId = _selectedInvoice!.id.isNotEmpty
+          ? _selectedInvoice!.id
+          : _selectedInvoice!.invoiceNo;
+      final targetInvoiceNo = _selectedInvoice!.invoiceNo;
+      final refundMethod = _refundMethod;
+      final isRestocked = _isRestocked;
+      final reason = reasonController.text.trim().isNotEmpty
+          ? reasonController.text.trim()
+          : 'Customer Return';
+
+      final List<ReturnItemEntity> itemsToReturn = [];
+      for (final item in _selectedInvoice!.items) {
+        final qty = _returnQuantities[item.item.id] ?? 0;
+        if (qty > 0) {
+          itemsToReturn.add(ReturnItemEntity(
+            id: '',
+            saleId: targetSaleId,
+            invoiceNo: targetInvoiceNo,
+            itemId: item.item.id,
+            itemName: item.item.name,
+            customerId: targetCustomerId.isNotEmpty ? targetCustomerId : null,
+            customerName: targetCustomerName,
+            returnQuantity: qty,
+            unitPrice: item.item.retailSellPrice,
+            totalRefundAmount: qty * item.item.retailSellPrice,
+            refundMethod: refundMethod,
+            isRestocked: isRestocked,
+            reason: reason,
+            createdAt: DateTime.now(),
+          ));
+        }
+      }
+
+      // 2. Process returns sequentially to prevent concurrency race conditions on backend
+      final returnsBloc = context.read<ReturnsBloc>();
+      for (final returnItem in itemsToReturn) {
+        await returnsBloc.processReturnUseCase(returnItem);
+      }
+
+      // 3. Refresh all related blocs
+      returnsBloc.add(const FetchReturnLogsEvent());
+      try {
+        InjectionContainer.inventoryBloc.add(const FetchInventoryItemsEvent());
+        InjectionContainer.reportsBloc.add(const FetchReportsEvent());
+        InjectionContainer.customerBloc.add(const FetchCustomersEvent());
+      } catch (_) {}
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Successfully processed return for ${itemsToReturn.length} item(s) & restocked inventory!',
+            ),
+            backgroundColor: Colors.green[700],
           ),
-          backgroundColor: Colors.green[700],
-        ),
-      );
+        );
 
-      setState(() {
-        _selectedInvoice = null;
-        _returnQuantities.clear();
-        reasonController.clear();
-        _isSubmitting = false;
-      });
+        setState(() {
+          _selectedCustomer = null;
+          _selectedInvoice = null;
+          _returnQuantities.clear();
+          reasonController.clear();
+          _isSubmitting = false;
+        });
 
-      _tabController.animateTo(1); // Switch to Return History tab
+        _tabController.animateTo(1); // Switch to Return History tab
+      }
     } catch (e) {
-      setState(() => _isSubmitting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to process return: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to process return: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -229,10 +275,31 @@ class _ReturnsScreenState extends State<ReturnsScreen>
     ThemeData theme,
     ColorScheme colorScheme,
   ) {
-    // 1. Fetch Customers List
+    // 1. Fetch Customers List & Deduplicate
     final custSnapshot = context.watch<CustomerBloc>().state;
-    final List<CustomerEntity> customerList =
+    final List<CustomerEntity> rawCustomers =
         custSnapshot is CustomerLoadedState ? custSnapshot.customers : [];
+
+    final Map<String, CustomerEntity> uniqueCustomerMap = {};
+    for (final customer in rawCustomers) {
+      final key = customer.id.isNotEmpty ? customer.id : customer.phone;
+      if (key.isNotEmpty && !uniqueCustomerMap.containsKey(key)) {
+        uniqueCustomerMap[key] = customer;
+      }
+    }
+    final List<CustomerEntity> customerList = uniqueCustomerMap.values.toList();
+
+    // Safely resolve selected customer from the deduplicated list
+    CustomerEntity? safeSelectedCustomer;
+    if (_selectedCustomer != null) {
+      for (final c in customerList) {
+        if ((c.id.isNotEmpty && c.id == _selectedCustomer!.id) ||
+            (c.phone.isNotEmpty && c.phone == _selectedCustomer!.phone)) {
+          safeSelectedCustomer = c;
+          break;
+        }
+      }
+    }
 
     // 2. Fetch Sales Invoices List
     final reportsSnapshot = context.watch<ReportsBloc>().state;
@@ -241,21 +308,31 @@ class _ReturnsScreenState extends State<ReturnsScreen>
         : [];
 
     // Filter invoices by selected customer
-    final List<SaleEntity> filteredInvoices = allInvoices.where((sale) {
-      if (_selectedCustomer == null) return true;
+    final List<SaleEntity> rawFilteredInvoices = allInvoices.where((sale) {
+      if (safeSelectedCustomer == null) return true;
       final matchId =
           sale.customer?.id.isNotEmpty == true &&
-          sale.customer!.id == _selectedCustomer!.id;
+          sale.customer!.id == safeSelectedCustomer.id;
       final matchName =
           sale.customer?.name.isNotEmpty == true &&
           sale.customer!.name.trim().toLowerCase() ==
-              _selectedCustomer!.name.trim().toLowerCase();
+              safeSelectedCustomer.name.trim().toLowerCase();
       final matchPhone =
           sale.customer?.phone.isNotEmpty == true &&
-          _selectedCustomer!.phone.isNotEmpty &&
-          sale.customer!.phone.trim() == _selectedCustomer!.phone.trim();
+          safeSelectedCustomer.phone.isNotEmpty &&
+          sale.customer!.phone.trim() == safeSelectedCustomer.phone.trim();
       return matchId || matchName || matchPhone;
     }).toList();
+
+    // Deduplicate invoices
+    final Map<String, SaleEntity> uniqueInvoicesMap = {};
+    for (final inv in rawFilteredInvoices) {
+      final key = inv.id.isNotEmpty ? inv.id : inv.invoiceNo;
+      if (key.isNotEmpty && !uniqueInvoicesMap.containsKey(key)) {
+        uniqueInvoicesMap[key] = inv;
+      }
+    }
+    final List<SaleEntity> filteredInvoices = uniqueInvoicesMap.values.toList();
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
@@ -267,7 +344,7 @@ class _ReturnsScreenState extends State<ReturnsScreen>
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<CustomerEntity?>(
-          value: _selectedCustomer,
+          value: safeSelectedCustomer,
           isExpanded: true,
           decoration: InputDecoration(
             hintText: 'All Invoices / Walk-in Customer',
@@ -318,10 +395,16 @@ class _ReturnsScreenState extends State<ReturnsScreen>
         const SizedBox(height: 8),
         Builder(
           builder: (context) {
-            final SaleEntity? safeSelectedInvoice =
-                (filteredInvoices.contains(_selectedInvoice))
-                ? _selectedInvoice
-                : null;
+            SaleEntity? safeSelectedInvoice;
+            if (_selectedInvoice != null) {
+              for (final inv in filteredInvoices) {
+                if ((inv.id.isNotEmpty && inv.id == _selectedInvoice!.id) ||
+                    (inv.invoiceNo.isNotEmpty && inv.invoiceNo == _selectedInvoice!.invoiceNo)) {
+                  safeSelectedInvoice = inv;
+                  break;
+                }
+              }
+            }
 
             return DropdownButtonFormField<SaleEntity?>(
               value: safeSelectedInvoice,
@@ -1089,7 +1172,10 @@ class _ReturnsScreenState extends State<ReturnsScreen>
                     color: colorScheme.surface,
                     child: InkWell(
                       onTap: () {
-                        TransactionDetailsSheet.showForReturn(context, item);
+                        TransactionDetailsSheet.showForReturn(
+                          context,
+                          item.copyWith(customerName: resolvedCustomerName),
+                        );
                       },
                       borderRadius: BorderRadius.circular(16),
                       child: Padding(
