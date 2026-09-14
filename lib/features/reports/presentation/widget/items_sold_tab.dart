@@ -162,7 +162,7 @@ class ItemsSoldTab extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
 
-                // Name, Item ID, Sold By / Category
+                // Name, Remove Item ID, Sold By / Category
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
