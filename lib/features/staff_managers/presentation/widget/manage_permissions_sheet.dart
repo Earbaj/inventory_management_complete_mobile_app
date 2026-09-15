@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/models/staff_model.dart';
@@ -34,6 +35,7 @@ class _ManagePermissionsSheetState extends State<ManagePermissionsSheet> {
   }
 
   Future<void> _savePermissions() async {
+    if (isSaving) return;
     setState(() {
       isSaving = true;
     });
@@ -49,17 +51,34 @@ class _ManagePermissionsSheetState extends State<ManagePermissionsSheet> {
       permissions: updatedPermissions,
     );
 
-    context.read<StaffBloc>().add(UpdateStaffEvent(updatedStaff));
+    final completer = Completer<void>();
+    context.read<StaffBloc>().add(UpdateStaffEvent(updatedStaff, completer: completer));
 
-    if (mounted) {
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Permissions updated for ${widget.staff.name}'),
-          backgroundColor: Colors.green.shade700,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+    try {
+      await completer.future;
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Permissions updated for ${widget.staff.name}'),
+            backgroundColor: Colors.green.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          isSaving = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
@@ -67,13 +86,14 @@ class _ManagePermissionsSheetState extends State<ManagePermissionsSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
-      ),
+    return PopScope(
+      canPop: !isSaving,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+        ),
       child: SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -118,7 +138,7 @@ class _ManagePermissionsSheetState extends State<ManagePermissionsSheet> {
                   ),
                 ),
                 IconButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: isSaving ? null : () => Navigator.pop(context),
                   icon: const Icon(Icons.close_rounded),
                 ),
               ],
@@ -165,24 +185,57 @@ class _ManagePermissionsSheetState extends State<ManagePermissionsSheet> {
             SizedBox(
               width: double.infinity,
               height: 50,
-              child: FilledButton.icon(
+              child: FilledButton(
                 onPressed: isSaving ? null : _savePermissions,
-                icon: isSaving
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                      )
-                    : const Icon(Icons.check_rounded),
-                label: Text(
-                  isSaving ? 'Updating...' : 'Save Permissions',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  disabledBackgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.75),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
+                child: isSaving
+                    ? const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          ),
+                          SizedBox(width: 10),
+                          Text(
+                            'Updating Permissions...',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      )
+                    : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.check_rounded),
+                          SizedBox(width: 8),
+                          Text(
+                            'Save Permissions',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
               ),
             ),
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/error/failures.dart';
@@ -72,6 +73,7 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
   }
 
   Future<void> _submitForm() async {
+    if (isSaving) return;
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -99,10 +101,34 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
       createdAt: DateTime.now(),
     );
 
-    context.read<StaffBloc>().add(AddStaffEvent(newStaffEntity));
+    final completer = Completer<void>();
+    context.read<StaffBloc>().add(AddStaffEvent(newStaffEntity, completer: completer));
 
-    if (mounted) {
-      Navigator.pop(context, true);
+    try {
+      await completer.future;
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          isSaving = false;
+        });
+        final errorMsg = e.toString();
+        if (errorMsg.toLowerCase().contains('limit') ||
+            errorMsg.toLowerCase().contains('upgrade') ||
+            errorMsg.toLowerCase().contains('plan')) {
+          _showFreeTierLimitDialog(context, errorMsg);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMsg.replaceAll('Exception: ', '')),
+              backgroundColor: Colors.red.shade700,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -163,14 +189,16 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 480),
-        child: SingleChildScrollView(
+    return PopScope(
+      canPop: !isSaving,
+      child: Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -213,6 +241,7 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
                       // Full Name
                       TextFormField(
                         controller: _nameController,
+                        enabled: !isSaving,
                         decoration: const InputDecoration(
                           labelText: 'Full Name *',
                           hintText: 'e.g. John Doe',
@@ -230,6 +259,7 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
                       // Email
                       TextFormField(
                         controller: _emailController,
+                        enabled: !isSaving,
                         keyboardType: TextInputType.emailAddress,
                         decoration: const InputDecoration(
                           labelText: 'Email Address *',
@@ -251,6 +281,7 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
                       // Password
                       TextFormField(
                         controller: _passwordController,
+                        enabled: !isSaving,
                         obscureText: _obscurePassword,
                         decoration: InputDecoration(
                           labelText: 'Account Password *',
@@ -260,11 +291,13 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
                             icon: Icon(
                               _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
                             ),
-                            onPressed: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
+                            onPressed: isSaving
+                                ? null
+                                : () {
+                                    setState(() {
+                                      _obscurePassword = !_obscurePassword;
+                                    });
+                                  },
                           ),
                         ),
                         validator: (value) {
@@ -282,6 +315,7 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
                       // Phone
                       TextFormField(
                         controller: _phoneController,
+                        enabled: !isSaving,
                         keyboardType: TextInputType.phone,
                         decoration: const InputDecoration(
                           labelText: 'Phone Number *',
@@ -316,13 +350,15 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
                             ),
                           );
                         }).toList(),
-                        onChanged: (role) {
-                          if (role != null) {
-                            setState(() {
-                              _selectedRole = role;
-                            });
-                          }
-                        },
+                        onChanged: isSaving
+                            ? null
+                            : (role) {
+                                if (role != null) {
+                                  setState(() {
+                                    _selectedRole = role;
+                                  });
+                                }
+                              },
                       ),
                       const SizedBox(height: 14),
 
@@ -345,15 +381,17 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
                               child: Text(branch.name),
                             );
                           }).toList(),
-                          onChanged: (branchId) {
-                            if (branchId != null) {
-                              setState(() {
-                                _selectedBranchId = branchId;
-                                final b = _branches.firstWhere((element) => element.id == branchId);
-                                _selectedBranchName = b.name;
-                              });
-                            }
-                          },
+                          onChanged: isSaving
+                              ? null
+                              : (branchId) {
+                                  if (branchId != null) {
+                                    setState(() {
+                                      _selectedBranchId = branchId;
+                                      final b = _branches.firstWhere((element) => element.id == branchId);
+                                      _selectedBranchName = b.name;
+                                    });
+                                  }
+                                },
                         )
                       else
                         const Padding(
@@ -374,16 +412,52 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
                             child: const Text('Cancel'),
                           ),
                           const SizedBox(width: 12),
-                          FilledButton.icon(
+                          FilledButton(
                             onPressed: isSaving ? null : _submitForm,
-                            icon: isSaving
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: colorScheme.primary,
+                              disabledBackgroundColor: colorScheme.primary.withValues(alpha: 0.75),
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: isSaving
+                                ? const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.2,
+                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        ),
+                                      ),
+                                      SizedBox(width: 10),
+                                      Text(
+                                        'Saving Staff...',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
                                   )
-                                : const Icon(Icons.check_rounded),
-                            label: Text(isSaving ? 'Saving...' : 'Save Staff'),
+                                : const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.check_rounded, size: 20),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Save Staff',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                           ),
                         ],
                       ),
@@ -395,6 +469,7 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
