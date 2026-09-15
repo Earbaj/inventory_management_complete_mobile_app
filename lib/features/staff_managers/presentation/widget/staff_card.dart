@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/widgets/global_warning_dialog.dart';
 import '../../staff_manager_model.dart';
 
+
 class StaffCard extends StatelessWidget {
   final StaffMember staff;
   final VoidCallback onDelete;
@@ -45,11 +46,9 @@ class StaffCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Row: Avatar, Name, Role Badge, Status Badge
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Avatar Circle
                 CircleAvatar(
                   radius: 24,
                   backgroundColor: staff.role.backgroundColor,
@@ -60,8 +59,6 @@ class StaffCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-
-                // Name & Role
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -140,8 +137,6 @@ class StaffCard extends StatelessWidget {
                     ],
                   ),
                 ),
-
-                // Manage Permissions Button
                 if (onManagePermissions != null)
                   IconButton(
                     onPressed: onManagePermissions,
@@ -149,22 +144,17 @@ class StaffCard extends StatelessWidget {
                     tooltip: 'Manage Permissions',
                     visualDensity: VisualDensity.compact,
                   ),
-
-                // Delete Button (Admin action)
                 IconButton(
-                  onPressed: () => _confirmDelete(context),
+                  onPressed: onDelete,
                   icon: const Icon(Icons.delete_outline_rounded, color: Colors.red),
                   tooltip: 'Delete ${staff.role.label}',
                   visualDensity: VisualDensity.compact,
                 ),
               ],
             ),
-
             const SizedBox(height: 12),
             const Divider(height: 1),
             const SizedBox(height: 10),
-
-            // Middle Contact Details (Email, Phone, Branch)
             Row(
               children: [
                 Expanded(
@@ -189,10 +179,7 @@ class StaffCard extends StatelessWidget {
                 ),
               ],
             ),
-
             const SizedBox(height: 10),
-
-            // Bottom Footer (Sales Served count)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
@@ -244,22 +231,5 @@ class StaffCard extends StatelessWidget {
       ],
     );
   }
-
-  void _confirmDelete(BuildContext context) {
-    GlobalWarningDialog.show(
-      context,
-      title: 'Delete ${staff.role.label}',
-      message:
-      'Are you sure you want to delete ${staff.name} (${staff.role.label})?\n\n'
-          'This action cannot be undone.',
-      confirmText: 'Delete',
-      cancelText: 'Cancel',
-      icon: Icons.delete_forever_rounded,
-      confirmColor: Colors.red,
-      onConfirm: () async {
-        Navigator.pop(context);
-        onDelete();
-      },
-    );
-  }
 }
+
