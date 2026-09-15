@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/localization/localization_local.dart';
 import '../../domain/entities/business_advisor_entity.dart';
 
 class BusinessAdvisorCard extends StatelessWidget {
@@ -29,7 +30,7 @@ class BusinessAdvisorCard extends StatelessWidget {
                     const Icon(Icons.workspace_premium_rounded, color: Colors.purple, size: 24),
                     const SizedBox(width: 8),
                     Text(
-                      advisor.isAiPowered ? 'AI Business Advisor' : 'Business Advisor Insights',
+                      advisor.isAiPowered ? 'AI ${AiInsightsStrings.businessAdvisor.getString(context)}' : AiInsightsStrings.businessAdvisor.getString(context),
                       style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -56,9 +57,9 @@ class BusinessAdvisorCard extends StatelessWidget {
 
             // Growth Opportunities
             if (advisor.growthOpportunities.isNotEmpty) ...[
-              const Text(
-                '🚀 Growth Opportunities',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.purple),
+              Text(
+                AiInsightsStrings.growthOpportunities.getString(context),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.purple),
               ),
               const SizedBox(height: 8),
               ...advisor.growthOpportunities.map((opp) {
@@ -85,9 +86,9 @@ class BusinessAdvisorCard extends StatelessWidget {
 
             // Actionable Profit Tips
             if (advisor.actionableTips.isNotEmpty) ...[
-              const Text(
-                '💡 Actionable Profit Tips',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.teal),
+              Text(
+                AiInsightsStrings.actionableTips.getString(context),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.teal),
               ),
               const SizedBox(height: 8),
               ...advisor.actionableTips.map((tip) {

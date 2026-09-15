@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/localization/localization_local.dart';
+
 class ExportActionCard extends StatelessWidget {
   final String title;
   final String description;
@@ -23,7 +25,6 @@ class ExportActionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 14),
@@ -78,9 +79,9 @@ class ExportActionCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     icon: const Icon(Icons.table_chart_outlined, color: Colors.green, size: 18),
-                    label: const Text(
-                      'Export CSV',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.green),
+                    label: Text(
+                      ExportStrings.exportCsv.getString(context),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.green),
                     ),
                   ),
                 ),
@@ -96,9 +97,9 @@ class ExportActionCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
-                    label: const Text(
-                      'Export PDF',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    label: Text(
+                      ExportStrings.exportPdf.getString(context),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                     ),
                   ),
                 ),

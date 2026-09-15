@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/localization/localization_local.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../../core/widgets/global_empty_placeholder.dart';
 import '../bloc/branch_bloc.dart';
@@ -40,11 +41,11 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
           },
           icon: const Icon(Icons.menu_rounded),
         ),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.store_rounded, size: 24),
-            SizedBox(width: 8),
-            Text('Branch Management'),
+            const Icon(Icons.store_rounded, size: 24),
+            const SizedBox(width: 8),
+            Text(BranchesStrings.branchesTitle.getString(context)),
           ],
         ),
         actions: [
@@ -53,14 +54,14 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
               context.read<BranchBloc>().add(const FetchBranchesEvent(forceRefresh: true));
             },
             icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Refresh Branches',
+            tooltip: BranchesStrings.refreshBranches.getString(context),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openAddBranchSheet,
         icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Branch'),
+        label: Text(BranchesStrings.addBranch.getString(context)),
       ),
       body: BlocConsumer<BranchBloc, BranchState>(
         listenWhen: (previous, current) =>
@@ -165,9 +166,9 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
               physics: const AlwaysScrollableScrollPhysics(),
               child: SizedBox(
                 height: MediaQuery.of(context).size.height * 0.7,
-                child: const GlobalEmptyPlaceholder(
-                  title: 'No Branches Registered',
-                  subtitle: 'Tap + Add Branch button below to create your first shop branch.',
+                child: GlobalEmptyPlaceholder(
+                  title: BranchesStrings.noBranchesFound.getString(context),
+                  subtitle: BranchesStrings.createFirstBranch.getString(context),
                 ),
               ),
             )

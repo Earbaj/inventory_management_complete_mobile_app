@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/error/failures.dart';
+import '../../../../core/localization/localization_local.dart';
 import '../../../branches/domain/entities/branch_entity.dart';
 import '../../../branches/presentation/bloc/branch_bloc.dart';
 import '../../../branches/presentation/bloc/branch_event.dart';
@@ -213,10 +214,10 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
                   children: [
                     const Icon(Icons.person_add_rounded, color: Colors.white, size: 26),
                     const SizedBox(width: 12),
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'Add Manager / Staff',
-                        style: TextStyle(
+                        StaffStrings.addStaff.getString(context),
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -242,10 +243,10 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
                       TextFormField(
                         controller: _nameController,
                         enabled: !isSaving,
-                        decoration: const InputDecoration(
-                          labelText: 'Full Name *',
+                        decoration: InputDecoration(
+                          labelText: '${StaffStrings.fullName.getString(context)} *',
                           hintText: 'e.g. John Doe',
-                          prefixIcon: Icon(Icons.person_outline_rounded),
+                          prefixIcon: const Icon(Icons.person_outline_rounded),
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
@@ -261,10 +262,10 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
                         controller: _emailController,
                         enabled: !isSaving,
                         keyboardType: TextInputType.emailAddress,
-                        decoration: const InputDecoration(
-                          labelText: 'Email Address *',
+                        decoration: InputDecoration(
+                          labelText: '${StaffStrings.email.getString(context)} *',
                           hintText: 'e.g. manager@store.com',
-                          prefixIcon: Icon(Icons.email_outlined),
+                          prefixIcon: const Icon(Icons.email_outlined),
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
@@ -284,7 +285,7 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
                         enabled: !isSaving,
                         obscureText: _obscurePassword,
                         decoration: InputDecoration(
-                          labelText: 'Account Password *',
+                          labelText: '${StaffStrings.password.getString(context)} *',
                           hintText: 'Minimum 6 characters',
                           prefixIcon: const Icon(Icons.lock_outline_rounded),
                           suffixIcon: IconButton(
@@ -317,10 +318,10 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
                         controller: _phoneController,
                         enabled: !isSaving,
                         keyboardType: TextInputType.phone,
-                        decoration: const InputDecoration(
-                          labelText: 'Phone Number *',
+                        decoration: InputDecoration(
+                          labelText: '${StaffStrings.phone.getString(context)} *',
                           hintText: 'e.g. 01700000000',
-                          prefixIcon: Icon(Icons.phone_outlined),
+                          prefixIcon: const Icon(Icons.phone_outlined),
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
@@ -334,9 +335,9 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
                       // Role Dropdown
                       DropdownButtonFormField<StaffRole>(
                         initialValue: _selectedRole,
-                        decoration: const InputDecoration(
-                          labelText: 'Role *',
-                          prefixIcon: Icon(Icons.badge_outlined),
+                        decoration: InputDecoration(
+                          labelText: '${StaffStrings.role.getString(context)} *',
+                          prefixIcon: const Icon(Icons.badge_outlined),
                         ),
                         items: StaffRole.values.map((role) {
                           return DropdownMenuItem<StaffRole>(
@@ -371,9 +372,9 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
                       else if (_branches.isNotEmpty)
                         DropdownButtonFormField<String>(
                           initialValue: _selectedBranchId,
-                          decoration: const InputDecoration(
-                            labelText: 'Select Branch *',
-                            prefixIcon: Icon(Icons.store_outlined),
+                          decoration: InputDecoration(
+                            labelText: '${BranchesStrings.branchesTitle.getString(context)} *',
+                            prefixIcon: const Icon(Icons.store_outlined),
                           ),
                           items: _branches.map((branch) {
                             return DropdownMenuItem<String>(
@@ -409,7 +410,7 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
                         children: [
                           OutlinedButton(
                             onPressed: isSaving ? null : () => Navigator.pop(context),
-                            child: const Text('Cancel'),
+                            child: Text(Bangla.cancel.getString(context)),
                           ),
                           const SizedBox(width: 12),
                           FilledButton(
@@ -423,10 +424,10 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
                               ),
                             ),
                             child: isSaving
-                                ? const Row(
+                                ? Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      SizedBox(
+                                      const SizedBox(
                                         width: 18,
                                         height: 18,
                                         child: CircularProgressIndicator(
@@ -434,24 +435,24 @@ class _AddStaffDialogState extends State<AddStaffDialog> {
                                           valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                         ),
                                       ),
-                                      SizedBox(width: 10),
+                                      const SizedBox(width: 10),
                                       Text(
-                                        'Saving Staff...',
-                                        style: TextStyle(
+                                        Bangla.loading.getString(context),
+                                        style: const TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
                                     ],
                                   )
-                                : const Row(
+                                : Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.check_rounded, size: 20),
-                                      SizedBox(width: 8),
+                                      const Icon(Icons.check_rounded, size: 20),
+                                      const SizedBox(width: 8),
                                       Text(
-                                        'Save Staff',
-                                        style: TextStyle(
+                                        StaffStrings.saveStaff.getString(context),
+                                        style: const TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.w600,
                                         ),

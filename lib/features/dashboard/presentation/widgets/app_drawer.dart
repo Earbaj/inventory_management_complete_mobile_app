@@ -195,7 +195,7 @@ class AppDrawer extends StatelessWidget {
                         currentRoute: currentRoute,
                       ),
                       _DrawerItem(
-                        title: 'Returns',
+                        title: Bangla.returnsTitle.getString(context),
                         icon: Icons.assignment_return_outlined,
                         activeIcon: Icons.assignment_return_rounded,
                         route: '/returns',
@@ -223,14 +223,14 @@ class AppDrawer extends StatelessWidget {
                           currentRoute: currentRoute,
                         ),
                         _DrawerItem(
-                          title: 'Staff / Managers',
+                          title: Bangla.staffTitle.getString(context),
                           icon: Icons.manage_accounts_outlined,
                           activeIcon: Icons.manage_accounts_rounded,
                           route: '/staff-managers',
                           currentRoute: currentRoute,
                         ),
                         _DrawerItem(
-                          title: 'Branches 🏢',
+                          title: '${Bangla.branchesTitle.getString(context)} 🏢',
                           icon: Icons.store_outlined,
                           activeIcon: Icons.store_rounded,
                           route: '/branches',
@@ -239,7 +239,7 @@ class AppDrawer extends StatelessWidget {
                           userIsPremium: isPremiumUser,
                         ),
                         _DrawerItem(
-                          title: 'Expenses 💸',
+                          title: '${Bangla.expensesTitle.getString(context)} 💸',
                           icon: Icons.receipt_long_outlined,
                           activeIcon: Icons.receipt_long_rounded,
                           route: '/expenses',
@@ -248,7 +248,7 @@ class AppDrawer extends StatelessWidget {
                           userIsPremium: isPremiumUser,
                         ),
                         _DrawerItem(
-                          title: 'AI Insights 🤖',
+                          title: '${Bangla.aiInsightsTitle.getString(context)} 🤖',
                           icon: Icons.auto_awesome_outlined,
                           activeIcon: Icons.auto_awesome_rounded,
                           route: '/ai-insights',
@@ -257,7 +257,7 @@ class AppDrawer extends StatelessWidget {
                           userIsPremium: isPremiumUser,
                         ),
                         _DrawerItem(
-                          title: 'Data Export 📥',
+                          title: '${Bangla.exportTitle.getString(context)} 📥',
                           icon: Icons.cloud_download_outlined,
                           activeIcon: Icons.cloud_download_rounded,
                           route: '/export',
@@ -266,7 +266,7 @@ class AppDrawer extends StatelessWidget {
                           userIsPremium: isPremiumUser,
                         ),
                         _DrawerItem(
-                          title: 'Suppliers / মহাজন হিসাব 🚚',
+                          title: '${Bangla.suppliersTitle.getString(context)} 🚚',
                           icon: Icons.local_shipping_outlined,
                           activeIcon: Icons.local_shipping_rounded,
                           route: '/suppliers',
@@ -275,7 +275,7 @@ class AppDrawer extends StatelessWidget {
                           userIsPremium: isPremiumUser,
                         ),
                         _DrawerItem(
-                          title: 'Recycle Bin ♻️',
+                          title: '${Bangla.recycleBinTitle.getString(context)} ♻️',
                           icon: Icons.delete_sweep_outlined,
                           activeIcon: Icons.delete_sweep_rounded,
                           route: '/recycle-bin',
@@ -284,7 +284,7 @@ class AppDrawer extends StatelessWidget {
                           userIsPremium: isPremiumUser,
                         ),
                         _DrawerItem(
-                          title: 'My Profile / প্রোফাইল 👤',
+                          title: '${Bangla.profileTitle.getString(context)} 👤',
                           icon: Icons.person_outline,
                           activeIcon: Icons.person_rounded,
                           route: '/profile',

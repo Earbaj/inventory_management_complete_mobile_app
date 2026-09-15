@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/localization/localization_local.dart';
 import '../../domain/entities/demand_forecast_entity.dart';
 
 class DemandForecastCard extends StatelessWidget {
@@ -31,7 +32,7 @@ class DemandForecastCard extends StatelessWidget {
                     const Icon(Icons.trending_up_rounded, color: Colors.deepOrange, size: 24),
                     const SizedBox(width: 8),
                     Text(
-                      forecast.isAiPowered ? 'AI Demand Forecast' : 'Heuristic Demand Forecast',
+                      forecast.isAiPowered ? 'AI ${AiInsightsStrings.demandForecast.getString(context)}' : AiInsightsStrings.demandForecast.getString(context),
                       style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -54,9 +55,9 @@ class DemandForecastCard extends StatelessWidget {
 
             // Top Trending Products
             if (forecast.topTrendingProducts.isNotEmpty) ...[
-              const Text(
-                '🔥 Top Trending Products',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.green),
+              Text(
+                AiInsightsStrings.topTrendingProducts.getString(context),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.green),
               ),
               const SizedBox(height: 8),
               ...forecast.topTrendingProducts.map((p) {
@@ -103,9 +104,9 @@ class DemandForecastCard extends StatelessWidget {
 
             // Slow-Moving Risk Products
             if (forecast.slowMovingRiskProducts.isNotEmpty) ...[
-              const Text(
-                '⚠️ Slow-Moving / Dead Stock Risk',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.orange),
+              Text(
+                AiInsightsStrings.slowMovingRisk.getString(context),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.orange),
               ),
               const SizedBox(height: 8),
               ...forecast.slowMovingRiskProducts.map((p) {

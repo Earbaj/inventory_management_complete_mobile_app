@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../../core/utils/money_util.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/localization/localization_local.dart';
 import '../../../../core/route/app_route.dart';
+import '../../../../core/utils/money_util.dart';
 import '../../../../core/widgets/global_empty_placeholder.dart';
 import '../../../../core/widgets/global_warning_dialog.dart';
 import '../../domain/entities/expense_entity.dart';
@@ -23,15 +24,6 @@ class ExpensesScreen extends StatefulWidget {
 class _ExpensesScreenState extends State<ExpensesScreen> {
   final ScrollController _scrollController = ScrollController();
   String? _selectedCategory;
-
-  final List<Map<String, String>> _categories = const [
-    {'key': 'all', 'label': 'All Categories'},
-    {'key': 'utility', 'label': 'Utility ⚡'},
-    {'key': 'rent', 'label': 'Rent 🏪'},
-    {'key': 'salary', 'label': 'Salary 💼'},
-    {'key': 'transport', 'label': 'Transport 🚚'},
-    {'key': 'misc', 'label': 'Misc 📑'},
-  ];
 
   @override
   void initState() {
@@ -74,10 +66,10 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   void _confirmDeleteExpense(ExpenseEntity expense) {
     GlobalWarningDialog.show(
       context,
-      title: 'Move to Recycle Bin?',
-      message: 'Are you sure you want to delete "${expense.title}"? It can be restored later from the Recycle Bin.',
-      confirmText: 'Delete',
-      cancelText: 'Cancel',
+      title: ExpensesStrings.deleteExpense.getString(context),
+      message: ExpensesStrings.deleteExpenseConfirm.getString(context),
+      confirmText: Bangla.delete.getString(context),
+      cancelText: Bangla.cancel.getString(context),
       icon: Icons.delete_forever_rounded,
       confirmColor: Colors.red,
       onConfirm: () async {
@@ -88,6 +80,15 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final List<Map<String, String>> categories = [
+      {'key': 'all', 'label': Bangla.all.getString(context)},
+      {'key': 'utility', 'label': '${ExpensesStrings.utilities.getString(context)} ⚡'},
+      {'key': 'rent', 'label': '${ExpensesStrings.rent.getString(context)} 🏪'},
+      {'key': 'salary', 'label': '${ExpensesStrings.salary.getString(context)} 💼'},
+      {'key': 'transport', 'label': '${ExpensesStrings.transport.getString(context)} 🚚'},
+      {'key': 'misc', 'label': '${ExpensesStrings.other.getString(context)} 📑'},
+    ];
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -96,11 +97,11 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
           },
           icon: const Icon(Icons.menu_rounded),
         ),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.receipt_long_rounded, size: 24),
-            SizedBox(width: 8),
-            Text('Shop Expenses'),
+            const Icon(Icons.receipt_long_rounded, size: 24),
+            const SizedBox(width: 8),
+            Text(ExpensesStrings.expensesTitle.getString(context)),
           ],
         ),
         actions: [
@@ -109,14 +110,14 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
               context.read<ExpensesBloc>().add(const FetchExpensesEvent(isRefresh: true));
             },
             icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Refresh Expenses',
+            tooltip: Bangla.details.getString(context),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddExpenseSheet,
         icon: const Icon(Icons.add_rounded),
-        label: const Text('Record Expense'),
+        label: Text(ExpensesStrings.addExpense.getString(context)),
         backgroundColor: Colors.red.shade700,
         foregroundColor: Colors.white,
       ),
@@ -246,14 +247,14 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Row(
+                          Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Total Operational Expenses',
-                                style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+                                ExpensesStrings.totalExpenses.getString(context),
+                                style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
                               ),
-                              Icon(Icons.trending_down_rounded, color: Colors.white70),
+                              const Icon(Icons.trending_down_rounded, color: Colors.white70),
                             ],
                           ),
                           const SizedBox(height: 6),
@@ -282,7 +283,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                     child: Row(
-                      children: _categories.map((c) {
+                      children: categories.map((c) {
                         final key = c['key']!;
                         final isSelected = (key == 'all' && _selectedCategory == null) ||
                             (_selectedCategory == key);
@@ -312,8 +313,8 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                 // EXPENSES LIST
                 if (expenses.isEmpty)
                   GlobalEmptyPlaceholder.sliver(
-                    title: 'No Shop Expenses Found',
-                    subtitle: 'Tap + Record Expense to start recording your shop costs.',
+                    title: ExpensesStrings.noExpensesFound.getString(context),
+                    subtitle: ExpensesStrings.addExpense.getString(context),
                   )
                 else
                   SliverPadding(

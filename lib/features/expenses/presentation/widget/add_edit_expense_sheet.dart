@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/localization/localization_local.dart';
 import '../../../../core/utils/money_util.dart';
 import '../../domain/entities/expense_entity.dart';
 
@@ -169,14 +170,18 @@ class _AddEditExpenseSheetState extends State<AddEditExpenseSheet> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                isEditing ? 'Edit Expense Record' : 'Record New Expense',
+                                isEditing
+                                    ? ExpensesStrings.editExpense.getString(context)
+                                    : ExpensesStrings.addExpense.getString(context),
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                isEditing ? 'Modify recorded expense details' : 'Log shop costs & operating expenses',
+                                isEditing
+                                    ? ExpensesStrings.editExpense.getString(context)
+                                    : ExpensesStrings.expensesTitle.getString(context),
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: colorScheme.onSurfaceVariant,
                                 ),
@@ -201,7 +206,7 @@ class _AddEditExpenseSheetState extends State<AddEditExpenseSheet> {
                           ? _selectedCategory
                           : 'misc',
                       decoration: InputDecoration(
-                        labelText: 'Expense Category *',
+                        labelText: '${ExpensesStrings.category.getString(context)} *',
                         prefixIcon: const Icon(Icons.category_outlined),
                         filled: true,
                         fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
@@ -237,8 +242,8 @@ class _AddEditExpenseSheetState extends State<AddEditExpenseSheet> {
                       controller: _titleController,
                       textCapitalization: TextCapitalization.sentences,
                       decoration: InputDecoration(
-                        labelText: 'Title / Description *',
-                        hintText: 'e.g. Shop Electricity Bill August',
+                        labelText: '${ExpensesStrings.expenseTitle.getString(context)} *',
+                        hintText: 'e.g. Shop Electricity Bill',
                         prefixIcon: const Icon(Icons.description_outlined),
                         filled: true,
                         fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
@@ -261,7 +266,7 @@ class _AddEditExpenseSheetState extends State<AddEditExpenseSheet> {
                       controller: _amountController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(
-                        labelText: 'Amount (${MoneyUtil.currencySymbol}) *',
+                        labelText: '${ExpensesStrings.amount.getString(context)} (${MoneyUtil.currencySymbol}) *',
                         hintText: 'e.g. 1500.00',
                         prefixIcon: const Icon(Icons.attach_money_rounded),
                         filled: true,
@@ -303,7 +308,7 @@ class _AddEditExpenseSheetState extends State<AddEditExpenseSheet> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Expense Date',
+                                    ExpensesStrings.expenseDate.getString(context),
                                     style: TextStyle(
                                       fontSize: 11,
                                       color: colorScheme.onSurfaceVariant,
@@ -328,8 +333,8 @@ class _AddEditExpenseSheetState extends State<AddEditExpenseSheet> {
                     TextFormField(
                       controller: _noteController,
                       decoration: InputDecoration(
-                        labelText: 'Note / Payment Details (Optional)',
-                        hintText: 'e.g. Paid via bKash Merchant',
+                        labelText: ExpensesStrings.notes.getString(context),
+                        hintText: 'e.g. Paid via bKash',
                         prefixIcon: const Icon(Icons.note_alt_outlined),
                         filled: true,
                         fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
@@ -353,7 +358,7 @@ class _AddEditExpenseSheetState extends State<AddEditExpenseSheet> {
                               padding: const EdgeInsets.symmetric(vertical: 14),
                             ),
                             onPressed: _isSubmitting ? null : () => Navigator.pop(context),
-                            child: const Text('Cancel'),
+                            child: Text(Bangla.cancel.getString(context)),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -377,7 +382,9 @@ class _AddEditExpenseSheetState extends State<AddEditExpenseSheet> {
                                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                     ),
                                   )
-                                : Text(isEditing ? 'Update Expense' : 'Save Expense'),
+                                : Text(isEditing
+                                    ? Bangla.save.getString(context)
+                                    : ExpensesStrings.saveExpense.getString(context)),
                           ),
                         ),
                       ],

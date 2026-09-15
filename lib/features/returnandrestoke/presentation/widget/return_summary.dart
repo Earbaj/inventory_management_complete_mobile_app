@@ -1,151 +1,89 @@
 import 'package:flutter/material.dart';
+import '../../../../core/localization/localization_local.dart';
 import '../../../../core/utils/money_util.dart';
 import '../../return_models.dart';
 
-class ReturnSummary
-    extends StatelessWidget {
-
+class ReturnSummary extends StatelessWidget {
   final CustomerInvoice invoice;
-
-  final Map<String, int>
-  quantities;
+  final Map<String, int> quantities;
 
   const ReturnSummary({
+    super.key,
     required this.invoice,
     required this.quantities,
   });
 
   double get returnTotal {
-
     return invoice.items.fold(
       0,
-          (total, item) {
-
-        final quantity =
-            quantities[
-            item.productId] ??
-                0;
-
-        return total +
-            item.price * quantity;
+      (total, item) {
+        final quantity = quantities[item.productId] ?? 0;
+        return total + item.price * quantity;
       },
     );
   }
 
   int get totalItems {
-
     return quantities.values.fold(
       0,
-          (sum, quantity) =>
-      sum + quantity,
+      (sum, quantity) => sum + quantity,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-
-    final colorScheme =
-        Theme.of(context)
-            .colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-
-      padding:
-      const EdgeInsets.all(16),
-
-      decoration:
-      BoxDecoration(
-
-        color: colorScheme
-            .primary
-            .withValues(
-          alpha: 0.07,
-        ),
-
-        borderRadius:
-        BorderRadius.circular(
-          16,
-        ),
-
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.primary.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme
-              .primary
-              .withValues(
-            alpha: 0.15,
-          ),
+          color: colorScheme.primary.withValues(alpha: 0.15),
         ),
       ),
-
       child: Column(
         children: [
-
           Row(
             children: [
-
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Return Summary',
-
-                  style:
-                  TextStyle(
+                  ReturnsStrings.invoiceSummary.getString(context),
+                  style: const TextStyle(
                     fontSize: 16,
-                    fontWeight:
-                    FontWeight.w800,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
-
               Text(
                 '$totalItems item(s)',
-
-                style:
-                Theme.of(context)
-                    .textTheme
-                    .bodySmall,
+                style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
           ),
-
-          const SizedBox(
-            height: 12,
-          ),
-
+          const SizedBox(height: 12),
           Row(
             children: [
-
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Return Amount',
+                  ReturnsStrings.refundTotal.getString(context),
                 ),
               ),
-
               Text(
                 '${MoneyUtil.currencySymbol} ${returnTotal.toStringAsFixed(2)}',
-
-                style:
-                TextStyle(
+                style: TextStyle(
                   fontSize: 18,
-                  fontWeight:
-                  FontWeight.w800,
-
-                  color:
-                  colorScheme.primary,
+                  fontWeight: FontWeight.w800,
+                  color: colorScheme.primary,
                 ),
               ),
             ],
           ),
-
-          const SizedBox(
-            height: 5,
-          ),
-
+          const SizedBox(height: 5),
           Text(
-            'Returned items will be added '
-                'back to inventory stock.',
-
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall,
+            ReturnsStrings.restockSubtitle.getString(context),
+            style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
       ),

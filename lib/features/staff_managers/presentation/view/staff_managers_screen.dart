@@ -1,21 +1,22 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:inventory_management_complete/features/staff_managers/presentation/bloc/staff_bloc.dart';
 
-import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../../core/localization/localization_local.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../../core/widgets/global_empty_placeholder.dart';
 import '../../../../core/widgets/global_warning_dialog.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../domain/entities/staff_entity.dart';
+import '../../staff_manager_model.dart';
+import '../bloc/staff_bloc.dart';
 import '../bloc/staff_event.dart';
 import '../bloc/staff_state.dart';
-import '../../staff_manager_model.dart';
 import '../widget/add_staff_dialog.dart';
 import '../widget/manage_permissions_sheet.dart';
 import '../widget/staff_card.dart';
 import '../widget/staff_shimmer.dart';
-import '../../../auth/presentation/bloc/auth_state.dart';
 
 class StaffManagersScreen extends StatefulWidget {
   const StaffManagersScreen({super.key});
@@ -74,11 +75,11 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
   void _confirmDeleteStaff(String staffId, String staffName) {
     GlobalWarningDialog.show(
       context,
-      title: 'Delete Staff Member?',
+      title: StaffStrings.deleteStaffConfirm.getString(context),
       message:
-          'Are you sure you want to remove "$staffName" from your shop staff list?\n\nThis action will delete their account permanently.',
-      confirmText: 'Delete',
-      cancelText: 'Cancel',
+          '${StaffStrings.deleteStaffWarning.getString(context)}\n\n($staffName)',
+      confirmText: Bangla.delete.getString(context),
+      cancelText: Bangla.cancel.getString(context),
       icon: Icons.delete_forever_rounded,
       confirmColor: Colors.red,
       onConfirm: () async {
@@ -111,21 +112,21 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
           },
           icon: const Icon(Icons.menu_rounded),
         ),
-        title: const Text('Staff & Managers'),
+        title: Text(StaffStrings.staffTitle.getString(context)),
         actions: [
           IconButton(
             onPressed: () {
               context.read<StaffBloc>().add(FetchStaffEvent(_searchController.text));
             },
             icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Refresh Staff List',
+            tooltip: Bangla.details.getString(context),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openAddStaffDialog,
         icon: const Icon(Icons.person_add_rounded),
-        label: const Text('Add Manager'),
+        label: Text(StaffStrings.addStaff.getString(context)),
       ),
       body: BlocConsumer<StaffBloc, StaffState>(
         listenWhen: (previous, current) =>
@@ -242,7 +243,7 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
                   controller: _searchController,
                   onChanged: _onSearchChanged,
                   decoration: InputDecoration(
-                    hintText: 'Search manager by name, phone or email',
+                    hintText: StaffStrings.searchStaff.getString(context),
                     prefixIcon: const Icon(Icons.search_rounded),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
@@ -278,9 +279,9 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
                                 physics: const AlwaysScrollableScrollPhysics(),
                                 child: SizedBox(
                                   height: MediaQuery.of(context).size.height * 0.6,
-                                  child: const GlobalEmptyPlaceholder(
-                                    title: 'No Staff Found',
-                                    subtitle: 'Add staff to start managing your business.',
+                                  child: GlobalEmptyPlaceholder(
+                                    title: StaffStrings.noStaffFound.getString(context),
+                                    subtitle: StaffStrings.addStaff.getString(context),
                                   ),
                                 ),
                               )

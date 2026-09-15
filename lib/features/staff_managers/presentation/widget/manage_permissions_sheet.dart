@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/localization/localization_local.dart';
 import '../../data/models/staff_model.dart';
 import '../../domain/entities/staff_entity.dart';
 import '../bloc/staff_bloc.dart';
@@ -60,7 +61,7 @@ class _ManagePermissionsSheetState extends State<ManagePermissionsSheet> {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Permissions updated for ${widget.staff.name}'),
+            content: Text(StaffStrings.permissionsSaved.getString(context)),
             backgroundColor: Colors.green.shade700,
             behavior: SnackBarBehavior.floating,
           ),
@@ -127,11 +128,11 @@ class _ManagePermissionsSheetState extends State<ManagePermissionsSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Permissions & Access',
+                        StaffStrings.managePermissions.getString(context),
                         style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        'Manager: ${widget.staff.name}',
+                        '${StaffStrings.manager.getString(context)}: ${widget.staff.name}',
                         style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
                       ),
                     ],
@@ -216,14 +217,14 @@ class _ManagePermissionsSheetState extends State<ManagePermissionsSheet> {
                           ),
                         ],
                       )
-                    : const Row(
+                    : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.check_rounded),
-                          SizedBox(width: 8),
+                          const Icon(Icons.check_rounded),
+                          const SizedBox(width: 8),
                           Text(
-                            'Save Permissions',
-                            style: TextStyle(
+                            Bangla.save.getString(context),
+                            style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
                             ),
