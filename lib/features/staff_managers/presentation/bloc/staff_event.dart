@@ -1,3 +1,4 @@
+import 'dart:async';
 import '../../domain/entities/staff_entity.dart';
 
 abstract class StaffEvent {
@@ -28,6 +29,7 @@ class UpdateStaffEvent extends StaffEvent {
 /// Event: Deletes a staff member.
 class DeleteStaffEvent extends StaffEvent {
   final String staffId;
+  final Completer<void>? completer;
 
-  const DeleteStaffEvent(this.staffId);
+  const DeleteStaffEvent(this.staffId, {this.completer});
 }

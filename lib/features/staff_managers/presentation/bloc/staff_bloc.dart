@@ -106,8 +106,10 @@ class StaffBloc extends Bloc<StaffEvent, StaffState> {
 
       emit(const StaffOperationSuccessState('Staff member deleted successfully!'));
       _emitLoadedState(emit);
+      event.completer?.complete();
     } catch (e) {
       emit(StaffErrorState(e.toString(), previousStaff: _allStaffMembers));
+      event.completer?.completeError(e);
     }
   }
 

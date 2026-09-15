@@ -7,6 +7,7 @@ class StaffCard extends StatelessWidget {
   final dynamic onToggleStatus;
   final VoidCallback? onEdit;
   final VoidCallback? onManagePermissions;
+  final bool isDeleting;
 
   const StaffCard({
     super.key,
@@ -15,6 +16,7 @@ class StaffCard extends StatelessWidget {
     this.onToggleStatus,
     this.onEdit,
     this.onManagePermissions,
+    this.isDeleting = false,
   });
 
   String _formatDate(DateTime dt) {
@@ -150,12 +152,24 @@ class StaffCard extends StatelessWidget {
                   ),
 
                 // Delete Button (Admin action)
-                IconButton(
-                  onPressed: onDelete,
-                  icon: const Icon(Icons.delete_outline_rounded, color: Colors.red),
-                  tooltip: 'Delete ${staff.role.label}',
-                  visualDensity: VisualDensity.compact,
-                ),
+                isDeleting
+                    ? const Padding(
+                        padding: EdgeInsets.all(10.0),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.2,
+                            color: Colors.red,
+                          ),
+                        ),
+                      )
+                    : IconButton(
+                        onPressed: onDelete,
+                        icon: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+                        tooltip: 'Delete ${staff.role.label}',
+                        visualDensity: VisualDensity.compact,
+                      ),
               ],
             ),
 
