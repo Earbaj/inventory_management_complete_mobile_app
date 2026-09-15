@@ -235,22 +235,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SizedBox(height: 12),
         ...InvoicePdfFormat.values.map((format) {
           final isSelected = _selectedPdfFormat == format;
-          IconData icon;
-          switch (format) {
-            case InvoicePdfFormat.classic:
-              icon = Icons.receipt_long_rounded;
-              break;
-            case InvoicePdfFormat.modern:
-              icon = Icons.auto_awesome_mosaic_rounded;
-              break;
-            case InvoicePdfFormat.fullWidth:
-              icon = Icons.table_chart_rounded;
-              break;
-            case InvoicePdfFormat.thermalPos:
-              icon = Icons.point_of_sale_rounded;
-              break;
-          }
-
           return Card(
             margin: const EdgeInsets.only(bottom: 10),
             elevation: isSelected ? 2 : 0,
@@ -279,20 +263,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 padding: const EdgeInsets.all(12),
                 child: Row(
                   children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: isSelected ? colorScheme.primary : colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        icon,
-                        color: isSelected ? Colors.white : colorScheme.onSurfaceVariant,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
