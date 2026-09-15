@@ -17,6 +17,7 @@ import '../widget/staff_card.dart';
 import '../widget/staff_shimmer.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 
+
 class StaffManagersScreen extends StatefulWidget {
   const StaffManagersScreen({super.key});
 
@@ -72,17 +73,22 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
     );
   }
 
-  void _confirmDeleteStaff(String staffId, String staffName) {
+  // FIX 1: Explicitly pass BuildContext and pop the dialog before dispatching delete event
+  void _confirmDeleteStaff(BuildContext context, String staffId, String staffName) {
     GlobalWarningDialog.show(
       context,
       title: 'Delete Staff Member?',
       message:
-      'Are you sure you want to remove "$staffName" from your shop staff list?\n\nThis action will delete their account permanently.',
+          'Are you sure you want to remove "$staffName" from your shop staff list?\n\nThis action will delete their account permanently.',
       confirmText: 'Delete',
       cancelText: 'Cancel',
       icon: Icons.delete_forever_rounded,
       confirmColor: Colors.red,
       onConfirm: () {
+        // Pop the confirmation dialog first using root navigator
+        Navigator.of(context, rootNavigator: true).pop();
+
+        // Dispatch delete event to BLoC
         context.read<StaffBloc>().add(DeleteStaffEvent(staffId));
       },
     );
@@ -105,7 +111,9 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
         actions: [
           IconButton(
             onPressed: () {
-              context.read<StaffBloc>().add(FetchStaffEvent(_searchController.text));
+              context
+                  .read<StaffBloc>()
+                  .add(FetchStaffEvent(_searchController.text));
             },
             icon: const Icon(Icons.refresh_rounded),
             tooltip: 'Refresh Staff List',
@@ -116,7 +124,8 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
                 _isFilterVisible = !_isFilterVisible;
               });
             },
-            icon: Icon(_isFilterVisible ? Icons.filter_alt_off:Icons.filter_alt),
+            icon: Icon(
+                _isFilterVisible ? Icons.filter_alt_off : Icons.filter_alt),
             tooltip: 'filter staff list',
           ),
         ],
@@ -128,10 +137,16 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
       ),
       body: BlocConsumer<StaffBloc, StaffState>(
         listenWhen: (previous, current) =>
-        current is StaffOperationSuccessState || current is StaffErrorState,
-        buildWhen: (previous, current) => current is! StaffOperationSuccessState,
+            current is StaffOperationSuccessState || current is StaffErrorState,
+        // FIX 2: Allow UI rebuilding on all state changes to prevent black/blank screens
+        buildWhen: (previous, current) => true,
         listener: (context, state) {
           if (state is StaffOperationSuccessState) {
+            // Re-fetch staff list to ensure the local list updates immediately
+            context
+                .read<StaffBloc>()
+                .add(FetchStaffEvent(_searchController.text));
+
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
@@ -151,8 +166,10 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
         },
         builder: (context, snapshot) {
           final state = snapshot;
-          final bool isInitialLoading = state is StaffLoadingState && state is! StaffLoadedState;
-          final bool isRefreshing = state is StaffLoadedState && state.isListLoading;
+          final bool isInitialLoading =
+              state is StaffLoadingState && state is! StaffLoadedState;
+          final bool isRefreshing =
+              state is StaffLoadedState && state.isListLoading;
 
           if (isInitialLoading) {
             return const StaffShimmerView();
@@ -168,7 +185,8 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: colorScheme.errorContainer.withValues(alpha: 0.3),
+                        color:
+                            colorScheme.errorContainer.withValues(alpha: 0.3),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -198,12 +216,15 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
                     const SizedBox(height: 24),
                     ElevatedButton.icon(
                       onPressed: () {
-                        context.read<StaffBloc>().add(FetchStaffEvent(_searchController.text));
+                        context
+                            .read<StaffBloc>()
+                            .add(FetchStaffEvent(_searchController.text));
                       },
                       icon: const Icon(Icons.refresh_rounded),
                       label: const Text('Try Again'),
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -216,21 +237,22 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
           }
 
           final authState = context.watch<AuthBloc>().state;
-          final String? currentUserId = authState is AuthenticatedState ? authState.user?.id : null;
+          final String? currentUserId =
+              authState is AuthenticatedState ? authState.user?.id : null;
 
           final List<StaffEntity> staffEntitiesSource = (state is StaffLoadedState)
               ? state.filteredStaff
               : (state is StaffErrorState ? state.previousStaff : []);
 
           // 1. Get raw entities excluding the logged-in user (primary owner) and superadmin
-          final rawEntities = staffEntitiesSource
-              .where((e) {
+          final rawEntities = staffEntitiesSource.where((e) {
             if (currentUserId != null) {
-              return e.id != currentUserId && e.role.toLowerCase() != 'superadmin';
+              return e.id != currentUserId &&
+                  e.role.toLowerCase() != 'superadmin';
             }
-            return e.role.toLowerCase() != 'admin' && e.role.toLowerCase() != 'superadmin';
-          })
-              .toList();
+            return e.role.toLowerCase() != 'admin' &&
+                e.role.toLowerCase() != 'superadmin';
+          }).toList();
 
           // 2. Map all raw entities to StaffMembers
           final List<StaffMember> allStaffList = rawEntities.map((e) {
@@ -259,7 +281,8 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
           for (int i = 0; i < rawEntities.length; i++) {
             final entity = rawEntities[i];
             final staff = allStaffList[i];
-            if (_selectedRoleFilter == null || staff.role == _selectedRoleFilter) {
+            if (_selectedRoleFilter == null ||
+                staff.role == _selectedRoleFilter) {
               staffEntities.add(entity);
               staffList.add(staff);
             }
@@ -267,8 +290,7 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
 
           return Column(
             children: [
-
-              if(_isFilterVisible)...[
+              if (_isFilterVisible) ...[
                 // SEARCH & FILTER HEADER
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -280,12 +302,12 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
                       prefixIcon: const Icon(Icons.search_rounded),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
-                        onPressed: () {
-                          _searchController.clear();
-                          _onSearchChanged('');
-                        },
-                        icon: const Icon(Icons.close_rounded),
-                      )
+                              onPressed: () {
+                                _searchController.clear();
+                                _onSearchChanged('');
+                              },
+                              icon: const Icon(Icons.close_rounded),
+                            )
                           : null,
                       filled: true,
                       fillColor: colorScheme.surfaceContainerHighest,
@@ -301,8 +323,8 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
                 // ROLE FILTER CHIPS
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   child: Row(
                     children: [
                       FilterChip(
@@ -321,8 +343,8 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
                             label: Text(role.label),
                             selected: isSelected,
                             onSelected: (_) {
-                              setState(() =>
-                              _selectedRoleFilter = isSelected ? null : role);
+                              setState(() => _selectedRoleFilter =
+                                  isSelected ? null : role);
                             },
                           ),
                         );
@@ -338,47 +360,57 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
                 child: (isInitialLoading || isRefreshing)
                     ? const StaffShimmerView()
                     : RefreshIndicator(
-                  onRefresh: () async {
-                    context.read<StaffBloc>().add(FetchStaffEvent(_searchController.text));
-                  },
-                  child: staffList.isEmpty
-                      ? SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    child: SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.6,
-                      child: const GlobalEmptyPlaceholder(
-                        title: 'No Staff Found',
-                        subtitle: 'Add staff to start managing your business.',
+                        onRefresh: () async {
+                          context
+                              .read<StaffBloc>()
+                              .add(FetchStaffEvent(_searchController.text));
+                        },
+                        child: staffList.isEmpty
+                            ? SingleChildScrollView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                child: SizedBox(
+                                  height:
+                                      MediaQuery.of(context).size.height * 0.6,
+                                  child: const GlobalEmptyPlaceholder(
+                                    title: 'No Staff Found',
+                                    subtitle:
+                                        'Add staff to start managing your business.',
+                                  ),
+                                ),
+                              )
+                            : ListView.builder(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                padding:
+                                    const EdgeInsets.fromLTRB(16, 4, 16, 80),
+                                itemCount: staffList.length,
+                                itemBuilder: (context, index) {
+                                  final staff = staffList[index];
+                                  final entity = staffEntities[index];
+                                  return StaffCard(
+                                    staff: staff,
+                                    onToggleStatus: () {
+                                      context.read<StaffBloc>().add(
+                                            UpdateStaffEvent(
+                                              entity.copyWith(
+                                                  isActive: !entity.isActive),
+                                            ),
+                                          );
+                                    },
+                                    onManagePermissions: () {
+                                      _openManagePermissions(context, entity);
+                                    },
+                                    onEdit: () {
+                                      _openManagePermissions(context, entity);
+                                    },
+                                    // FIX 3: Pass context to _confirmDeleteStaff
+                                    onDelete: () {
+                                      _confirmDeleteStaff(
+                                          context, entity.id, entity.name);
+                                    },
+                                  );
+                                },
+                              ),
                       ),
-                    ),
-                  )
-                      : ListView.builder(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 80),
-                    itemCount: staffList.length,
-                    itemBuilder: (context, index) {
-                      final staff = staffList[index];
-                      final entity = staffEntities[index];
-                      return StaffCard(
-                        staff: staff,
-                        onToggleStatus: () {
-                          context.read<StaffBloc>().add(UpdateStaffEvent(
-                            entity.copyWith(isActive: !entity.isActive),
-                          ));
-                        },
-                        onManagePermissions: () {
-                          _openManagePermissions(context, entity);
-                        },
-                        onEdit: () {
-                          _openManagePermissions(context, entity);
-                        },
-                        onDelete: () {
-                          _confirmDeleteStaff(entity.id, entity.name);
-                        },
-                      );
-                    },
-                  ),
-                ),
               ),
             ],
           );
