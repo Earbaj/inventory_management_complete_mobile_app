@@ -55,8 +55,21 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   void _showAddExpenseSheet() {
     AddEditExpenseSheet.show(
       context,
-      onSave: (expense) {
-        context.read<ExpensesBloc>().add(CreateExpenseEvent(expense));
+      onSave: (expense) async {
+        final bloc = context.read<ExpensesBloc>();
+        final future = bloc.stream
+            .firstWhere(
+              (s) => s is ExpensesOperationSuccessState || s is ExpensesErrorState,
+            )
+            .timeout(
+              const Duration(seconds: 20),
+              onTimeout: () => const ExpensesErrorState('Request timed out. Please check your connection.'),
+            );
+        bloc.add(CreateExpenseEvent(expense));
+        final state = await future;
+        if (state is ExpensesErrorState) {
+          throw Exception(state.message);
+        }
       },
     );
   }
@@ -65,8 +78,21 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     AddEditExpenseSheet.show(
       context,
       expenseToEdit: expense,
-      onSave: (updatedExpense) {
-        context.read<ExpensesBloc>().add(UpdateExpenseEvent(updatedExpense));
+      onSave: (updatedExpense) async {
+        final bloc = context.read<ExpensesBloc>();
+        final future = bloc.stream
+            .firstWhere(
+              (s) => s is ExpensesOperationSuccessState || s is ExpensesErrorState,
+            )
+            .timeout(
+              const Duration(seconds: 20),
+              onTimeout: () => const ExpensesErrorState('Request timed out. Please check your connection.'),
+            );
+        bloc.add(UpdateExpenseEvent(updatedExpense));
+        final state = await future;
+        if (state is ExpensesErrorState) {
+          throw Exception(state.message);
+        }
       },
     );
   }

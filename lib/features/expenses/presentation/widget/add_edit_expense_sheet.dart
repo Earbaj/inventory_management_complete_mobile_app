@@ -4,7 +4,7 @@ import '../../domain/entities/expense_entity.dart';
 
 class AddEditExpenseSheet extends StatefulWidget {
   final ExpenseEntity? expenseToEdit;
-  final Function(ExpenseEntity) onSave;
+  final Future<void> Function(ExpenseEntity) onSave;
 
   const AddEditExpenseSheet({
     super.key,
@@ -15,7 +15,7 @@ class AddEditExpenseSheet extends StatefulWidget {
   static Future<void> show(
     BuildContext context, {
     ExpenseEntity? expenseToEdit,
-    required Function(ExpenseEntity) onSave,
+    required Future<void> Function(ExpenseEntity) onSave,
   }) {
     return showModalBottomSheet(
       context: context,
@@ -85,13 +85,13 @@ class _AddEditExpenseSheetState extends State<AddEditExpenseSheet> {
     }
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (_isSubmitting) return;
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSubmitting = true);
 
-    final amount = double.tryParse(_amountController.text.trim()) ?? 0.0;
+    final amount = MoneyUtil.roundMoney(double.tryParse(_amountController.text.trim()) ?? 0.0);
     final expense = ExpenseEntity(
       id: widget.expenseToEdit?.id ?? '',
       category: _selectedCategory,
@@ -101,8 +101,16 @@ class _AddEditExpenseSheetState extends State<AddEditExpenseSheet> {
       note: _noteController.text.trim().isNotEmpty ? _noteController.text.trim() : null,
     );
 
-    widget.onSave(expense);
-    Navigator.pop(context);
+    try {
+      await widget.onSave(expense);
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
   }
 
   @override
@@ -222,19 +230,22 @@ class _AddEditExpenseSheetState extends State<AddEditExpenseSheet> {
                           ),
                         );
                       }).toList(),
-                      onChanged: (val) {
-                        if (val != null) {
-                          setState(() {
-                            _selectedCategory = val;
-                          });
-                        }
-                      },
+                      onChanged: _isSubmitting
+                          ? null
+                          : (val) {
+                              if (val != null) {
+                                setState(() {
+                                  _selectedCategory = val;
+                                });
+                              }
+                            },
                     ),
                     const SizedBox(height: 14),
 
                     // Title / Description
                     TextFormField(
                       controller: _titleController,
+                      enabled: !_isSubmitting,
                       textCapitalization: TextCapitalization.sentences,
                       decoration: InputDecoration(
                         labelText: 'Title / Description *',
@@ -259,6 +270,7 @@ class _AddEditExpenseSheetState extends State<AddEditExpenseSheet> {
                     // Amount Field
                     TextFormField(
                       controller: _amountController,
+                      enabled: !_isSubmitting,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(
                         labelText: 'Amount (${MoneyUtil.currencySymbol}) *',
@@ -286,7 +298,7 @@ class _AddEditExpenseSheetState extends State<AddEditExpenseSheet> {
 
                     // Date Picker
                     InkWell(
-                      onTap: _pickDate,
+                      onTap: _isSubmitting ? null : _pickDate,
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -327,6 +339,7 @@ class _AddEditExpenseSheetState extends State<AddEditExpenseSheet> {
                     // Note / Payment Details
                     TextFormField(
                       controller: _noteController,
+                      enabled: !_isSubmitting,
                       decoration: InputDecoration(
                         labelText: 'Note / Payment Details (Optional)',
                         hintText: 'e.g. Paid via bKash Merchant',
@@ -365,19 +378,37 @@ class _AddEditExpenseSheetState extends State<AddEditExpenseSheet> {
                               ),
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               backgroundColor: Colors.red.shade700,
+                              disabledBackgroundColor: Colors.red.shade700.withValues(alpha: 0.8),
                               foregroundColor: Colors.white,
+                              disabledForegroundColor: Colors.white,
                             ),
                             onPressed: _isSubmitting ? null : _submit,
                             child: _isSubmitting
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                    ),
+                                ? Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.2,
+                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        isEditing ? 'Updating...' : 'Saving...',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
                                   )
-                                : Text(isEditing ? 'Update Expense' : 'Save Expense'),
+                                : Text(
+                                    isEditing ? 'Update Expense' : 'Save Expense',
+                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                  ),
                           ),
                         ),
                       ],
