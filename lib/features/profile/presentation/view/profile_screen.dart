@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/localization/localization_local.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../../core/widgets/global_warning_dialog.dart';
 import '../../../auth/domain/entities/user_entity.dart';
@@ -29,7 +30,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Profile / ইউজার প্রোফাইল'),
+        title: Text(ProfileStrings.profileTitle.getString(context)),
         leading: IconButton(
           onPressed: () {
             AppRoute.shellScaffoldKey.currentState?.openDrawer();
@@ -59,7 +60,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           }
 
           if (user == null) {
-            return const Center(child: Text('প্রোফাইলের তথ্য লোড করা সম্ভব হয়নি।'));
+            return Center(child: Text(ProfileStrings.loadFailed.getString(context)));
           }
 
           return SingleChildScrollView(
@@ -130,7 +131,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Icons.email_outlined,
                           color: Colors.blue,
                         ),
-                        title: const Text('Email Address'),
+                        title: Text(ProfileStrings.emailAddress.getString(context)),
                         subtitle: Text(user.email),
                       ),
                       const Divider(height: 1),
@@ -139,7 +140,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Icons.phone_outlined,
                           color: Colors.green,
                         ),
-                        title: const Text('Mobile Number'),
+                        title: Text(ProfileStrings.mobileNumber.getString(context)),
                         subtitle: Text(
                           (user.phone != null && user.phone!.isNotEmpty) ? user.phone! : 'N/A',
                         ),
@@ -152,7 +153,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Icons.storefront_outlined,
                             color: Colors.orange,
                           ),
-                          title: const Text('Shop / Business Name'),
+                          title: Text(ProfileStrings.shopName.getString(context)),
                           subtitle: Text(user.shopName!),
                         ),
                       ],
@@ -175,15 +176,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          children: const [
-                            Icon(
+                          children: [
+                            const Icon(
                               Icons.warning_amber_rounded,
                               color: Colors.red,
                             ),
-                            SizedBox(width: 8),
+                            const SizedBox(width: 8),
                             Text(
-                              'Danger Zone / Account Delete',
-                              style: TextStyle(
+                              ProfileStrings.dangerZone.getString(context),
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.red,
                                 fontSize: 15,
@@ -192,9 +193,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        const Text(
-                          "If you delete than your account delete permanently and all of it's data",
-                          style: TextStyle(
+                        Text(
+                          ProfileStrings.dangerZoneWarning.getString(context),
+                          style: const TextStyle(
                             fontSize: 12,
                             color: Colors.black87,
                           ),
@@ -211,8 +212,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ),
                             icon: const Icon(Icons.delete_forever),
-                            label: const Text(
-                              'Delete Your Account',
+                            label: Text(
+                              ProfileStrings.deleteAccount.getString(context),
                             ),
                             onPressed: () => _confirmDeleteAccount(context),
                           ),
@@ -232,11 +233,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _confirmDeleteAccount(BuildContext context) {
     GlobalWarningDialog.show(
       context,
-      title: 'Delete Account',
-      message:
-          'Are you sure you want to permanently delete your account? All your data will be removed and you will be logged out.',
-      confirmText: 'Delete',
-      cancelText: 'Cancel',
+      title: ProfileStrings.deleteAccountConfirm.getString(context),
+      message: ProfileStrings.deleteAccountPrompt.getString(context),
+      confirmText: Bangla.delete.getString(context),
+      cancelText: Bangla.cancel.getString(context),
       icon: Icons.delete_forever_rounded,
       confirmColor: Colors.red,
       onConfirm: () {

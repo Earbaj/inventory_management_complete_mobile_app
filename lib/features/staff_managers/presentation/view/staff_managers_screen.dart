@@ -1,21 +1,22 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:inventory_management_complete/features/staff_managers/presentation/bloc/staff_bloc.dart';
 
-import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../../core/localization/localization_local.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../../core/widgets/global_empty_placeholder.dart';
 import '../../../../core/widgets/global_warning_dialog.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../domain/entities/staff_entity.dart';
+import '../../staff_manager_model.dart';
+import '../bloc/staff_bloc.dart';
 import '../bloc/staff_event.dart';
 import '../bloc/staff_state.dart';
-import '../../staff_manager_model.dart';
 import '../widget/add_staff_dialog.dart';
 import '../widget/manage_permissions_sheet.dart';
 import '../widget/staff_card.dart';
 import '../widget/staff_shimmer.dart';
-import '../../../auth/presentation/bloc/auth_state.dart';
 
 class StaffManagersScreen extends StatefulWidget {
   const StaffManagersScreen({super.key});
@@ -26,9 +27,8 @@ class StaffManagersScreen extends StatefulWidget {
 
 class _StaffManagersScreenState extends State<StaffManagersScreen> {
   final TextEditingController _searchController = TextEditingController();
-  StaffRole? _selectedRoleFilter;
   Timer? _searchDebounceTimer;
-  bool _isFilterVisible = false;
+  String? _deletingStaffId;
 
   @override
   void initState() {
@@ -75,15 +75,26 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
   void _confirmDeleteStaff(String staffId, String staffName) {
     GlobalWarningDialog.show(
       context,
-      title: 'Delete Staff Member?',
+      title: StaffStrings.deleteStaffConfirm.getString(context),
       message:
-      'Are you sure you want to remove "$staffName" from your shop staff list?\n\nThis action will delete their account permanently.',
-      confirmText: 'Delete',
-      cancelText: 'Cancel',
+          '${StaffStrings.deleteStaffWarning.getString(context)}\n\n($staffName)',
+      confirmText: Bangla.delete.getString(context),
+      cancelText: Bangla.cancel.getString(context),
       icon: Icons.delete_forever_rounded,
       confirmColor: Colors.red,
-      onConfirm: () {
-        context.read<StaffBloc>().add(DeleteStaffEvent(staffId));
+      onConfirm: () async {
+        setState(() => _deletingStaffId = staffId);
+        final completer = Completer<void>();
+        context.read<StaffBloc>().add(
+              DeleteStaffEvent(staffId, completer: completer),
+            );
+        try {
+          await completer.future;
+        } finally {
+          if (mounted) {
+            setState(() => _deletingStaffId = null);
+          }
+        }
       },
     );
   }
@@ -101,30 +112,21 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
           },
           icon: const Icon(Icons.menu_rounded),
         ),
-        title: const Text('Staff & Managers'),
+        title: Text(StaffStrings.staffTitle.getString(context)),
         actions: [
           IconButton(
             onPressed: () {
               context.read<StaffBloc>().add(FetchStaffEvent(_searchController.text));
             },
             icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Refresh Staff List',
-          ),
-          IconButton(
-            onPressed: () {
-              setState(() {
-                _isFilterVisible = !_isFilterVisible;
-              });
-            },
-            icon: Icon(_isFilterVisible ? Icons.filter_alt_off:Icons.filter_alt),
-            tooltip: 'filter staff list',
+            tooltip: Bangla.details.getString(context),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openAddStaffDialog,
         icon: const Icon(Icons.person_add_rounded),
-        label: const Text('Add Manager'),
+        label: Text(StaffStrings.addStaff.getString(context)),
       ),
       body: BlocConsumer<StaffBloc, StaffState>(
         listenWhen: (previous, current) =>
@@ -222,8 +224,8 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
               ? state.filteredStaff
               : (state is StaffErrorState ? state.previousStaff : []);
 
-          // 1. Get raw entities excluding the logged-in user (primary owner) and superadmin
-          final rawEntities = staffEntitiesSource
+          // 1. Filter raw entities excluding the logged-in user and superadmin
+          final List<StaffEntity> staffEntities = staffEntitiesSource
               .where((e) {
             if (currentUserId != null) {
               return e.id != currentUserId && e.role.toLowerCase() != 'superadmin';
@@ -232,153 +234,101 @@ class _StaffManagersScreenState extends State<StaffManagersScreen> {
           })
               .toList();
 
-          // 2. Map all raw entities to StaffMembers
-          final List<StaffMember> allStaffList = rawEntities.map((e) {
-            return StaffMember(
-              id: e.id,
-              name: e.name,
-              email: e.email,
-              phone: e.phone,
-              role: switch (e.role.toLowerCase()) {
-                'admin' || 'senior_manager' => StaffRole.seniorManager,
-                'manager' => StaffRole.manager,
-                'staff' || 'inventory_staff' => StaffRole.inventoryStaff,
-                _ => StaffRole.cashier,
-              },
-              status: e.isActive ? StaffStatus.active : StaffStatus.inactive,
-              joinedDate: e.createdAt,
-              assignedBranch: 'Main Branch',
-              salesServedCount: 12,
-            );
-          }).toList();
-
-          // 3. Filter both lists based on the selected role filter to keep indexes aligned
-          final List<StaffEntity> staffEntities = [];
-          final List<StaffMember> staffList = [];
-
-          for (int i = 0; i < rawEntities.length; i++) {
-            final entity = rawEntities[i];
-            final staff = allStaffList[i];
-            if (_selectedRoleFilter == null || staff.role == _selectedRoleFilter) {
-              staffEntities.add(entity);
-              staffList.add(staff);
-            }
-          }
-
           return Column(
             children: [
-
-              if(_isFilterVisible)...[
-                // SEARCH & FILTER HEADER
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                  child: TextField(
-                    controller: _searchController,
-                    onChanged: _onSearchChanged,
-                    decoration: InputDecoration(
-                      hintText: 'Search manager by name, phone or email',
-                      prefixIcon: const Icon(Icons.search_rounded),
-                      suffixIcon: _searchController.text.isNotEmpty
-                          ? IconButton(
-                        onPressed: () {
-                          _searchController.clear();
-                          _onSearchChanged('');
-                        },
-                        icon: const Icon(Icons.close_rounded),
-                      )
-                          : null,
-                      filled: true,
-                      fillColor: colorScheme.surfaceContainerHighest,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                    ),
-                  ),
-                ),
-                // ROLE FILTER CHIPS
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 4),
-                  child: Row(
-                    children: [
-                      FilterChip(
-                        label: const Text('All Managers'),
-                        selected: _selectedRoleFilter == null,
-                        onSelected: (_) {
-                          setState(() => _selectedRoleFilter = null);
-                        },
-                      ),
-                      const SizedBox(width: 8),
-                      ...StaffRole.values.map((role) {
-                        final isSelected = _selectedRoleFilter == role;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: FilterChip(
-                            label: Text(role.label),
-                            selected: isSelected,
-                            onSelected: (_) {
-                              setState(() =>
-                              _selectedRoleFilter = isSelected ? null : role);
+              // SEARCH BAR
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: _onSearchChanged,
+                  decoration: InputDecoration(
+                    hintText: StaffStrings.searchStaff.getString(context),
+                    prefixIcon: const Icon(Icons.search_rounded),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            onPressed: () {
+                              _searchController.clear();
+                              _onSearchChanged('');
                             },
-                          ),
-                        );
-                      }),
-                    ],
+                            icon: const Icon(Icons.close_rounded),
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: colorScheme.surfaceContainerHighest,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
                   ),
                 ),
-              ],
-              const SizedBox(height: 6),
+              ),
 
               // STAFF MEMBERS LIST
               Expanded(
                 child: (isInitialLoading || isRefreshing)
                     ? const StaffShimmerView()
                     : RefreshIndicator(
-                  onRefresh: () async {
-                    context.read<StaffBloc>().add(FetchStaffEvent(_searchController.text));
-                  },
-                  child: staffList.isEmpty
-                      ? SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    child: SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.6,
-                      child: const GlobalEmptyPlaceholder(
-                        title: 'No Staff Found',
-                        subtitle: 'Add staff to start managing your business.',
+                        onRefresh: () async {
+                          context.read<StaffBloc>().add(FetchStaffEvent(_searchController.text));
+                        },
+                        child: staffEntities.isEmpty
+                            ? SingleChildScrollView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                child: SizedBox(
+                                  height: MediaQuery.of(context).size.height * 0.6,
+                                  child: GlobalEmptyPlaceholder(
+                                    title: StaffStrings.noStaffFound.getString(context),
+                                    subtitle: StaffStrings.addStaff.getString(context),
+                                  ),
+                                ),
+                              )
+                            : ListView.builder(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                padding: const EdgeInsets.fromLTRB(16, 4, 16, 80),
+                                itemCount: staffEntities.length,
+                                itemBuilder: (context, index) {
+                                  final entity = staffEntities[index];
+                                  final staff = StaffMember(
+                                    id: entity.id,
+                                    name: entity.name,
+                                    email: entity.email,
+                                    phone: entity.phone,
+                                    role: switch (entity.role.toLowerCase()) {
+                                      'admin' || 'senior_manager' => StaffRole.seniorManager,
+                                      'manager' => StaffRole.manager,
+                                      'staff' || 'inventory_staff' => StaffRole.inventoryStaff,
+                                      _ => StaffRole.cashier,
+                                    },
+                                    status: entity.isActive ? StaffStatus.active : StaffStatus.inactive,
+                                    joinedDate: entity.createdAt,
+                                    assignedBranch: 'Main Branch',
+                                    salesServedCount: 12,
+                                  );
+
+                                  return StaffCard(
+                                    staff: staff,
+                                    isDeleting: _deletingStaffId == entity.id,
+                                    onToggleStatus: () {
+                                      context.read<StaffBloc>().add(UpdateStaffEvent(
+                                        entity.copyWith(isActive: !entity.isActive),
+                                      ));
+                                    },
+                                    onManagePermissions: () {
+                                      _openManagePermissions(context, entity);
+                                    },
+                                    onEdit: () {
+                                      _openManagePermissions(context, entity);
+                                    },
+                                    onDelete: () {
+                                      _confirmDeleteStaff(entity.id, entity.name);
+                                    },
+                                  );
+                                },
+                              ),
                       ),
-                    ),
-                  )
-                      : ListView.builder(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 80),
-                    itemCount: staffList.length,
-                    itemBuilder: (context, index) {
-                      final staff = staffList[index];
-                      final entity = staffEntities[index];
-                      return StaffCard(
-                        staff: staff,
-                        onToggleStatus: () {
-                          context.read<StaffBloc>().add(UpdateStaffEvent(
-                            entity.copyWith(isActive: !entity.isActive),
-                          ));
-                        },
-                        onManagePermissions: () {
-                          _openManagePermissions(context, entity);
-                        },
-                        onEdit: () {
-                          _openManagePermissions(context, entity);
-                        },
-                        onDelete: () {
-                          _confirmDeleteStaff(entity.id, entity.name);
-                        },
-                      );
-                    },
-                  ),
-                ),
               ),
             ],
           );

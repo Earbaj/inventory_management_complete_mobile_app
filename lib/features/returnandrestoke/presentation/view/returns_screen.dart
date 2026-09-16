@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/localization/localization_local.dart';
 import '../../../../core/utils/money_util.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../../core/widgets/global_empty_placeholder.dart';
@@ -238,9 +239,10 @@ class _ReturnsScreenState extends State<ReturnsScreen>
           },
           icon: const Icon(Icons.menu_rounded),
         ),
-        title: const Text('Returns & Restock'),
+        title: Text(ReturnsStrings.returnsTitle.getString(context)),
         actions: [
           IconButton(
+            tooltip: Bangla.refresh.getString(context),
             onPressed: () {
               context.read<ReturnsBloc>().add(const FetchReturnLogsEvent());
               context.read<CustomerBloc>().add(const FetchCustomersEvent());
@@ -251,9 +253,9 @@ class _ReturnsScreenState extends State<ReturnsScreen>
         ],
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(icon: Icon(Icons.restore_rounded), text: 'Process Return'),
-            Tab(icon: Icon(Icons.history_rounded), text: 'Return History'),
+          tabs: [
+            Tab(icon: const Icon(Icons.restore_rounded), text: ReturnsStrings.processReturn.getString(context)),
+            Tab(icon: const Icon(Icons.history_rounded), text: ReturnsStrings.returnLogs.getString(context)),
           ],
         ),
       ),
@@ -338,27 +340,27 @@ class _ReturnsScreenState extends State<ReturnsScreen>
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
       children: [
         // STEP 1: CUSTOMER SELECTION DROPDOWN
-        const Text(
-          '1. Select Customer',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+        Text(
+          ReturnsStrings.selectCustomer.getString(context),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<CustomerEntity?>(
           value: safeSelectedCustomer,
           isExpanded: true,
           decoration: InputDecoration(
-            hintText: 'All Invoices / Walk-in Customer',
+            hintText: ReturnsStrings.allCustomersAndWalkIn.getString(context),
             prefixIcon: const Icon(Icons.person_search_rounded),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
             filled: true,
             fillColor: colorScheme.surfaceContainerHighest,
           ),
           items: [
-            const DropdownMenuItem<CustomerEntity?>(
+            DropdownMenuItem<CustomerEntity?>(
               value: null,
               child: Text(
-                'All Customers & Walk-in Invoices',
-                style: TextStyle(fontWeight: FontWeight.w600),
+                ReturnsStrings.allCustomersAndWalkIn.getString(context),
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
             ...customerList.map((customer) {
@@ -388,9 +390,9 @@ class _ReturnsScreenState extends State<ReturnsScreen>
         const SizedBox(height: 20),
 
         // STEP 2: INVOICE SELECTION DROPDOWN
-        const Text(
-          '2. Select Invoice to Return Items From',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+        Text(
+          ReturnsStrings.selectInvoice.getString(context),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
         ),
         const SizedBox(height: 8),
         Builder(
@@ -411,8 +413,8 @@ class _ReturnsScreenState extends State<ReturnsScreen>
               isExpanded: true,
               decoration: InputDecoration(
                 hintText: filteredInvoices.isEmpty
-                    ? 'No invoices found for this customer'
-                    : 'Choose an invoice',
+                    ? ReturnsStrings.noInvoicesFound.getString(context)
+                    : ReturnsStrings.chooseInvoice.getString(context),
                 prefixIcon: const Icon(Icons.receipt_rounded),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
@@ -436,11 +438,11 @@ class _ReturnsScreenState extends State<ReturnsScreen>
                 final Color textColor;
 
                 if (isFullReturn) {
-                  badgeText = 'FULL RETURNED';
+                  badgeText = ReturnsStrings.fullReturned.getString(context);
                   badgeColor = Colors.red.withValues(alpha: 0.15);
                   textColor = Colors.red[800]!;
                 } else if (isPartialReturn) {
-                  badgeText = 'PARTIAL RETURN';
+                  badgeText = ReturnsStrings.partialReturn.getString(context);
                   badgeColor = Colors.orange.withValues(alpha: 0.15);
                   textColor = Colors.orange[900]!;
                 } else if (hasDue) {
@@ -695,9 +697,9 @@ class _ReturnsScreenState extends State<ReturnsScreen>
           ),
 
           const SizedBox(height: 18),
-          const Text(
-            '3. Select Return Quantity for Purchased Items',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          Text(
+            ReturnsStrings.selectReturnQty.getString(context),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
           ),
           const SizedBox(height: 10),
 
@@ -785,9 +787,9 @@ class _ReturnsScreenState extends State<ReturnsScreen>
                       return Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'Return Quantity:',
-                            style: TextStyle(
+                          Text(
+                            ReturnsStrings.returnQuantity.getString(context),
+                            style: const TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 13,
                             ),
@@ -866,9 +868,9 @@ class _ReturnsScreenState extends State<ReturnsScreen>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Total Return Items:',
-                      style: TextStyle(fontSize: 14),
+                    Text(
+                      ReturnsStrings.totalReturnUnits.getString(context),
+                      style: const TextStyle(fontSize: 14),
                     ),
                     Text(
                       '$_totalReturnItemsCount units',
@@ -880,9 +882,9 @@ class _ReturnsScreenState extends State<ReturnsScreen>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Total Refund Amount:',
-                      style: TextStyle(
+                    Text(
+                      ReturnsStrings.refundTotal.getString(context),
+                      style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
                       ),
@@ -901,9 +903,9 @@ class _ReturnsScreenState extends State<ReturnsScreen>
 
                 // RESTOCK INVENTORY SWITCH
                 SwitchListTile(
-                  title: const Text('Restock Product(s) back into Inventory'),
-                  subtitle: const Text(
-                    'Increases available stock in warehouse',
+                  title: Text(ReturnsStrings.restockToInventory.getString(context)),
+                  subtitle: Text(
+                    ReturnsStrings.restockSubtitle.getString(context),
                   ),
                   value: _isRestocked,
                   contentPadding: EdgeInsets.zero,
@@ -913,16 +915,16 @@ class _ReturnsScreenState extends State<ReturnsScreen>
                 const SizedBox(height: 10),
 
                 // REFUND METHOD
-                const Text(
-                  'Refund Method',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                Text(
+                  ReturnsStrings.refundMethod.getString(context),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 ),
                 const SizedBox(height: 6),
                 Row(
                   children: [
                     Expanded(
                       child: ChoiceChip(
-                        label: const Text('Cash'),
+                        label: Text(ReturnsStrings.cashRefund.getString(context)),
                         selected: _refundMethod == 'cash',
                         onSelected: (sel) {
                           if (sel) setState(() => _refundMethod = 'cash');
@@ -932,7 +934,7 @@ class _ReturnsScreenState extends State<ReturnsScreen>
                     const SizedBox(width: 8),
                     Expanded(
                       child: ChoiceChip(
-                        label: const Text('Due Adjust'),
+                        label: Text(ReturnsStrings.adjustDue.getString(context)),
                         selected: _refundMethod == 'due_adjust',
                         onSelected: (sel) {
                           if (sel) setState(() => _refundMethod = 'due_adjust');
@@ -942,7 +944,7 @@ class _ReturnsScreenState extends State<ReturnsScreen>
                     const SizedBox(width: 8),
                     Expanded(
                       child: ChoiceChip(
-                        label: const Text('bKash'),
+                        label: Text(ReturnsStrings.onlineWallet.getString(context)),
                         selected: _refundMethod == 'bkash',
                         onSelected: (sel) {
                           if (sel) setState(() => _refundMethod = 'bkash');
@@ -995,7 +997,7 @@ class _ReturnsScreenState extends State<ReturnsScreen>
                 TextField(
                   controller: reasonController,
                   decoration: InputDecoration(
-                    hintText: 'Reason for return (e.g. Damaged, Wrong size)',
+                    hintText: ReturnsStrings.reasonForReturn.getString(context),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -1023,8 +1025,8 @@ class _ReturnsScreenState extends State<ReturnsScreen>
                       : const Icon(Icons.check_circle_rounded),
                   label: Text(
                     _isSubmitting
-                        ? 'Processing Return...'
-                        : 'Submit Return & Restock (${MoneyUtil.currencySymbol}${_calculatedRefundTotal.toStringAsFixed(0)})',
+                        ? Bangla.loading.getString(context)
+                        : '${ReturnsStrings.submitReturn.getString(context)} (${MoneyUtil.currencySymbol}${_calculatedRefundTotal.toStringAsFixed(0)})',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
@@ -1041,13 +1043,13 @@ class _ReturnsScreenState extends State<ReturnsScreen>
             ),
           ),
         ] else
-          const Padding(
-            padding: EdgeInsets.all(32.0),
+          Padding(
+            padding: const EdgeInsets.all(32.0),
             child: Center(
               child: Text(
-                'Please select a customer and an invoice to process product return.',
+                ReturnsStrings.selectCustInvoicePrompt.getString(context),
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey),
+                style: const TextStyle(color: Colors.grey),
               ),
             ),
           ),
@@ -1092,7 +1094,7 @@ class _ReturnsScreenState extends State<ReturnsScreen>
                 controller: searchController,
                 onChanged: _onSearchChanged,
                 decoration: InputDecoration(
-                  hintText: 'Search return logs by invoice or item name',
+                  hintText: ReturnsStrings.searchReturns.getString(context),
                   prefixIcon: const Icon(Icons.search_rounded),
                   suffixIcon: searchController.text.isNotEmpty
                       ? IconButton(
@@ -1114,8 +1116,8 @@ class _ReturnsScreenState extends State<ReturnsScreen>
             ),
 
             if (returnLogs.isEmpty)
-              const GlobalEmptyPlaceholder(
-                title: 'No return logs found.',
+              GlobalEmptyPlaceholder(
+                title: ReturnsStrings.noReturnLogs.getString(context),
                 subtitle:
                     'Next Time When You Return An Item You Found It Here.',
               )

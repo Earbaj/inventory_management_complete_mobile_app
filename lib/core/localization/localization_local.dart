@@ -1,23 +1,39 @@
 import 'package:flutter/widgets.dart';
 
+import 'features/ai_insights_strings.dart';
 import 'features/auth_strings.dart';
+import 'features/branches_strings.dart';
 import 'features/common_strings.dart';
 import 'features/customers_strings.dart';
 import 'features/dashboard_strings.dart';
+import 'features/expenses_strings.dart';
+import 'features/export_strings.dart';
 import 'features/inventory_strings.dart';
 import 'features/pos_strings.dart';
+import 'features/profile_strings.dart';
+import 'features/recycle_bin_strings.dart';
 import 'features/reports_strings.dart';
+import 'features/returns_strings.dart';
 import 'features/settings_strings.dart';
+import 'features/staff_strings.dart';
 import 'features/suppliers_strings.dart';
 
+export 'features/ai_insights_strings.dart';
 export 'features/auth_strings.dart';
+export 'features/branches_strings.dart';
 export 'features/common_strings.dart';
 export 'features/customers_strings.dart';
 export 'features/dashboard_strings.dart';
+export 'features/expenses_strings.dart';
+export 'features/export_strings.dart';
 export 'features/inventory_strings.dart';
 export 'features/pos_strings.dart';
+export 'features/profile_strings.dart';
+export 'features/recycle_bin_strings.dart';
 export 'features/reports_strings.dart';
+export 'features/returns_strings.dart';
 export 'features/settings_strings.dart';
+export 'features/staff_strings.dart';
 export 'features/suppliers_strings.dart';
 
 mixin Bangla {
@@ -40,6 +56,7 @@ mixin Bangla {
   static const String loading = CommonStrings.loading;
   static const String success = CommonStrings.success;
   static const String error = CommonStrings.error;
+  static const String refresh = CommonStrings.refresh;
 
   // Auth
   static const String login = AuthStrings.login;
@@ -157,6 +174,30 @@ mixin Bangla {
   static const String language = SettingsStrings.language;
   static const String subscription = SettingsStrings.subscription;
 
+  // Returns
+  static const String returnsTitle = ReturnsStrings.returnsTitle;
+
+  // Staff / Managers
+  static const String staffTitle = StaffStrings.staffTitle;
+
+  // Branches
+  static const String branchesTitle = BranchesStrings.branchesTitle;
+
+  // Expenses
+  static const String expensesTitle = ExpensesStrings.expensesTitle;
+
+  // AI Insights
+  static const String aiInsightsTitle = AiInsightsStrings.aiInsightsTitle;
+
+  // Export
+  static const String exportTitle = ExportStrings.exportTitle;
+
+  // Recycle Bin
+  static const String recycleBinTitle = RecycleBinStrings.recycleBinTitle;
+
+  // Profile
+  static const String profileTitle = ProfileStrings.profileTitle;
+
   // Combined Bengali Map
   static const Map<String, String> BN = {
     ...CommonStrings.bn,
@@ -168,6 +209,14 @@ mixin Bangla {
     ...SuppliersStrings.bn,
     ...ReportsStrings.bn,
     ...SettingsStrings.bn,
+    ...ReturnsStrings.bn,
+    ...StaffStrings.bn,
+    ...BranchesStrings.bn,
+    ...ExpensesStrings.bn,
+    ...AiInsightsStrings.bn,
+    ...ExportStrings.bn,
+    ...RecycleBinStrings.bn,
+    ...ProfileStrings.bn,
   };
 
   // Combined English Map
@@ -181,6 +230,14 @@ mixin Bangla {
     ...SuppliersStrings.en,
     ...ReportsStrings.en,
     ...SettingsStrings.en,
+    ...ReturnsStrings.en,
+    ...StaffStrings.en,
+    ...BranchesStrings.en,
+    ...ExpensesStrings.en,
+    ...AiInsightsStrings.en,
+    ...ExportStrings.en,
+    ...RecycleBinStrings.en,
+    ...ProfileStrings.en,
   };
 }
 

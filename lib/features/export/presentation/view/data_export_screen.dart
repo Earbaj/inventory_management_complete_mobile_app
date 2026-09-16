@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:printing/printing.dart';
 
+import '../../../../core/localization/localization_local.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../../core/services/pdf_export_service.dart';
 import '../../../customers/customer_transaction.dart';
@@ -49,7 +50,7 @@ class _DataExportScreenState extends State<DataExportScreen> {
             scrollDirection: Axis.horizontal,
             child: SingleChildScrollView(
               child: SelectableText(
-                csvContent.isNotEmpty ? csvContent : 'Exported file is empty.',
+                csvContent.isNotEmpty ? csvContent : ExportStrings.fileEmpty.getString(context),
                 style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
               ),
             ),
@@ -58,7 +59,7 @@ class _DataExportScreenState extends State<DataExportScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close'),
+            child: Text(ExportStrings.close.getString(context)),
           ),
           FilledButton.icon(
             style: FilledButton.styleFrom(backgroundColor: Colors.green.shade700),
@@ -69,7 +70,7 @@ class _DataExportScreenState extends State<DataExportScreen> {
               );
             },
             icon: const Icon(Icons.download_rounded),
-            label: const Text('Save / Share CSV'),
+            label: Text(ExportStrings.saveShareCsv.getString(context)),
           ),
         ],
       ),
@@ -267,11 +268,11 @@ class _DataExportScreenState extends State<DataExportScreen> {
           },
           icon: const Icon(Icons.menu_rounded),
         ),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.download_for_offline_rounded, size: 24),
-            SizedBox(width: 8),
-            Text('Bulk Data Export'),
+            const Icon(Icons.download_for_offline_rounded, size: 24),
+            const SizedBox(width: 8),
+            Text(ExportStrings.bulkDataExport.getString(context)),
           ],
         ),
       ),
@@ -317,20 +318,22 @@ class _DataExportScreenState extends State<DataExportScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                    Row(
                       children: [
-                        Icon(Icons.cloud_download_rounded, color: Colors.white, size: 28),
-                        SizedBox(width: 10),
-                        Text(
-                          'Bulk CSV & PDF Exporter',
-                          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        const Icon(Icons.cloud_download_rounded, color: Colors.white, size: 28),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            ExportStrings.bannerTitle.getString(context),
+                            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 6),
-                    const Text(
-                      'Export shop inventory, customer due balances, sales invoices, and customer ledgers to CSV or print official PDF statements.',
-                      style: TextStyle(color: Colors.white70, fontSize: 12.5),
+                    Text(
+                      ExportStrings.bannerDesc.getString(context),
+                      style: const TextStyle(color: Colors.white70, fontSize: 12.5),
                     ),
                   ],
                 ),
@@ -363,8 +366,8 @@ class _DataExportScreenState extends State<DataExportScreen> {
 
               // 1. INVENTORY EXPORT CARD
               ExportActionCard(
-                title: '1. Export Product Inventory',
-                description: 'Export all warehouse items, stock counts, cost prices & selling rates.',
+                title: ExportStrings.exportInventory.getString(context),
+                description: ExportStrings.exportInventoryDesc.getString(context),
                 icon: Icons.inventory_2_outlined,
                 iconColor: Colors.blue,
                 isLoading: isLoading,
@@ -376,8 +379,8 @@ class _DataExportScreenState extends State<DataExportScreen> {
 
               // 2. CUSTOMERS EXPORT CARD
               ExportActionCard(
-                title: '2. Export Customer List & Due Balances',
-                description: 'Export all registered customer profiles, contact numbers & due balances.',
+                title: ExportStrings.exportCustomers.getString(context),
+                description: ExportStrings.exportCustomersDesc.getString(context),
                 icon: Icons.people_outline,
                 iconColor: Colors.orange.shade800,
                 isLoading: isLoading,
@@ -389,8 +392,8 @@ class _DataExportScreenState extends State<DataExportScreen> {
 
               // 3. SALES INVOICES EXPORT CARD
               ExportActionCard(
-                title: '3. Export Sales & Revenue Invoices',
-                description: 'Export complete sales transaction log, discounts, VAT & net totals.',
+                title: ExportStrings.exportSales.getString(context),
+                description: ExportStrings.exportSalesDesc.getString(context),
                 icon: Icons.receipt_long_outlined,
                 iconColor: Colors.purple,
                 isLoading: isLoading,
@@ -410,22 +413,22 @@ class _DataExportScreenState extends State<DataExportScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Row(
+                      Row(
                         children: [
-                          Icon(Icons.assignment_outlined, color: Colors.teal, size: 24),
-                          SizedBox(width: 10),
+                          const Icon(Icons.assignment_outlined, color: Colors.teal, size: 24),
+                          const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              '4. Export Customer Ledger Statement',
+                              ExportStrings.customerLedger.getString(context),
                               maxLines: 2,
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Export itemized statement of debits, credits & running balance for a customer.',
+                        ExportStrings.exportLedgerDesc.getString(context),
                         style: theme.textTheme.bodySmall?.copyWith(fontSize: 12),
                       ),
                       const SizedBox(height: 12),
@@ -433,7 +436,7 @@ class _DataExportScreenState extends State<DataExportScreen> {
                         value: safeSelectedCustomerForLedger,
                         isExpanded: true,
                         decoration: InputDecoration(
-                          hintText: 'Select Customer to Export Ledger',
+                          hintText: ExportStrings.selectCustomerLedger.getString(context),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                           filled: true,
                           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -463,9 +466,9 @@ class _DataExportScreenState extends State<DataExportScreen> {
                                 padding: const EdgeInsets.symmetric(vertical: 12),
                               ),
                               icon: const Icon(Icons.table_chart_outlined, color: Colors.green, size: 18),
-                              label: const Text(
-                                'Export Ledger CSV',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.green),
+                              label: Text(
+                                ExportStrings.exportLedgerCsv.getString(context),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.green),
                               ),
                             ),
                           ),
@@ -491,7 +494,7 @@ class _DataExportScreenState extends State<DataExportScreen> {
                                     )
                                   : const Icon(Icons.picture_as_pdf_rounded, size: 18),
                               label: Text(
-                                _isLoadingLedgerPdf ? 'Loading...' : 'Export Ledger PDF',
+                                _isLoadingLedgerPdf ? Bangla.loading.getString(context) : ExportStrings.exportLedgerPdf.getString(context),
                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
                               ),
                             ),

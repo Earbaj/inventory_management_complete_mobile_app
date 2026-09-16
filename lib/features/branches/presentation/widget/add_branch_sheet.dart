@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/localization/localization_local.dart';
 import '../bloc/branch_bloc.dart';
 import '../bloc/branch_event.dart';
 import '../bloc/branch_state.dart';
@@ -122,14 +123,14 @@ class _AddBranchSheetState extends State<AddBranchSheet> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Create New Branch',
+                                  BranchesStrings.addBranch.getString(context),
                                   style: theme.textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'Add a new store branch location',
+                                  BranchesStrings.createFirstBranch.getString(context),
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     color: colorScheme.onSurfaceVariant,
                                   ),
@@ -153,7 +154,7 @@ class _AddBranchSheetState extends State<AddBranchSheet> {
                         controller: _nameController,
                         textCapitalization: TextCapitalization.words,
                         decoration: InputDecoration(
-                          labelText: 'Branch Name *',
+                          labelText: '${BranchesStrings.branchName.getString(context)} *',
                           hintText: 'e.g. Mirpur Branch',
                           prefixIcon: const Icon(Icons.store_outlined),
                           filled: true,
@@ -176,7 +177,7 @@ class _AddBranchSheetState extends State<AddBranchSheet> {
                       TextFormField(
                         controller: _addressController,
                         decoration: InputDecoration(
-                          labelText: 'Address *',
+                          labelText: '${BranchesStrings.branchAddress.getString(context)} *',
                           hintText: 'e.g. Mirpur-10, Dhaka',
                           prefixIcon: const Icon(Icons.location_on_outlined),
                           filled: true,
@@ -200,7 +201,7 @@ class _AddBranchSheetState extends State<AddBranchSheet> {
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
                         decoration: InputDecoration(
-                          labelText: 'Phone Number *',
+                          labelText: '${BranchesStrings.branchPhone.getString(context)} *',
                           hintText: 'e.g. 01711000001',
                           prefixIcon: const Icon(Icons.phone_outlined),
                           filled: true,
@@ -231,7 +232,7 @@ class _AddBranchSheetState extends State<AddBranchSheet> {
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                               ),
                               onPressed: _isSubmitting ? null : () => Navigator.pop(context),
-                              child: const Text('Cancel'),
+                              child: Text(Bangla.cancel.getString(context)),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -253,7 +254,7 @@ class _AddBranchSheetState extends State<AddBranchSheet> {
                                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                 ),
                               )
-                                  : const Text('Save Branch'),
+                                  : Text(BranchesStrings.saveBranch.getString(context)),
                             ),
                           ),
                         ],

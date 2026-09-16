@@ -25,6 +25,7 @@ class CommonStrings {
   static const String total = 'total';
   static const String paid = 'paid';
   static const String due = 'due';
+  static const String refresh = 'refresh';
 
   static const Map<String, String> bn = {
     appName: 'ইনভেন্টরি পিওএস',
@@ -53,6 +54,7 @@ class CommonStrings {
     total: 'মোট',
     paid: 'পরিশোধিত',
     due: 'বাকি',
+    refresh: 'রিফ্রেশ করুন',
   };
 
   static const Map<String, String> en = {
@@ -82,5 +84,6 @@ class CommonStrings {
     total: 'Total',
     paid: 'Paid',
     due: 'Due',
+    refresh: 'Refresh',
   };
 }

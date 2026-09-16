@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../core/localization/localization_local.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../customers/domain/entities/customer_entity.dart';
 import '../../../customers/presentation/bloc/customer_bloc.dart';
@@ -97,14 +98,14 @@ class _AiInsightsScreenState extends State<AiInsightsScreen> {
           },
           icon: const Icon(Icons.menu_rounded),
         ),
-        title: Text('AI Insights & Predictions',maxLines: 1,overflow: TextOverflow.ellipsis,),
+        title: Text(AiInsightsStrings.aiInsightsTitle.getString(context), maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: [
           IconButton(
             onPressed: () {
               context.read<AiInsightsBloc>().add(const FetchAllAiInsightsEvent(forceGemini: false));
             },
             icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Refresh Local Analytics',
+            tooltip: Bangla.refresh.getString(context),
           ),
         ],
       ),
@@ -145,15 +146,16 @@ class _AiInsightsScreenState extends State<AiInsightsScreen> {
         },
         builder: (context, state) {
           if (state is AiInsightsLoadingState) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(color: Colors.purple),
-                  SizedBox(height: 16),
+                  const CircularProgressIndicator(color: Colors.purple),
+                  const SizedBox(height: 16),
                   Text(
-                    'Gemini 2.5 Flash AI is analyzing shop sales & customer records...',
-                    style: TextStyle(color: Colors.purple, fontWeight: FontWeight.bold, fontSize: 13),
+                    AiInsightsStrings.analyzingWithGemini.getString(context),
+                    style: const TextStyle(color: Colors.purple, fontWeight: FontWeight.bold, fontSize: 13),
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
@@ -256,7 +258,7 @@ class _AiInsightsScreenState extends State<AiInsightsScreen> {
                                const SizedBox(width: 8),
                                Expanded(
                                  child: Text(
-                                   'Monthly Gemini AI analysis is available! Run it now to update store predictions.',
+                                   AiInsightsStrings.geminiAvailableBanner.getString(context),
                                    style: TextStyle(color: Colors.purple.shade900, fontWeight: FontWeight.w600, fontSize: 13),
                                  ),
                                ),
@@ -273,7 +275,7 @@ class _AiInsightsScreenState extends State<AiInsightsScreen> {
                                context.read<AiInsightsBloc>().add(const FetchAllAiInsightsEvent(forceGemini: true));
                              },
                              icon: const Icon(Icons.auto_awesome_rounded),
-                             label: const Text('Run Gemini AI Analysis (1 Limit/Month)'),
+                             label: Text(AiInsightsStrings.runGeminiAnalysis.getString(context)),
                            ),
                          ],
                        ),
@@ -291,14 +293,14 @@ class _AiInsightsScreenState extends State<AiInsightsScreen> {
                            const SizedBox(width: 10),
                            Expanded(
                             child: Text(
-                              'Gemini AI analysis limit reached for this month. (Next run available next month).',
+                              AiInsightsStrings.geminiLimitReached.getString(context),
                               style: TextStyle(color: Colors.green.shade900, fontWeight: FontWeight.w600, fontSize: 13),
                             ),
                           ),
                          ],
                        ),
                      ),
-                   ),
+                    ),
                  ],
 
                  const SizedBox(height: 18),
@@ -311,19 +313,19 @@ class _AiInsightsScreenState extends State<AiInsightsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Row(
+                        Row(
                           children: [
-                            Icon(Icons.credit_score_rounded, color: Colors.purple, size: 22),
-                            SizedBox(width: 8),
+                            const Icon(Icons.credit_score_rounded, color: Colors.purple, size: 22),
+                            const SizedBox(width: 8),
                             Text(
-                              'Check Customer AI Credit Score',
-                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                              AiInsightsStrings.checkCreditScore.getString(context),
+                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Evaluates customer reliability rating (1-100), risk level & recommended due limit.',
+                          AiInsightsStrings.creditScoreSubtitle.getString(context),
                           style: theme.textTheme.bodySmall,
                         ),
                         const SizedBox(height: 12),
@@ -334,7 +336,7 @@ class _AiInsightsScreenState extends State<AiInsightsScreen> {
                                 value: safeSelectedCustomerForScore,
                                 isExpanded: true,
                                 decoration: InputDecoration(
-                                  hintText: 'Select Customer',
+                                  hintText: AiInsightsStrings.selectCustomer.getString(context),
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                   filled: true,
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -365,7 +367,7 @@ class _AiInsightsScreenState extends State<AiInsightsScreen> {
                               icon: isScoreLoading
                                   ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                                   : const Icon(Icons.auto_awesome_rounded, size: 18),
-                              label: const Text('Assess Score'),
+                              label: Text(AiInsightsStrings.assessScore.getString(context)),
                             ),
                           ],
                         ),

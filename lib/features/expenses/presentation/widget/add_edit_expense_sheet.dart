@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../../../core/localization/localization_local.dart';
 import '../../../../core/utils/money_util.dart';
 import '../../domain/entities/expense_entity.dart';
 
 class AddEditExpenseSheet extends StatefulWidget {
   final ExpenseEntity? expenseToEdit;
-  final Future<void> Function(ExpenseEntity) onSave;
+  final Function(ExpenseEntity) onSave;
 
   const AddEditExpenseSheet({
     super.key,
@@ -15,7 +16,7 @@ class AddEditExpenseSheet extends StatefulWidget {
   static Future<void> show(
     BuildContext context, {
     ExpenseEntity? expenseToEdit,
-    required Future<void> Function(ExpenseEntity) onSave,
+    required Function(ExpenseEntity) onSave,
   }) {
     return showModalBottomSheet(
       context: context,
@@ -85,13 +86,13 @@ class _AddEditExpenseSheetState extends State<AddEditExpenseSheet> {
     }
   }
 
-  Future<void> _submit() async {
+  void _submit() {
     if (_isSubmitting) return;
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSubmitting = true);
 
-    final amount = MoneyUtil.roundMoney(double.tryParse(_amountController.text.trim()) ?? 0.0);
+    final amount = double.tryParse(_amountController.text.trim()) ?? 0.0;
     final expense = ExpenseEntity(
       id: widget.expenseToEdit?.id ?? '',
       category: _selectedCategory,
@@ -101,16 +102,8 @@ class _AddEditExpenseSheetState extends State<AddEditExpenseSheet> {
       note: _noteController.text.trim().isNotEmpty ? _noteController.text.trim() : null,
     );
 
-    try {
-      await widget.onSave(expense);
-      if (mounted) {
-        Navigator.pop(context);
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() => _isSubmitting = false);
-      }
-    }
+    widget.onSave(expense);
+    Navigator.pop(context);
   }
 
   @override
@@ -177,14 +170,18 @@ class _AddEditExpenseSheetState extends State<AddEditExpenseSheet> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                isEditing ? 'Edit Expense Record' : 'Record New Expense',
+                                isEditing
+                                    ? ExpensesStrings.editExpense.getString(context)
+                                    : ExpensesStrings.addExpense.getString(context),
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                isEditing ? 'Modify recorded expense details' : 'Log shop costs & operating expenses',
+                                isEditing
+                                    ? ExpensesStrings.editExpense.getString(context)
+                                    : ExpensesStrings.expensesTitle.getString(context),
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: colorScheme.onSurfaceVariant,
                                 ),
@@ -209,7 +206,7 @@ class _AddEditExpenseSheetState extends State<AddEditExpenseSheet> {
                           ? _selectedCategory
                           : 'misc',
                       decoration: InputDecoration(
-                        labelText: 'Expense Category *',
+                        labelText: '${ExpensesStrings.category.getString(context)} *',
                         prefixIcon: const Icon(Icons.category_outlined),
                         filled: true,
                         fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
@@ -230,26 +227,23 @@ class _AddEditExpenseSheetState extends State<AddEditExpenseSheet> {
                           ),
                         );
                       }).toList(),
-                      onChanged: _isSubmitting
-                          ? null
-                          : (val) {
-                              if (val != null) {
-                                setState(() {
-                                  _selectedCategory = val;
-                                });
-                              }
-                            },
+                      onChanged: (val) {
+                        if (val != null) {
+                          setState(() {
+                            _selectedCategory = val;
+                          });
+                        }
+                      },
                     ),
                     const SizedBox(height: 14),
 
                     // Title / Description
                     TextFormField(
                       controller: _titleController,
-                      enabled: !_isSubmitting,
                       textCapitalization: TextCapitalization.sentences,
                       decoration: InputDecoration(
-                        labelText: 'Title / Description *',
-                        hintText: 'e.g. Shop Electricity Bill August',
+                        labelText: '${ExpensesStrings.expenseTitle.getString(context)} *',
+                        hintText: 'e.g. Shop Electricity Bill',
                         prefixIcon: const Icon(Icons.description_outlined),
                         filled: true,
                         fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
@@ -270,10 +264,9 @@ class _AddEditExpenseSheetState extends State<AddEditExpenseSheet> {
                     // Amount Field
                     TextFormField(
                       controller: _amountController,
-                      enabled: !_isSubmitting,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(
-                        labelText: 'Amount (${MoneyUtil.currencySymbol}) *',
+                        labelText: '${ExpensesStrings.amount.getString(context)} (${MoneyUtil.currencySymbol}) *',
                         hintText: 'e.g. 1500.00',
                         prefixIcon: const Icon(Icons.attach_money_rounded),
                         filled: true,
@@ -298,7 +291,7 @@ class _AddEditExpenseSheetState extends State<AddEditExpenseSheet> {
 
                     // Date Picker
                     InkWell(
-                      onTap: _isSubmitting ? null : _pickDate,
+                      onTap: _pickDate,
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -315,7 +308,7 @@ class _AddEditExpenseSheetState extends State<AddEditExpenseSheet> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Expense Date',
+                                    ExpensesStrings.expenseDate.getString(context),
                                     style: TextStyle(
                                       fontSize: 11,
                                       color: colorScheme.onSurfaceVariant,
@@ -339,10 +332,9 @@ class _AddEditExpenseSheetState extends State<AddEditExpenseSheet> {
                     // Note / Payment Details
                     TextFormField(
                       controller: _noteController,
-                      enabled: !_isSubmitting,
                       decoration: InputDecoration(
-                        labelText: 'Note / Payment Details (Optional)',
-                        hintText: 'e.g. Paid via bKash Merchant',
+                        labelText: ExpensesStrings.notes.getString(context),
+                        hintText: 'e.g. Paid via bKash',
                         prefixIcon: const Icon(Icons.note_alt_outlined),
                         filled: true,
                         fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
@@ -366,7 +358,7 @@ class _AddEditExpenseSheetState extends State<AddEditExpenseSheet> {
                               padding: const EdgeInsets.symmetric(vertical: 14),
                             ),
                             onPressed: _isSubmitting ? null : () => Navigator.pop(context),
-                            child: const Text('Cancel'),
+                            child: Text(Bangla.cancel.getString(context)),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -378,37 +370,21 @@ class _AddEditExpenseSheetState extends State<AddEditExpenseSheet> {
                               ),
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               backgroundColor: Colors.red.shade700,
-                              disabledBackgroundColor: Colors.red.shade700.withValues(alpha: 0.8),
                               foregroundColor: Colors.white,
-                              disabledForegroundColor: Colors.white,
                             ),
                             onPressed: _isSubmitting ? null : _submit,
                             child: _isSubmitting
-                                ? Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2.2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        isEditing ? 'Updating...' : 'Saving...',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
                                   )
-                                : Text(
-                                    isEditing ? 'Update Expense' : 'Save Expense',
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
-                                  ),
+                                : Text(isEditing
+                                    ? Bangla.save.getString(context)
+                                    : ExpensesStrings.saveExpense.getString(context)),
                           ),
                         ),
                       ],

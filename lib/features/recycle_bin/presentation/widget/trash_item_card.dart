@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/localization/localization_local.dart';
 import '../../../../core/utils/money_util.dart';
 import '../../../../core/widgets/global_warning_dialog.dart';
 import '../../domain/entities/trash_item_entity.dart';
@@ -24,19 +25,19 @@ class TrashItemCard extends StatelessWidget {
     return '${dt.day} ${months[dt.month - 1]} ${dt.year} at ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 
-  (IconData, Color, String) _getEntityTypeMetadata() {
+  (IconData, Color, String) _getEntityTypeMetadata(BuildContext context) {
     switch (item.entityType.toLowerCase()) {
       case 'item':
       case 'inventory':
-        return (Icons.inventory_2_outlined, const Color(0xFF1565C0), 'Product Item');
+        return (Icons.inventory_2_outlined, const Color(0xFF1565C0), RecycleBinStrings.products.getString(context));
       case 'customer':
-        return (Icons.person_outline_rounded, const Color(0xFF2E7D32), 'Customer Profile');
+        return (Icons.person_outline_rounded, const Color(0xFF2E7D32), RecycleBinStrings.customers.getString(context));
       case 'sale':
-        return (Icons.receipt_long_outlined, const Color(0xFF6A1B9A), 'Sales Invoice');
+        return (Icons.receipt_long_outlined, const Color(0xFF6A1B9A), RecycleBinStrings.salesInvoices.getString(context));
       case 'return':
-        return (Icons.assignment_return_outlined, const Color(0xFFE65100), 'Sales Return');
+        return (Icons.assignment_return_outlined, const Color(0xFFE65100), RecycleBinStrings.returns.getString(context));
       default:
-        return (Icons.restore_from_trash_outlined, Colors.grey.shade700, 'Record');
+        return (Icons.restore_from_trash_outlined, Colors.grey.shade700, RecycleBinStrings.allRecords.getString(context));
     }
   }
 
@@ -44,7 +45,7 @@ class TrashItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final (iconData, color, badgeLabel) = _getEntityTypeMetadata();
+    final (iconData, color, badgeLabel) = _getEntityTypeMetadata(context);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -143,7 +144,7 @@ class TrashItemCard extends StatelessWidget {
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
-                              'Deleted: ${_formatDate(item.deletedAt)}',
+                              '${RecycleBinStrings.deletedPrefix.getString(context)}${_formatDate(item.deletedAt)}',
                               style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -153,7 +154,7 @@ class TrashItemCard extends StatelessWidget {
                       if (item.deletedBy != null && item.deletedBy!.isNotEmpty) ...[
                         const SizedBox(height: 2),
                         Text(
-                          'By: ${item.deletedBy}',
+                          '${RecycleBinStrings.deletedByPrefix.getString(context)}${item.deletedBy}',
                           style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                         ),
                       ],
@@ -171,13 +172,13 @@ class TrashItemCard extends StatelessWidget {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   icon: const Icon(Icons.restore_rounded, size: 18),
-                  label: const Text('Restore', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  label: Text(RecycleBinStrings.restoreItem.getString(context), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                 ),
                 const SizedBox(width: 8),
                 IconButton(
                   onPressed: () => _confirmPermanentDelete(context),
                   icon: const Icon(Icons.delete_forever_rounded, color: Colors.red),
-                  tooltip: 'Permanently Delete',
+                  tooltip: RecycleBinStrings.permanentDelete.getString(context),
                   visualDensity: VisualDensity.compact,
                 ),
               ],
@@ -191,10 +192,10 @@ class TrashItemCard extends StatelessWidget {
   void _confirmPermanentDelete(BuildContext context) {
     GlobalWarningDialog.show(
       context,
-      title: 'Permanent Hard Delete?',
-      message: 'Are you sure you want to permanently purge "${item.title}" from MongoDB storage?\n\n⚠️ WARNING: This action is IRREVERSIBLE. Data cannot be recovered after permanent deletion.',
-      confirmText: 'Purge Permanently',
-      cancelText: 'Cancel',
+      title: RecycleBinStrings.permDeleteConfirm.getString(context),
+      message: RecycleBinStrings.permDeletePrompt.getString(context),
+      confirmText: RecycleBinStrings.permanentDelete.getString(context),
+      cancelText: Bangla.cancel.getString(context),
       confirmColor: Colors.red.shade700,
       icon: Icons.delete_forever_rounded,
       onConfirm: () async {

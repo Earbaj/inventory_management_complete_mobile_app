@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/localization/localization_local.dart';
 import '../../../../core/utils/money_util.dart';
 import '../../domain/entities/customer_credit_score_entity.dart';
 
@@ -80,7 +81,7 @@ class CustomerCreditScoreDialog extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'AI Reliability & Credit Score',
+                AiInsightsStrings.customerCreditScore.getString(context),
                 style: theme.textTheme.bodySmall,
               ),
               const SizedBox(height: 20),
@@ -135,7 +136,7 @@ class CustomerCreditScoreDialog extends StatelessWidget {
                       ),
                       child: Column(
                         children: [
-                          const Text('Credit Risk Level', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                          Text(AiInsightsStrings.creditRiskLevel.getString(context), style: const TextStyle(fontSize: 11, color: Colors.grey)),
                           const SizedBox(height: 4),
                           Text(
                             creditScore.creditRiskLevel.replaceAll('_', ' ').toUpperCase(),
@@ -155,7 +156,7 @@ class CustomerCreditScoreDialog extends StatelessWidget {
                       ),
                       child: Column(
                         children: [
-                          const Text('Recommended Due Limit', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                          Text(AiInsightsStrings.recommendedDueLimit.getString(context), style: const TextStyle(fontSize: 11, color: Colors.grey)),
                           const SizedBox(height: 4),
                           Text(
                             '${MoneyUtil.currencySymbol} ${creditScore.maxRecommendedDueLimit.toStringAsFixed(0)}',
@@ -201,7 +202,7 @@ class CustomerCreditScoreDialog extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: const Text('Close Assessment'),
+                  child: Text(AiInsightsStrings.closeAssessment.getString(context)),
                 ),
               ),
             ],

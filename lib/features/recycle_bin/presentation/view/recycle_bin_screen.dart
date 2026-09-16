@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/localization/localization_local.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../../core/widgets/global_empty_placeholder.dart';
 import '../../../../core/widgets/global_warning_dialog.dart';
@@ -23,11 +24,11 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
   String _selectedFilter = 'all';
 
   final List<(String, String)> _filterOptions = [
-    ('all', 'All Records'),
-    ('item', 'Products'),
-    ('customer', 'Customers'),
-    ('sale', 'Sales Invoices'),
-    ('return', 'Returns'),
+    ('all', RecycleBinStrings.allRecords),
+    ('item', RecycleBinStrings.products),
+    ('customer', RecycleBinStrings.customers),
+    ('sale', RecycleBinStrings.salesInvoices),
+    ('return', RecycleBinStrings.returns),
   ];
 
   @override
@@ -95,19 +96,20 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
           },
           icon: const Icon(Icons.menu_rounded),
         ),
-        title: const  Text('Recycle Bin'),
+        title: Text(RecycleBinStrings.recycleBinTitle.getString(context)),
         actions: [
           IconButton(
-            tooltip: 'Empty Recycle Bin',
+            tooltip: RecycleBinStrings.emptyTrashTooltip.getString(context),
             onPressed: () => _confirmEmptyTrash(context),
             icon: const Icon(Icons.delete_sweep_rounded, color: Colors.redAccent),
           ),
           IconButton(
-            tooltip: 'Clean 90-day Audit Logs',
+            tooltip: RecycleBinStrings.cleanLogsTooltip.getString(context),
             onPressed: () => _confirmCleanupLogs(context),
             icon: const Icon(Icons.cleaning_services_rounded),
           ),
           IconButton(
+            tooltip: Bangla.refresh.getString(context),
             onPressed: () {
               context.read<RecycleBinBloc>().add(FetchTrashItemsEvent(
                 entityType: _selectedFilter,
@@ -118,7 +120,6 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
               ));
             },
             icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Refresh',
           ),
         ],
       ),
@@ -235,7 +236,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                   controller: _searchController,
                   onChanged: (val) => _onSearchChanged(context, val),
                   decoration: InputDecoration(
-                    hintText: 'Search deleted items, customers or invoices...',
+                    hintText: RecycleBinStrings.searchDeleted.getString(context),
                     prefixIcon: const Icon(Icons.search_rounded),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
@@ -266,12 +267,12 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                         scrollDirection: Axis.horizontal,
                         child: Row(
                           children: _filterOptions.map((opt) {
-                            final (key, label) = opt;
+                            final (key, labelKey) = opt;
                             final isSelected = _selectedFilter == key;
                             return Padding(
                               padding: const EdgeInsets.only(right: 8),
                               child: FilterChip(
-                                label: Text(label),
+                                label: Text(labelKey.getString(context)),
                                 selected: isSelected,
                                 onSelected: (_) => _onFilterSelected(context, key),
                               ),
@@ -308,9 +309,9 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                 child: (isInitialLoading || isListLoading)
                     ? const RecycleBinShimmerView()
                     : trashItems.isEmpty
-                        ? const GlobalEmptyPlaceholder(
-                            title: 'Recycle Bin is Empty',
-                            subtitle: 'No soft-deleted records match your search or filter.',
+                        ? GlobalEmptyPlaceholder(
+                            title: RecycleBinStrings.emptyBin.getString(context),
+                            subtitle: RecycleBinStrings.emptyBinSubtitle.getString(context),
                           )
                         : RefreshIndicator(
                             onRefresh: () => _onRefresh(context),
@@ -369,10 +370,10 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
   void _confirmEmptyTrash(BuildContext context) {
     GlobalWarningDialog.show(
       context,
-      title: 'Empty Recycle Bin?',
-      message: 'Are you sure you want to permanently delete all items in the Recycle Bin?\n\n⚠️ WARNING: This action cannot be undone.',
-      confirmText: 'Empty Bin',
-      cancelText: 'Cancel',
+      title: RecycleBinStrings.emptyTrashConfirm.getString(context),
+      message: RecycleBinStrings.emptyTrashPrompt.getString(context),
+      confirmText: RecycleBinStrings.emptyTrashBtn.getString(context),
+      cancelText: Bangla.cancel.getString(context),
       confirmColor: Colors.red.shade700,
       icon: Icons.delete_sweep_rounded,
       onConfirm: () async {
@@ -385,10 +386,10 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
   void _confirmCleanupLogs(BuildContext context) {
     GlobalWarningDialog.show(
       context,
-      title: 'Cleanup Old Audit Logs?',
-      message: 'Are you sure you want to purge audit activity logs older than 90 days to free up database storage?',
-      confirmText: 'Purge Logs',
-      cancelText: 'Cancel',
+      title: RecycleBinStrings.cleanLogsConfirm.getString(context),
+      message: RecycleBinStrings.cleanLogsPrompt.getString(context),
+      confirmText: RecycleBinStrings.cleanLogsBtn.getString(context),
+      cancelText: Bangla.cancel.getString(context),
       confirmColor: Colors.orange.shade800,
       icon: Icons.cleaning_services_rounded,
       onConfirm: () async {
