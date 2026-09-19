@@ -199,6 +199,7 @@ mixin Bangla {
   static const String profileTitle = ProfileStrings.profileTitle;
 
   // Combined Bengali Map
+  // ignore: constant_identifier_names
   static const Map<String, String> BN = {
     ...CommonStrings.bn,
     ...AuthStrings.bn,
@@ -220,6 +221,7 @@ mixin Bangla {
   };
 
   // Combined English Map
+  // ignore: constant_identifier_names
   static const Map<String, String> EN = {
     ...CommonStrings.en,
     ...AuthStrings.en,
