@@ -69,6 +69,10 @@ void main() {
       expect(buildItem(), isNot(equals(buildItem(retailSellPrice: 65))));
     });
 
+    test('instances with a different catagory are not equal', () {
+      expect(buildItem(), isNot(equals(buildItem(category: "Water"))));
+    });
+
     test('an instance is equal to itself (identity)', () {
       final item = buildItem();
       expect(item, equals(item));
