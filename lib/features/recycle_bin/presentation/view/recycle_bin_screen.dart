@@ -124,6 +124,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
         ],
       ),
       body: BlocConsumer<RecycleBinBloc, RecycleBinState>(
+        buildWhen: (previous, current) => current is! RecycleBinOperationSuccessState,
         listener: (context, state) {
           if (state is RecycleBinOperationSuccessState) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -335,8 +336,15 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                                 }
 
                                 final item = trashItems[index];
+                                final isRestoring = loadedState?.restoringItemId == item.id;
+                                final isDeleting = loadedState?.deletingItemId == item.id;
+                                final isActionDisabled = loadedState?.isProcessingItem == true;
+
                                 return TrashItemCard(
                                   item: item,
+                                  isRestoring: isRestoring,
+                                  isDeleting: isDeleting,
+                                  isActionDisabled: isActionDisabled,
                                   onRestore: () {
                                     context.read<RecycleBinBloc>().add(
                                       RestoreTrashItemEvent(

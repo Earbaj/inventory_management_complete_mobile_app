@@ -7,6 +7,7 @@ class RecycleBinStrings {
   static const String salesInvoices = 'recycle_bin_sales';
   static const String returns = 'recycle_bin_returns';
   static const String restoreItem = 'recycle_bin_restore';
+  static const String restoringItem = 'recycle_bin_restoring';
   static const String permanentDelete = 'recycle_bin_perm_delete';
   static const String restoreConfirm = 'recycle_bin_restore_confirm';
   static const String restorePrompt = 'recycle_bin_restore_prompt';
@@ -34,6 +35,7 @@ class RecycleBinStrings {
     salesInvoices: 'বিক্রির চালান',
     returns: 'ফেরতের খতিয়ান',
     restoreItem: 'পুনরুদ্ধার (রিস্টোর)',
+    restoringItem: 'রিস্টোর হচ্ছে...',
     permanentDelete: 'স্থায়ীভাবে মুছুন',
     restoreConfirm: 'পুনরুদ্ধার নিশ্চিতকরণ',
     restorePrompt: 'আপনি কি এই আইটেমটি পুনরায় সক্রিয় করতে চান?',
@@ -62,6 +64,7 @@ class RecycleBinStrings {
     salesInvoices: 'Sales Invoices',
     returns: 'Returns',
     restoreItem: 'Restore',
+    restoringItem: 'Restoring...',
     permanentDelete: 'Delete Permanently',
     restoreConfirm: 'Confirm Restore',
     restorePrompt: 'Are you sure you want to restore this item back to your active list?',

@@ -21,6 +21,8 @@ class RecycleBinLoadedState extends RecycleBinState {
   final bool isLoadingMore;
   final bool hasReachedMax;
   final bool isListLoading;
+  final String? restoringItemId;
+  final String? deletingItemId;
 
   const RecycleBinLoadedState({
     required this.items,
@@ -30,7 +32,11 @@ class RecycleBinLoadedState extends RecycleBinState {
     this.isLoadingMore = false,
     this.hasReachedMax = false,
     this.isListLoading = false,
+    this.restoringItemId,
+    this.deletingItemId,
   });
+
+  bool get isProcessingItem => restoringItemId != null || deletingItemId != null;
 
   List<TrashItemEntity> get filteredItems {
     if (activeFilter == 'all') return items;
@@ -45,6 +51,10 @@ class RecycleBinLoadedState extends RecycleBinState {
     bool? isLoadingMore,
     bool? hasReachedMax,
     bool? isListLoading,
+    String? restoringItemId,
+    bool clearRestoringItemId = false,
+    String? deletingItemId,
+    bool clearDeletingItemId = false,
   }) {
     return RecycleBinLoadedState(
       items: items ?? this.items,
@@ -54,6 +64,8 @@ class RecycleBinLoadedState extends RecycleBinState {
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       hasReachedMax: hasReachedMax ?? this.hasReachedMax,
       isListLoading: isListLoading ?? this.isListLoading,
+      restoringItemId: clearRestoringItemId ? null : (restoringItemId ?? this.restoringItemId),
+      deletingItemId: clearDeletingItemId ? null : (deletingItemId ?? this.deletingItemId),
     );
   }
 }

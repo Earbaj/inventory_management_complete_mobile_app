@@ -1,5 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/di/injection_container.dart';
+import '../../../customers/presentation/bloc/customer_event.dart';
+import '../../../inventory/presentation/bloc/inventory_event.dart';
+import '../../../reports/presentation/bloc/reports_event.dart';
 import '../../data/datasources/recycle_bin_remote_data_source.dart';
 import '../../domain/entities/pagination_meta_entity.dart';
 import '../../domain/entities/trash_item_entity.dart';
@@ -125,16 +129,42 @@ class RecycleBinBloc extends Bloc<RecycleBinEvent, RecycleBinState> {
   ) async {
     final currentState = state;
     if (currentState is RecycleBinLoadedState) {
-      emit(currentState.copyWith(isListLoading: true));
+      emit(currentState.copyWith(
+        restoringItemId: event.id,
+        clearDeletingItemId: true,
+      ));
     }
     try {
       await restoreTrashItemUseCase(
         entityType: event.entityType,
         id: event.id,
       );
+
+      // Notify and sync other blocs across the application
+      try {
+        final type = event.entityType.toLowerCase();
+        if (type == 'item' || type == 'inventory') {
+          InjectionContainer.inventoryBloc.add(const FetchInventoryItemsEvent());
+        } else if (type == 'customer') {
+          InjectionContainer.customerBloc.add(const FetchCustomersEvent());
+        } else {
+          InjectionContainer.reportsBloc.add(const FetchReportsEvent(forceRefresh: true));
+        }
+      } catch (_) {}
+
       _allItems.removeWhere((item) => item.id == event.id);
       _decrementMetaTotal();
       emit(RecycleBinOperationSuccessState('"${event.title}" restored successfully!'));
+
+      // Transition to shimmer loader while fetching updated data
+      if (currentState is RecycleBinLoadedState) {
+        emit(currentState.copyWith(
+          items: List.from(_allItems),
+          meta: _meta,
+          isListLoading: true,
+          clearRestoringItemId: true,
+        ));
+      }
 
       final paginatedResult = await getTrashItemsUseCase(
         entityType: _activeFilter,
@@ -149,7 +179,10 @@ class RecycleBinBloc extends Bloc<RecycleBinEvent, RecycleBinState> {
       _emitLoadedState(emit);
     } catch (e) {
       if (currentState is RecycleBinLoadedState) {
-        emit(currentState.copyWith(isListLoading: false));
+        emit(currentState.copyWith(
+          clearRestoringItemId: true,
+          isListLoading: false,
+        ));
       }
       emit(RecycleBinErrorState(
         e.toString().replaceAll('Exception: ', '').replaceAll('ServerFailure: ', ''),
@@ -163,7 +196,10 @@ class RecycleBinBloc extends Bloc<RecycleBinEvent, RecycleBinState> {
   ) async {
     final currentState = state;
     if (currentState is RecycleBinLoadedState) {
-      emit(currentState.copyWith(isListLoading: true));
+      emit(currentState.copyWith(
+        deletingItemId: event.id,
+        clearRestoringItemId: true,
+      ));
     }
     try {
       await permanentDeleteTrashItemUseCase(
@@ -173,6 +209,15 @@ class RecycleBinBloc extends Bloc<RecycleBinEvent, RecycleBinState> {
       _allItems.removeWhere((item) => item.id == event.id);
       _decrementMetaTotal();
       emit(RecycleBinOperationSuccessState('"${event.title}" permanently deleted.'));
+
+      if (currentState is RecycleBinLoadedState) {
+        emit(currentState.copyWith(
+          items: List.from(_allItems),
+          meta: _meta,
+          isListLoading: true,
+          clearDeletingItemId: true,
+        ));
+      }
 
       final paginatedResult = await getTrashItemsUseCase(
         entityType: _activeFilter,
@@ -187,7 +232,10 @@ class RecycleBinBloc extends Bloc<RecycleBinEvent, RecycleBinState> {
       _emitLoadedState(emit);
     } catch (e) {
       if (currentState is RecycleBinLoadedState) {
-        emit(currentState.copyWith(isListLoading: false));
+        emit(currentState.copyWith(
+          clearDeletingItemId: true,
+          isListLoading: false,
+        ));
       }
       emit(RecycleBinErrorState(
         e.toString().replaceAll('Exception: ', '').replaceAll('ServerFailure: ', ''),
@@ -265,6 +313,8 @@ class RecycleBinBloc extends Bloc<RecycleBinEvent, RecycleBinState> {
       isLoadingMore: false,
       hasReachedMax: _hasReachedMax,
       isListLoading: false,
+      restoringItemId: null,
+      deletingItemId: null,
     ));
   }
 }
