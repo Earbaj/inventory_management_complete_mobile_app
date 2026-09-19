@@ -6,12 +6,16 @@ class ExpenseCard extends StatelessWidget {
   final ExpenseEntity expense;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+  final bool isDeleting;
+  final bool isActionDisabled;
 
   const ExpenseCard({
     super.key,
     required this.expense,
     this.onEdit,
     this.onDelete,
+    this.isDeleting = false,
+    this.isActionDisabled = false,
   });
 
   IconData _getCategoryIcon(String cat) {
@@ -133,23 +137,47 @@ class ExpenseCard extends StatelessWidget {
                   children: [
                     if (onEdit != null)
                       InkWell(
-                        onTap: onEdit,
+                        onTap: (isDeleting || isActionDisabled) ? null : onEdit,
                         borderRadius: BorderRadius.circular(8),
-                        child: const Padding(
-                          padding: EdgeInsets.all(4.0),
-                          child: Icon(Icons.edit_outlined, size: 18, color: Colors.blue),
+                        child: Padding(
+                          padding: const EdgeInsets.all(4.0),
+                          child: Icon(
+                            Icons.edit_outlined,
+                            size: 18,
+                            color: (isDeleting || isActionDisabled) ? Colors.grey : Colors.blue,
+                          ),
                         ),
                       ),
                     if (onDelete != null) ...[
                       const SizedBox(width: 4),
-                      InkWell(
-                        onTap: onDelete,
-                        borderRadius: BorderRadius.circular(8),
-                        child: const Padding(
-                          padding: EdgeInsets.all(4.0),
-                          child: Icon(Icons.delete_outline_rounded, size: 18, color: Colors.red),
+                      if (isDeleting)
+                        const SizedBox(
+                          width: 26,
+                          height: 26,
+                          child: Center(
+                            child: SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+                              ),
+                            ),
+                          ),
+                        )
+                      else
+                        InkWell(
+                          onTap: (isDeleting || isActionDisabled) ? null : onDelete,
+                          borderRadius: BorderRadius.circular(8),
+                          child: Padding(
+                            padding: const EdgeInsets.all(4.0),
+                            child: Icon(
+                              Icons.delete_outline_rounded,
+                              size: 18,
+                              color: (isDeleting || isActionDisabled) ? Colors.grey : Colors.red,
+                            ),
+                          ),
                         ),
-                      ),
                     ],
                   ],
                 ),

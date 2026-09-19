@@ -25,6 +25,7 @@ class ExpensesLoadedState extends ExpensesState {
   final bool hasReachedMax;
   final String? selectedCategory;
   final bool isListLoading;
+  final String? deletingExpenseId;
 
   const ExpensesLoadedState({
     required this.expenses,
@@ -34,7 +35,10 @@ class ExpensesLoadedState extends ExpensesState {
     this.hasReachedMax = false,
     this.selectedCategory,
     this.isListLoading = false,
+    this.deletingExpenseId,
   });
+
+  bool get isDeletingExpense => deletingExpenseId != null;
 
   ExpensesLoadedState copyWith({
     List<ExpenseEntity>? expenses,
@@ -44,6 +48,8 @@ class ExpensesLoadedState extends ExpensesState {
     bool? hasReachedMax,
     String? selectedCategory,
     bool? isListLoading,
+    String? deletingExpenseId,
+    bool clearDeletingExpenseId = false,
   }) {
     return ExpensesLoadedState(
       expenses: expenses ?? this.expenses,
@@ -53,6 +59,9 @@ class ExpensesLoadedState extends ExpensesState {
       hasReachedMax: hasReachedMax ?? this.hasReachedMax,
       selectedCategory: selectedCategory ?? this.selectedCategory,
       isListLoading: isListLoading ?? this.isListLoading,
+      deletingExpenseId: clearDeletingExpenseId
+          ? null
+          : (deletingExpenseId ?? this.deletingExpenseId),
     );
   }
 
@@ -65,6 +74,7 @@ class ExpensesLoadedState extends ExpensesState {
         hasReachedMax,
         selectedCategory,
         isListLoading,
+        deletingExpenseId,
       ];
 }
 
