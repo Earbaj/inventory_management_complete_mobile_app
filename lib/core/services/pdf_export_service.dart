@@ -1623,7 +1623,7 @@ class PdfExportService {
           ? '$currency${tx.runningBalance.abs().toStringAsFixed(2)} (Due)'
           : (tx.runningBalance > 0
               ? '$currency${tx.runningBalance.toStringAsFixed(2)} (Credit)'
-              : '$currency');
+              : currency);
 
       return [
         dateStr,
@@ -1639,7 +1639,7 @@ class PdfExportService {
         ? '$currency${customer.rawBalance.abs().toStringAsFixed(2)} (Due)'
         : (customer.rawBalance > 0
             ? '$currency${customer.rawBalance.toStringAsFixed(2)} (Credit)'
-            : '$currency');
+            : currency);
 
     pdf.addPage(
       pw.Page(
