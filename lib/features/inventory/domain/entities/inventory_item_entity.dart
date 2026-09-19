@@ -1,7 +1,9 @@
+import 'package:equatable/equatable.dart';
+
 /// Domain Entity representing an Inventory Item in the Business Logic Layer.
 ///
 /// Fully decoupled from backend DTOs and database schemas.
-class InventoryItemEntity {
+class InventoryItemEntity extends Equatable {
   final String id;
   final String name;
   final String sku;
@@ -68,4 +70,20 @@ class InventoryItemEntity {
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+
+  @override
+  // TODO: implement props
+  List<Object?> get props => [
+    id,
+    name,
+    sku,
+    category,
+    unit,
+    stockQuantity,
+    lowStockQuantity,
+    retailSellPrice,
+    purchasePrice,
+    createdAt,
+    updatedAt,
+  ];
 }
