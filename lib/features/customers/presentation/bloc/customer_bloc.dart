@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/utils/money_util.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../recycle_bin/presentation/bloc/recycle_bin_bloc.dart';
+import '../../../recycle_bin/presentation/bloc/recycle_bin_event.dart';
 import '../../../reports/presentation/bloc/reports_event.dart';
 import '../../domain/entities/customer_entity.dart';
 import '../../domain/usecases/add_customer_usecase.dart';
@@ -130,10 +132,36 @@ class CustomerBloc extends Bloc<CustomerEvent, CustomerState> {
     try {
       await deleteCustomerUseCase(event.customerId);
       _allCustomers.removeWhere((c) => c.id == event.customerId);
+
       emit(const CustomerOperationSuccessState('Customer deleted successfully!'));
-      _emitLoadedState(emit);
+
+      // Transition to shimmer view immediately
+      _emitLoadedState(emit, isListLoading: true);
+
+      // Re-fetch fresh customer list
+      try {
+        _allCustomers = await getCustomersUseCase(
+          page: 1,
+          limit: 10,
+        );
+      } catch (_) {}
+
+      _emitLoadedState(emit, isListLoading: false);
+
+      try {
+        if (InjectionContainer.getIt.isRegistered<ReportsBloc>()) {
+          InjectionContainer.reportsBloc.add(const FetchReportsEvent());
+        }
+      } catch (_) {}
+
+      try {
+        if (InjectionContainer.getIt.isRegistered<RecycleBinBloc>()) {
+          InjectionContainer.getIt<RecycleBinBloc>().add(const FetchTrashItemsEvent(forceRefresh: true));
+        }
+      } catch (_) {}
     } catch (e) {
       emit(CustomerErrorState(e.toString(), previousCustomers: _allCustomers));
+      _emitLoadedState(emit, isListLoading: false);
     }
   }
 
@@ -188,7 +216,10 @@ class CustomerBloc extends Bloc<CustomerEvent, CustomerState> {
     }
   }
 
-  void _emitLoadedState(Emitter<CustomerState> emit, {bool isListLoading = false}) {
+  void _emitLoadedState(
+    Emitter<CustomerState> emit, {
+    bool isListLoading = false,
+  }) {
     final query = _currentSearchQuery.trim().toLowerCase();
     final filtered = _allCustomers.where((customer) {
       final matchesSearch = query.isEmpty ||

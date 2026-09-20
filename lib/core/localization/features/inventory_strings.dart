@@ -15,6 +15,7 @@ class InventoryStrings {
   static const String sellingPrice = 'selling_price';
   static const String importCsv = 'import_csv';
   static const String exportCsv = 'export_csv';
+  static const String deleteItem = 'delete_item';
   static const String deleteItemConfirm = 'delete_item_confirm';
   static const String inStock = 'in_stock';
   static const String outOfStockTag = 'out_of_stock_tag';
@@ -36,6 +37,7 @@ class InventoryStrings {
     sellingPrice: 'বিক্রি দাম (বিক্রয়মূল্য)',
     importCsv: 'CSV ফাইল থেকে আমদানি',
     exportCsv: 'CSV ফাইল রপ্তানি',
+    deleteItem: 'পণ্য মুছুন',
     deleteItemConfirm: 'আপনি কি নিশ্চিত যে পণ্যটি মুছে ফেলতে চান?',
     inStock: 'স্টক আছে',
     outOfStockTag: 'স্টক শেষ',
@@ -58,6 +60,7 @@ class InventoryStrings {
     sellingPrice: 'Selling Price',
     importCsv: 'Import from CSV',
     exportCsv: 'Export CSV',
+    deleteItem: 'Delete Item',
     deleteItemConfirm: 'Are you sure you want to delete this item?',
     inStock: 'In Stock',
     outOfStockTag: 'Out of Stock',
