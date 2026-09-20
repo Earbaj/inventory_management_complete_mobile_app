@@ -8,9 +8,7 @@ import '../../domain/usecases/delete_inventory_item_usecase.dart';
 import '../../domain/usecases/get_inventory_items_usecase.dart';
 import '../../domain/usecases/update_inventory_item_usecase.dart';
 import '../../../../core/di/injection_container.dart';
-import '../../../recycle_bin/presentation/bloc/recycle_bin_bloc.dart';
 import '../../../recycle_bin/presentation/bloc/recycle_bin_event.dart';
-import '../../../reports/presentation/bloc/reports_bloc.dart';
 import '../../../reports/presentation/bloc/reports_event.dart';
 import '../view/inventory_screen.dart';
 import 'inventory_event.dart';
@@ -158,15 +156,11 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
       _emitLoadedState(emit, isListLoading: false);
 
       try {
-        if (InjectionContainer.getIt.isRegistered<ReportsBloc>()) {
-          InjectionContainer.reportsBloc.add(const FetchReportsEvent());
-        }
+        InjectionContainer.reportsBloc.add(const FetchReportsEvent());
       } catch (_) {}
 
       try {
-        if (InjectionContainer.getIt.isRegistered<RecycleBinBloc>()) {
-          InjectionContainer.getIt<RecycleBinBloc>().add(const FetchTrashItemsEvent(forceRefresh: true));
-        }
+        InjectionContainer.recycleBinBloc.add(const FetchTrashItemsEvent(forceRefresh: true));
       } catch (_) {}
     } catch (e) {
       emit(InventoryErrorState(e.toString()));

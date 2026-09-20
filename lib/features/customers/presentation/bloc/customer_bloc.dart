@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/utils/money_util.dart';
 import '../../../../core/di/injection_container.dart';
-import '../../../recycle_bin/presentation/bloc/recycle_bin_bloc.dart';
 import '../../../recycle_bin/presentation/bloc/recycle_bin_event.dart';
 import '../../../reports/presentation/bloc/reports_event.dart';
 import '../../domain/entities/customer_entity.dart';
@@ -149,15 +148,11 @@ class CustomerBloc extends Bloc<CustomerEvent, CustomerState> {
       _emitLoadedState(emit, isListLoading: false);
 
       try {
-        if (InjectionContainer.getIt.isRegistered<ReportsBloc>()) {
-          InjectionContainer.reportsBloc.add(const FetchReportsEvent());
-        }
+        InjectionContainer.reportsBloc.add(const FetchReportsEvent());
       } catch (_) {}
 
       try {
-        if (InjectionContainer.getIt.isRegistered<RecycleBinBloc>()) {
-          InjectionContainer.getIt<RecycleBinBloc>().add(const FetchTrashItemsEvent(forceRefresh: true));
-        }
+        InjectionContainer.recycleBinBloc.add(const FetchTrashItemsEvent(forceRefresh: true));
       } catch (_) {}
     } catch (e) {
       emit(CustomerErrorState(e.toString(), previousCustomers: _allCustomers));
