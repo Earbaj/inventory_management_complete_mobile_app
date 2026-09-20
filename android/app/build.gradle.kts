@@ -37,21 +37,33 @@ android {
     }
 
     signingConfigs {
-        create("release") {
+        /*create("release") {
             keyAlias = keystoreProperties.getProperty("keyAlias")
             keyPassword = keystoreProperties.getProperty("keyPassword")
             storeFile = keystoreProperties.getProperty("storeFile")?.let { file(it) }
             storePassword = keystoreProperties.getProperty("storePassword")
+        }*/
+        create("release") {
+            // ১. first check local  key.properties if didn't find than  Codemagic use it's Environment Variable নেবে
+            keyAlias = keystoreProperties.getProperty("keyAlias")
+                ?: System.getenv("CM_KEY_ALIAS")
+            keyPassword = keystoreProperties.getProperty("keyPassword")
+                ?: System.getenv("CM_KEY_PASSWORD")
+            storeFile = keystoreProperties.getProperty("storeFile")?.let { file(it) }
+                ?: System.getenv("CM_KEYSTORE_PATH")?.let { file(it) }
+            storePassword = keystoreProperties.getProperty("storePassword")
+                ?: System.getenv("CM_KEYSTORE_PASSWORD")
         }
     }
 
     buildTypes {
         release {
-            signingConfig = if (keystorePropertiesFile.exists()) {
+            /*signingConfig = if (keystorePropertiesFile.exists()) {
                 signingConfigs.getByName("release")
             } else {
                 signingConfigs.getByName("debug")
-            }
+            }*/
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
