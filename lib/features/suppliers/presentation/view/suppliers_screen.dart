@@ -160,15 +160,28 @@ class _SuppliersScreenState extends State<SuppliersScreen> with TickerProviderSt
           ),
         ],
       ),
-      floatingActionButton: SuppliersExpandableFab(
-        expandAnimation: _expandAnimation,
-        isFabOpen: _isFabOpen,
-        onToggle: _toggleFab,
-        onAddSupplier: () => _showAddSupplierSheet(context),
-        onNewPurchaseOrder: () {
-          final state = context.read<SupplierBloc>().state;
-          final suppliers = state is SupplierLoadedState ? state.suppliers : <SupplierEntity>[];
-          _showNewPurchaseOrderSheet(context, suppliers);
+      floatingActionButton: BlocSelector<SupplierBloc, SupplierState, bool>(
+        selector: (state) {
+          final isInitialLoading = state is SupplierLoadingState || state is SupplierInitialState;
+          final isRefreshing = state is SupplierLoadedState && state.isListLoading;
+          return isInitialLoading || isRefreshing;
+        },
+        builder: (context, isLoading) {
+          if (isLoading) {
+            return const SizedBox.shrink();
+          }
+
+          return SuppliersExpandableFab(
+            expandAnimation: _expandAnimation,
+            isFabOpen: _isFabOpen,
+            onToggle: _toggleFab,
+            onAddSupplier: () => _showAddSupplierSheet(context),
+            onNewPurchaseOrder: () {
+              final state = context.read<SupplierBloc>().state;
+              final suppliers = state is SupplierLoadedState ? state.suppliers : <SupplierEntity>[];
+              _showNewPurchaseOrderSheet(context, suppliers);
+            },
+          );
         },
       ),
       body: BlocConsumer<SupplierBloc, SupplierState>(

@@ -58,10 +58,23 @@ class _BranchManagementScreenState extends State<BranchManagementScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openAddBranchSheet,
-        icon: const Icon(Icons.add_rounded),
-        label: Text(BranchesStrings.addBranch.getString(context)),
+      floatingActionButton: BlocSelector<BranchBloc, BranchState, bool>(
+        selector: (state) {
+          final isInitialLoading = state is BranchLoadingState || state is BranchInitialState;
+          final isRefreshing = state is BranchLoadedState && state.isListLoading;
+          return isInitialLoading || isRefreshing;
+        },
+        builder: (context, isLoading) {
+          if (isLoading) {
+            return const SizedBox.shrink();
+          }
+
+          return FloatingActionButton.extended(
+            onPressed: _openAddBranchSheet,
+            icon: const Icon(Icons.add_rounded),
+            label: Text(BranchesStrings.addBranch.getString(context)),
+          );
+        },
       ),
       body: BlocConsumer<BranchBloc, BranchState>(
         listenWhen: (previous, current) =>

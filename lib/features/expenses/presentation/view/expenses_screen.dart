@@ -153,12 +153,25 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showAddExpenseSheet,
-        icon: const Icon(Icons.add_rounded),
-        label: Text(ExpensesStrings.addExpense.getString(context)),
-        backgroundColor: Colors.red.shade700,
-        foregroundColor: Colors.white,
+      floatingActionButton: BlocSelector<ExpensesBloc, ExpensesState, bool>(
+        selector: (state) {
+          final isInitialLoading = state is ExpensesLoadingState || state is ExpensesInitialState;
+          final isRefreshing = state is ExpensesLoadedState && state.isListLoading;
+          return isInitialLoading || isRefreshing;
+        },
+        builder: (context, isLoading) {
+          if (isLoading) {
+            return const SizedBox.shrink();
+          }
+
+          return FloatingActionButton.extended(
+            onPressed: _showAddExpenseSheet,
+            icon: const Icon(Icons.add_rounded),
+            label: Text(ExpensesStrings.addExpense.getString(context)),
+            backgroundColor: Colors.red.shade700,
+            foregroundColor: Colors.white,
+          );
+        },
       ),
       body: BlocConsumer<ExpensesBloc, ExpensesState>(
         listenWhen: (previous, current) =>
