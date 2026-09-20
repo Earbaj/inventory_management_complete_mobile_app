@@ -57,6 +57,11 @@ mixin Bangla {
   static const String success = CommonStrings.success;
   static const String error = CommonStrings.error;
   static const String refresh = CommonStrings.refresh;
+  static const String noInternetTitle = CommonStrings.noInternetTitle;
+  static const String noInternetDesc = CommonStrings.noInternetDesc;
+  static const String retryConnection = CommonStrings.retryConnection;
+  static const String checkingConnection = CommonStrings.checkingConnection;
+  static const String stillNoInternet = CommonStrings.stillNoInternet;
 
   // Auth
   static const String login = AuthStrings.login;

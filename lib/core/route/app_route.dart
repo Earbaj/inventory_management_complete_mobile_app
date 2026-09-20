@@ -25,10 +25,12 @@ import '../../features/splash/presentation/view/splash_screen.dart';
 import '../../features/dashboard/presentation/widgets/app_drawer.dart';
 
 class AppRoute {
+  static final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
   static final GlobalKey<ScaffoldState> shellScaffoldKey = GlobalKey<ScaffoldState>();
 
   // GoRouter configuration
   static final GoRouter router = GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/splash',
 
     routes: [
