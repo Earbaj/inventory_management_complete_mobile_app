@@ -85,10 +85,23 @@ class _CustomersScreenState extends State<CustomersScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openAddCustomerSheet,
-        icon: const Icon(Icons.person_add_alt_1_rounded),
-        label: const Text('Add Customer'),
+      floatingActionButton: BlocSelector<CustomerBloc, CustomerState, bool>(
+        selector: (state) {
+          final isInitialLoading = state is CustomerLoadingState || state is CustomerInitialState;
+          final isRefreshing = state is CustomerLoadedState && state.isListLoading;
+          return isInitialLoading || isRefreshing;
+        },
+        builder: (context, isLoading) {
+          if (isLoading) {
+            return const SizedBox.shrink();
+          }
+
+          return FloatingActionButton.extended(
+            onPressed: _openAddCustomerSheet,
+            icon: const Icon(Icons.person_add_alt_1_rounded),
+            label: const Text('Add Customer'),
+          );
+        },
       ),
       body: BlocConsumer<CustomerBloc, CustomerState>(
         listenWhen: (previous, current) =>
@@ -270,14 +283,27 @@ class _CustomersScreenState extends State<CustomersScreen> {
   void _deleteCustomer(CustomerEntity customer) {
     GlobalWarningDialog.show(
       context,
-      title: 'Delete Customer?',
-      message: 'Are you sure you want to delete ${customer.name}?',
-      confirmText: 'Delete',
-      cancelText: 'Cancel',
+      title: CustomersStrings.deleteCustomer.getString(context),
+      message: '${customer.name} - ${CustomersStrings.deleteCustomerConfirm.getString(context)}',
+      confirmText: Bangla.delete.getString(context),
+      cancelText: Bangla.cancel.getString(context),
       icon: Icons.delete_forever_rounded,
       confirmColor: Colors.red,
-      onConfirm: () {
-        context.read<CustomerBloc>().add(DeleteCustomerEvent(customer.id));
+      onConfirm: () async {
+        final bloc = context.read<CustomerBloc>();
+        final future = bloc.stream
+            .firstWhere(
+              (s) => s is CustomerOperationSuccessState || s is CustomerErrorState,
+            )
+            .timeout(
+              const Duration(seconds: 20),
+              onTimeout: () => const CustomerErrorState('Request timed out. Please check your connection.'),
+            );
+        bloc.add(DeleteCustomerEvent(customer.id));
+        final state = await future;
+        if (state is CustomerErrorState) {
+          throw Exception(state.message);
+        }
       },
     );
   }

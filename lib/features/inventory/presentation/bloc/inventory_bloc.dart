@@ -7,6 +7,9 @@ import '../../domain/usecases/add_inventory_item_usecase.dart';
 import '../../domain/usecases/delete_inventory_item_usecase.dart';
 import '../../domain/usecases/get_inventory_items_usecase.dart';
 import '../../domain/usecases/update_inventory_item_usecase.dart';
+import '../../../../core/di/injection_container.dart';
+import '../../../recycle_bin/presentation/bloc/recycle_bin_event.dart';
+import '../../../reports/presentation/bloc/reports_event.dart';
 import '../view/inventory_screen.dart';
 import 'inventory_event.dart';
 import 'inventory_state.dart';
@@ -133,9 +136,35 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
       await deleteItemUseCase(event.itemId);
       _allItems.removeWhere((item) => item.id == event.itemId);
       emit(const InventoryOperationSuccessState('Item deleted successfully!'));
-      _emitLoadedState(emit);
+
+      // Transition to shimmer view immediately
+      _emitLoadedState(emit, isListLoading: true);
+
+      // Re-fetch fresh inventory items from server
+      try {
+        final apiSearch = _currentSearchQuery.trim().isEmpty ? null : _currentSearchQuery.trim();
+        final apiCategory = _currentCategory == 'All' ? null : _currentCategory;
+        _allItems = await getItemsUseCase(GetInventoryItemsParams(
+          page: 1,
+          limit: 20,
+          searchQuery: apiSearch,
+          category: apiCategory,
+        ));
+        _fetchedCategories = await remoteDataSource.getCategories(forceRefresh: true);
+      } catch (_) {}
+
+      _emitLoadedState(emit, isListLoading: false);
+
+      try {
+        InjectionContainer.reportsBloc.add(const FetchReportsEvent());
+      } catch (_) {}
+
+      try {
+        InjectionContainer.recycleBinBloc.add(const FetchTrashItemsEvent(forceRefresh: true));
+      } catch (_) {}
     } catch (e) {
       emit(InventoryErrorState(e.toString()));
+      _emitLoadedState(emit, isListLoading: false);
     }
   }
 

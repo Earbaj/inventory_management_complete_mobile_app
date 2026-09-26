@@ -35,8 +35,28 @@ class CustomerLoadedState extends CustomerState {
 
   double get totalDues => customers.fold(0.0, (sum, customer) => sum + customer.totalDue);
   int get dueCustomersCount => customers.where((customer) => customer.hasDue).length;
+
+  CustomerLoadedState copyWith({
+    List<CustomerEntity>? customers,
+    List<CustomerEntity>? filteredCustomers,
+    String? searchQuery,
+    bool? isListLoading,
+  }) {
+    return CustomerLoadedState(
+      customers: customers ?? this.customers,
+      filteredCustomers: filteredCustomers ?? this.filteredCustomers,
+      searchQuery: searchQuery ?? this.searchQuery,
+      isListLoading: isListLoading ?? this.isListLoading,
+    );
+  }
+
   @override
-  List<Object?> get props => [customers, filteredCustomers, searchQuery, isListLoading];
+  List<Object?> get props => [
+        customers,
+        filteredCustomers,
+        searchQuery,
+        isListLoading,
+      ];
 }
 
 class CustomerOperationSuccessState extends CustomerState {

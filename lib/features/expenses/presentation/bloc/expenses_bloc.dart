@@ -152,14 +152,49 @@ class ExpensesBloc extends Bloc<ExpensesEvent, ExpensesState> {
     DeleteExpenseEvent event,
     Emitter<ExpensesState> emit,
   ) async {
+    final currentState = state;
+    if (currentState is ExpensesLoadedState) {
+      emit(currentState.copyWith(deletingExpenseId: event.id));
+    }
+
     try {
       await deleteExpenseUseCase(event.id);
+
+      // Remove deleted expense locally and update total amount
+      if (state is ExpensesLoadedState) {
+        final current = state as ExpensesLoadedState;
+        final updatedList = current.expenses.where((e) => e.id != event.id).toList();
+        final deletedAmount = current.expenses
+            .where((e) => e.id == event.id)
+            .fold<double>(0.0, (sum, item) => sum + item.amount);
+        final newTotal = (current.totalExpenseAmount - deletedAmount).clamp(0.0, double.infinity);
+
+        emit(current.copyWith(
+          expenses: updatedList,
+          totalExpenseAmount: newTotal,
+          clearDeletingExpenseId: true,
+        ));
+      }
+
       emit(const ExpensesOperationSuccessState('Expense moved to Recycle Bin (Soft deleted).'));
 
-      // Re-fetch expenses
+      // Smooth transition to shimmer view while refreshing list from server
+      if (state is ExpensesLoadedState) {
+        emit((state as ExpensesLoadedState).copyWith(
+          isListLoading: true,
+          clearDeletingExpenseId: true,
+        ));
+      }
+
+      // Re-fetch fresh expenses
       add(FetchExpensesEvent(page: 1, category: _currentCategory, isRefresh: true));
     } catch (e) {
-      emit(ExpensesErrorState(e.toString()));
+      if (state is ExpensesLoadedState) {
+        emit((state as ExpensesLoadedState).copyWith(clearDeletingExpenseId: true));
+      }
+      final previous = currentState is ExpensesLoadedState ? currentState.expenses : <ExpenseEntity>[];
+      final prevTotal = currentState is ExpensesLoadedState ? currentState.totalExpenseAmount : 0.0;
+      emit(ExpensesErrorState(e.toString(), previousExpenses: previous, previousTotalAmount: prevTotal));
     }
   }
 }

@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 import '../config/env_config.dart';
 import '../error/failures.dart';
+import 'network_service.dart';
 
 /// Callback invoked when an authenticated API call receives a 401 Unauthorized response.
 typedef OnUnauthorizedCallback = void Function();
@@ -338,6 +339,7 @@ class ApiClient {
 
   Failure _handleDioError(DioException e) {
     if (e.type == DioExceptionType.connectionError) {
+      NetworkService.instance.checkAndShowNoInternet();
       return NetworkFailure(
         'Unable to connect to backend server (${EnvConfig.apiBaseUrl}). Please ensure the backend server is running and accessible.',
       );
@@ -346,6 +348,7 @@ class ApiClient {
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.sendTimeout ||
         e.type == DioExceptionType.receiveTimeout) {
+      NetworkService.instance.checkAndShowNoInternet();
       return const NetworkFailure('Network connection timeout. Please check your internet connection.');
     }
 

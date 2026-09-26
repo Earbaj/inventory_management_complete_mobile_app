@@ -8,12 +8,18 @@ class TrashItemCard extends StatelessWidget {
   final TrashItemEntity item;
   final VoidCallback onRestore;
   final VoidCallback onPermanentDelete;
+  final bool isRestoring;
+  final bool isDeleting;
+  final bool isActionDisabled;
 
   const TrashItemCard({
     super.key,
     required this.item,
     required this.onRestore,
     required this.onPermanentDelete,
+    this.isRestoring = false,
+    this.isDeleting = false,
+    this.isActionDisabled = false,
   });
 
   String _formatDate(DateTime? dt) {
@@ -164,23 +170,55 @@ class TrashItemCard extends StatelessWidget {
 
                 // Action Buttons
                 OutlinedButton.icon(
-                  onPressed: onRestore,
+                  onPressed: (isRestoring || isDeleting || isActionDisabled) ? null : onRestore,
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.green.shade700,
-                    side: BorderSide(color: Colors.green.shade600),
+                    disabledForegroundColor: Colors.green.shade700.withValues(alpha: 0.8),
+                    side: BorderSide(color: isRestoring ? Colors.green.shade700 : Colors.green.shade600),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  icon: const Icon(Icons.restore_rounded, size: 18),
-                  label: Text(RecycleBinStrings.restoreItem.getString(context), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  icon: isRestoring
+                      ? SizedBox(
+                          width: 15,
+                          height: 15,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.green.shade700),
+                          ),
+                        )
+                      : const Icon(Icons.restore_rounded, size: 18),
+                  label: Text(
+                    isRestoring
+                        ? RecycleBinStrings.restoringItem.getString(context)
+                        : RecycleBinStrings.restoreItem.getString(context),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
                 ),
                 const SizedBox(width: 8),
-                IconButton(
-                  onPressed: () => _confirmPermanentDelete(context),
-                  icon: const Icon(Icons.delete_forever_rounded, color: Colors.red),
-                  tooltip: RecycleBinStrings.permanentDelete.getString(context),
-                  visualDensity: VisualDensity.compact,
-                ),
+                isDeleting
+                    ? const SizedBox(
+                        width: 36,
+                        height: 36,
+                        child: Center(
+                          child: SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+                            ),
+                          ),
+                        ),
+                      )
+                    : IconButton(
+                        onPressed: (isRestoring || isDeleting || isActionDisabled)
+                            ? null
+                            : () => _confirmPermanentDelete(context),
+                        icon: const Icon(Icons.delete_forever_rounded, color: Colors.red),
+                        tooltip: RecycleBinStrings.permanentDelete.getString(context),
+                        visualDensity: VisualDensity.compact,
+                      ),
               ],
             ),
           ],

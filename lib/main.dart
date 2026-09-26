@@ -24,6 +24,7 @@ import 'core/di/injection_container.dart';
 import 'core/localization/bloc/language_bloc.dart';
 import 'core/localization/bloc/language_event.dart';
 import 'core/localization/bloc/language_state.dart';
+import 'core/presentation/widgets/connectivity_watcher.dart';
 import 'core/route/app_route.dart';
 import 'core/theme/app_theme.dart';
 
@@ -127,6 +128,11 @@ class MyApp extends StatelessWidget {
             darkTheme: AppTheme.darkTheme,
             themeMode: ThemeMode.system,
             routerConfig: AppRoute.router,
+            builder: (context, child) {
+              return ConnectivityWatcher(
+                child: child ?? const SizedBox.shrink(),
+              );
+            },
           );
         },
       ),

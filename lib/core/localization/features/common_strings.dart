@@ -26,6 +26,11 @@ class CommonStrings {
   static const String paid = 'paid';
   static const String due = 'due';
   static const String refresh = 'refresh';
+  static const String noInternetTitle = 'no_internet_title';
+  static const String noInternetDesc = 'no_internet_desc';
+  static const String retryConnection = 'retry_connection';
+  static const String checkingConnection = 'checking_connection';
+  static const String stillNoInternet = 'still_no_internet';
 
   static const Map<String, String> bn = {
     appName: 'ইনভেন্টরি পিওএস',
@@ -55,6 +60,11 @@ class CommonStrings {
     paid: 'পরিশোধিত',
     due: 'বাকি',
     refresh: 'রিফ্রেশ করুন',
+    noInternetTitle: 'ইন্টারনেট সংযোগ নেই',
+    noInternetDesc: 'রিয়েল-টাইম ইনভেন্টরি ও নিখুঁত তথ্য ব্যবস্থাপনার জন্য সক্রিয় ইন্টারনেট সংযোগ প্রয়োজন। অনুগ্রহ করে ওয়াইফাই বা মোবাইল ডেটা চালু করুন।',
+    retryConnection: 'পুনরায় চেষ্টা করুন',
+    checkingConnection: 'যাচাই করা হচ্ছে...',
+    stillNoInternet: 'এখনও ইন্টারনেট সংযোগ নেই। দয়া করে ইন্টারনেট চালু করে আবার চেষ্টা করুন।',
   };
 
   static const Map<String, String> en = {
@@ -85,5 +95,10 @@ class CommonStrings {
     paid: 'Paid',
     due: 'Due',
     refresh: 'Refresh',
+    noInternetTitle: 'No Internet Connection',
+    noInternetDesc: 'An active internet connection is required to use this app and ensure real-time inventory accuracy. Please check your WiFi or mobile data.',
+    retryConnection: 'Retry Connection',
+    checkingConnection: 'Checking connection...',
+    stillNoInternet: 'Still no internet connection. Please connect to internet and try again.',
   };
 }

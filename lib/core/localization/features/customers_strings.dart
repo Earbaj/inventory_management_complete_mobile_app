@@ -13,6 +13,8 @@ class CustomersStrings {
   static const String paymentReceived = 'payment_received';
   static const String saleInvoice = 'sale_invoice';
   static const String clearDue = 'clear_due';
+  static const String deleteCustomer = 'delete_customer';
+  static const String deleteCustomerConfirm = 'delete_customer_confirm';
 
   static const Map<String, String> bn = {
     customersTitle: 'কাস্টমার ও বাকি খাতা',
@@ -29,6 +31,8 @@ class CustomersStrings {
     paymentReceived: 'টাকা জমা নেওয়া হয়েছে',
     saleInvoice: 'বিক্রির চালান',
     clearDue: 'বাকি পরিশোধ',
+    deleteCustomer: 'কাস্টমার মুছুন',
+    deleteCustomerConfirm: 'আপনি কি নিশ্চিত যে আপনি এই কাস্টমারটিকে মুছে ফেলতে চান?',
   };
 
   static const Map<String, String> en = {
@@ -46,5 +50,7 @@ class CustomersStrings {
     paymentReceived: 'Payment Received',
     saleInvoice: 'Sale Invoice',
     clearDue: 'Clear Due',
+    deleteCustomer: 'Delete Customer',
+    deleteCustomerConfirm: 'Are you sure you want to delete this customer?',
   };
 }

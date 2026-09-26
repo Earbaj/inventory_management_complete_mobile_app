@@ -6,6 +6,7 @@ import 'package:inventory_management_complete/features/auth/presentation/bloc/au
 import 'package:inventory_management_complete/features/inventory/presentation/bloc/inventory_bloc.dart';
 import '../../../../core/route/app_route.dart';
 import '../../../../core/widgets/global_empty_placeholder.dart';
+import '../../../../core/widgets/global_warning_dialog.dart';
 import '../../../auth/domain/entities/user_entity.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
 import '../../domain/entities/inventory_item_entity.dart';
@@ -507,26 +508,40 @@ class _InventoryScreenState extends State<InventoryScreen> {
           ),
         ],
       ),
-      floatingActionButton: BlocSelector<AuthBloc, AuthState, bool>(
-          selector: (state) {
-            return state is AuthenticatedState &&
-                state.user?.role.toLowerCase() == 'admin';
-          },
-        builder: (context, isAdmin) {
-          if (!isAdmin) {
+      floatingActionButton: BlocSelector<InventoryBloc, InventoryState, bool>(
+        selector: (state) {
+          return state is InventoryLoadingState ||
+              state is InventoryInitialState ||
+              (state is InventoryLoadedState && state.isListLoading);
+        },
+        builder: (context, isLoading) {
+          if (isLoading) {
             return const SizedBox.shrink();
           }
 
-          return FloatingActionButton.extended(
-            onPressed: () {
-              _openAddItemSheet();
+          return BlocSelector<AuthBloc, AuthState, bool>(
+            selector: (state) {
+              return state is AuthenticatedState &&
+                  state.user?.role.toLowerCase() == 'admin';
             },
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('Add Item'),
+            builder: (context, isAdmin) {
+              if (!isAdmin) {
+                return const SizedBox.shrink();
+              }
+
+              return FloatingActionButton.extended(
+                onPressed: () {
+                  _openAddItemSheet();
+                },
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('Add Item'),
+              );
+            },
           );
-        }
+        },
       ),
       body: BlocConsumer<InventoryBloc,InventoryState>(
+        buildWhen: (previous, current) => current is! InventoryOperationSuccessState,
         listener: (context, state) {
           // SnackBar side-effects
           if (state is InventoryOperationSuccessState) {
@@ -730,40 +745,29 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   void _confirmDeleteItem(BuildContext context, InventoryItemEntity item) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.red),
-              SizedBox(width: 10),
-              Text('Delete Item?'),
-            ],
-          ),
-          content: Text(
-            'Are you sure you want to delete "${item.name}" (SKU: ${item.sku})?\n\nThis action will remove the item from your inventory.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade700,
-                foregroundColor: Colors.white,
-              ),
-              icon: const Icon(Icons.delete_forever_rounded),
-              label: const Text('Delete Item'),
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                context.read<InventoryBloc>().add(DeleteInventoryItemEvent(item.id));
-              },
-            ),
-          ],
-        );
+    GlobalWarningDialog.show(
+      context,
+      title: InventoryStrings.deleteItem.getString(context),
+      message: '${item.name} (SKU: ${item.sku}) - ${InventoryStrings.deleteItemConfirm.getString(context)}',
+      confirmText: Bangla.delete.getString(context),
+      cancelText: Bangla.cancel.getString(context),
+      icon: Icons.delete_forever_rounded,
+      confirmColor: Colors.red,
+      onConfirm: () async {
+        final bloc = context.read<InventoryBloc>();
+        final future = bloc.stream
+            .firstWhere(
+              (s) => s is InventoryOperationSuccessState || s is InventoryErrorState,
+            )
+            .timeout(
+              const Duration(seconds: 20),
+              onTimeout: () => const InventoryErrorState('Request timed out. Please check your connection.'),
+            );
+        bloc.add(DeleteInventoryItemEvent(item.id));
+        final state = await future;
+        if (state is InventoryErrorState) {
+          throw Exception(state.message);
+        }
       },
     );
   }

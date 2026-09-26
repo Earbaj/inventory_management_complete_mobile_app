@@ -99,7 +99,20 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
       icon: Icons.delete_forever_rounded,
       confirmColor: Colors.red,
       onConfirm: () async {
-        context.read<ExpensesBloc>().add(DeleteExpenseEvent(expense.id));
+        final bloc = context.read<ExpensesBloc>();
+        final future = bloc.stream
+            .firstWhere(
+              (s) => s is ExpensesOperationSuccessState || s is ExpensesErrorState,
+            )
+            .timeout(
+              const Duration(seconds: 20),
+              onTimeout: () => const ExpensesErrorState('Request timed out. Please check your connection.'),
+            );
+        bloc.add(DeleteExpenseEvent(expense.id));
+        final state = await future;
+        if (state is ExpensesErrorState) {
+          throw Exception(state.message);
+        }
       },
     );
   }
@@ -140,12 +153,25 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showAddExpenseSheet,
-        icon: const Icon(Icons.add_rounded),
-        label: Text(ExpensesStrings.addExpense.getString(context)),
-        backgroundColor: Colors.red.shade700,
-        foregroundColor: Colors.white,
+      floatingActionButton: BlocSelector<ExpensesBloc, ExpensesState, bool>(
+        selector: (state) {
+          final isInitialLoading = state is ExpensesLoadingState || state is ExpensesInitialState;
+          final isRefreshing = state is ExpensesLoadedState && state.isListLoading;
+          return isInitialLoading || isRefreshing;
+        },
+        builder: (context, isLoading) {
+          if (isLoading) {
+            return const SizedBox.shrink();
+          }
+
+          return FloatingActionButton.extended(
+            onPressed: _showAddExpenseSheet,
+            icon: const Icon(Icons.add_rounded),
+            label: Text(ExpensesStrings.addExpense.getString(context)),
+            backgroundColor: Colors.red.shade700,
+            foregroundColor: Colors.white,
+          );
+        },
       ),
       body: BlocConsumer<ExpensesBloc, ExpensesState>(
         listenWhen: (previous, current) =>
@@ -356,8 +382,13 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                           }
 
                           final expense = expenses[index];
+                          final isDeleting = loadedState?.deletingExpenseId == expense.id;
+                          final isActionDisabled = loadedState?.isDeletingExpense == true;
+
                           return ExpenseCard(
                             expense: expense,
+                            isDeleting: isDeleting,
+                            isActionDisabled: isActionDisabled,
                             onEdit: () => _showEditExpenseSheet(expense),
                             onDelete: () => _confirmDeleteExpense(expense),
                           );
