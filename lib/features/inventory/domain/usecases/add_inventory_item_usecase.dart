@@ -10,9 +10,9 @@ class AddInventoryItemUseCase {
   const AddInventoryItemUseCase(this.repository);
 
   Future<InventoryItemEntity> call(InventoryItemEntity item) {
-    if(item.purchasePrice < 0 || item.retailSellPrice < 0){
-      throw ValidationException('Price cannot be negative');
-    }
+    // if(item.purchasePrice < 0 || item.retailSellPrice < 0){
+    //   throw ValidationException('Price cannot be negative');
+    // }
     return repository.addInventoryItem(item);
   }
 }
